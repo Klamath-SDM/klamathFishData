@@ -45,9 +45,21 @@ habitat_data <- read_csv(here::here('data-raw','tables_with_data','habitat_data.
   glimpse()
 
 # RST ----
-
-
-
+rst_sites <- read_csv(here::here('data-raw','tables_with_data', 'rst_sites.csv')) |>
+  clean_names() |>
+  mutate(data_type = "RST data",
+         stream = paste(watershed, "River")) |>
+  assign_sub_basin(sub_basin) |>
+  select(stream, sub_basin, data_type, rst_name, operator, latitude, longitude, link) |>
+  glimpse()
 
 # hatcheries ----
-
+hatcheries <- read_csv(here::here('data-raw','fish_hatchery_locations.csv')) |>
+  clean_names() |>
+  mutate(stream = paste(watershed, "River"),
+         data_type = "hatchery") |>
+  rename(agency = operator) |>
+  assign_sub_basin(sub_basin) |>
+  select(-c(google_earth_location,  watershed)) |>
+  select(stream, sub_basin, data_type, everything()) |>
+  glimpse()
