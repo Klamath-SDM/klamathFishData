@@ -10,7 +10,7 @@ library(sf)
 # for now I am downloading spredsheets to tables_with_data folder
 # rst <- read_sheet("https://docs.google.com/spreadsheets/d/1rk1uoicdGNwcT6UKDLlQr7YkX9W5Fh2FCea3FAxxbGg",
            # sheet = "RST")
-
+# using sub-basin shp to assign sub_basin names to other data
 sub_basin <- st_read("data-raw/tables_with_data/sub-basin-boundaries/Klamath_HUC8_Subbasin.shp")
 
 # function to assign sub-basin to datasets #TODO let's consider moving this function to an R package(?)
@@ -34,7 +34,7 @@ assign_sub_basin <- function(data, sub_basin, is_point = TRUE, lon_col = "longit
 }
 
 
-# habitat data ----
+# habitat data ---- #TODO check with Maddee on source of this table
 habitat_data <- read_csv(here::here('data-raw','tables_with_data','habitat_data.csv')) |>
   clean_names() |>
   mutate(longitude = as.numeric(longtidue)) |>
@@ -54,7 +54,7 @@ rst_sites <- read_csv(here::here('data-raw','tables_with_data', 'rst_sites.csv')
   glimpse()
 
 # hatcheries ----
-hatcheries <- read_csv(here::here('data-raw','fish_hatchery_locations.csv')) |>
+hatcheries <- read_csv(here::here('data-raw','tables_with_data', 'fish_hatchery_locations.csv')) |>
   clean_names() |>
   mutate(stream = paste(watershed, "River"),
          data_type = "hatchery") |>
@@ -63,3 +63,8 @@ hatcheries <- read_csv(here::here('data-raw','fish_hatchery_locations.csv')) |>
   select(-c(google_earth_location,  watershed)) |>
   select(stream, sub_basin, data_type, everything()) |>
   glimpse()
+
+# save rda files
+usethis::use_data(habitat_data, overwrite = TRUE)
+usethis::use_data(rst_sites, overwrite = TRUE)
+usethis::use_data(hatcheries, overwrite = TRUE)

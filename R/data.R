@@ -20,3 +20,20 @@
 #'   estimate is not complete, otherwise it is assumed that estimate is complete.
 #'   }
 'model_output'
+
+#' @title Salmon Habitat Data
+#' @name habitat_data
+#' @description This dataset compiles modeled salmon habitat data derived from literature reviews.
+#' It includes information on habitat model extent, data sources, and approximate geographic locations.
+'habitat_data'
+
+#' @title Rotary Screw Traps Data
+#' @name rst_sites
+#' @description This dataset compiles rotary screw traps across the Klamath Basin.
+'rst_sites'
+
+
+#' @title Hatchery Locations
+#' @name hatcheries
+#' @description This dataset contains the hatchery locations and resources to find more information about them.
+'hatcheries'
