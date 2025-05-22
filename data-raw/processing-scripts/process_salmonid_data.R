@@ -2,6 +2,7 @@ library(tidyr)
 library(dplyr)
 library(janitor)
 library(sf)
+library(tidyverse)
 
 
 # library(googlesheets4)
@@ -62,6 +63,90 @@ hatcheries <- read_csv(here::here('data-raw','tables_with_data', 'fish_hatchery_
   assign_sub_basin(sub_basin) |>
   select(-c(google_earth_location,  watershed)) |>
   select(stream, sub_basin, data_type, everything()) |>
+  glimpse()
+
+# redd/carcass surveys
+# not about these data - it was compiled doing  literature review and documented on google sheets by Willie
+# https://docs.google.com/spreadsheets/d/1rk1uoicdGNwcT6UKDLlQr7YkX9W5Fh2FCea3FAxxbGg/edit?gid=444986309#gid=444986309
+# in order to get geodata, shapefiles were manually created on GIS, and linked to sheet
+# for some of the surveys we have "extent", and for others we have "points"
+
+## Survey Lines
+# TODO use rivermile package to assign river mile, brainstorm schema to have more unified datasets
+# shapefile 1 ---
+survey_shapefile_1 <- st_read("data-raw/redd_carcass_survey_data/shapefiles/redd_survey_coho_USFWS.shp")
+survey_shapefile_1 <- st_transform(survey_shapefile_1, crs = 4326)
+survey_lines_metadata_1 <- read_csv(here::here('data-raw', 'redd_carcass_survey_data' ,'redd_carcass.csv')) |>
+  clean_names() |>
+  filter(id >= 1 & id <= 7) |>
+  select(-c(upstream_google_earth, upstream_rkm, downstream_google_earth,
+            downstream_lat, downstream_long, upstream_lat, upstream_long)) |>
+  mutate(Id = id) |>
+  select(-id) |>
+  mutate(species = "coho salmon and fall chinook salmon") |>   #adding this for now to include both reaches as one (id 8-13 too)
+  glimpse()
+
+# join shapefile and metadata
+survey_lines_1 <- survey_shapefile_1 |>
+  left_join(survey_lines_metadata_1, by = "Id") |>
+  mutate(stream = paste(watershed, "River")) |>
+  assign_sub_basin(sub_basin, is_point = FALSE) |>
+  select(-watershed) |>
+  glimpse()
+
+print(st_crs(survey_shapefile_1))
+print(st_geometry_type(survey_shapefile_1))
+
+# shapefile 2 ---
+survey_shapefile_2 <- st_read("data-raw/redd_carcass_survey_data/shapefiles/redd_carcass_fall_chinook.shp") |> select(-Shape_Leng)
+survey_shapefile_2 <- st_transform(survey_shapefile_2, crs = 4326)
+#metadata of those on shapefiles
+survey_lines_metadata_2 <- read_csv(here::here('data-raw', 'redd_carcass_survey_data', 'redd_carcass.csv')) |>
+  clean_names() |>
+  filter(id >= 18 & id <= 20) |>
+  select(-c(upstream_google_earth, upstream_rkm, downstream_google_earth,
+            downstream_lat, downstream_long, upstream_lat, upstream_long)) |>
+  mutate(Id = id,
+         temporal_coverage = ifelse(temporal_coverage == "Oct 7 - Late Nov/Early Dec 2024", "2024", temporal_coverage)) |>
+  select(-id) |>
+  # select(-c(upstream_lat, upstream_long, downstream_long, downstream_lat, data_type)) |>
+  # filter(!is.na(latitude)) |>
+  glimpse()
+
+# join shapefile and metadata
+survey_lines_2 <- survey_shapefile_2 |>
+  left_join(survey_lines_metadata_2, by = "Id") |>
+  mutate(stream = paste(watershed, "River")) |>
+  assign_sub_basin(sub_basin, is_point = FALSE) |>
+  select(-watershed) |>
+  glimpse()
+
+print(st_crs(survey_shapefile_2))
+print(st_geometry_type(survey_shapefile_2))
+
+# survey points
+survey_points <- read_csv(here::here('data-raw', 'redd_carcass_survey_data', 'redd_carcass.csv')) |>
+  clean_names() |>
+  filter(id >= 14 & id <= 17 | id >= 21 & id <= 27,
+         !is.na(upstream_lat)) |>
+  select(-c(upstream_google_earth, upstream_rkm, downstream_google_earth, downstream_lat, downstream_long)) |>
+  mutate(Id = id) |>
+  select(-id) |>
+  rename(latitude = upstream_lat,
+         longitude = upstream_long) |>
+  mutate(temporal_coverage = case_when(
+    temporal_coverage == 2002 ~ "2002 fish kill event",
+    TRUE ~ "2008"),
+    agency = "CDFW",
+    stream = paste(watershed, "River")) |>
+  assign_sub_basin(sub_basin) |>
+  select(-watershed) |>
+  glimpse()
+
+all_surveys <- bind_rows(survey_lines_1, survey_lines_2, survey_points) |>
+  clean_names() |>
+  select(-c(id, label)) |>
+  select(stream, sub_basin, data_type, species, temporal_coverage,everything()) |>
   glimpse()
 
 # save rda files
