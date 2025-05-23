@@ -79,7 +79,7 @@ survey_shapefile_1 <- st_transform(survey_shapefile_1, crs = 4326)
 survey_lines_metadata_1 <- read_csv(here::here('data-raw', 'redd_carcass_survey_data' ,'redd_carcass.csv')) |>
   clean_names() |>
   filter(id >= 1 & id <= 7) |>
-  select(-c(upstream_google_earth, upstream_rkm, downstream_google_earth,
+  select(-c(upstream_google_earth, downstream_google_earth,
             downstream_lat, downstream_long, upstream_lat, upstream_long)) |>
   mutate(Id = id) |>
   select(-id) |>
@@ -104,7 +104,7 @@ survey_shapefile_2 <- st_transform(survey_shapefile_2, crs = 4326)
 survey_lines_metadata_2 <- read_csv(here::here('data-raw', 'redd_carcass_survey_data', 'redd_carcass.csv')) |>
   clean_names() |>
   filter(id >= 18 & id <= 20) |>
-  select(-c(upstream_google_earth, upstream_rkm, downstream_google_earth,
+  select(-c(upstream_google_earth, downstream_google_earth,
             downstream_lat, downstream_long, upstream_lat, upstream_long)) |>
   mutate(Id = id,
          temporal_coverage = ifelse(temporal_coverage == "Oct 7 - Late Nov/Early Dec 2024", "2024", temporal_coverage)) |>
@@ -129,7 +129,7 @@ survey_points <- read_csv(here::here('data-raw', 'redd_carcass_survey_data', 're
   clean_names() |>
   filter(id >= 14 & id <= 17 | id >= 21 & id <= 27,
          !is.na(upstream_lat)) |>
-  select(-c(upstream_google_earth, upstream_rkm, downstream_google_earth, downstream_lat, downstream_long)) |>
+  select(-c(upstream_google_earth, downstream_google_earth, downstream_lat, downstream_long)) |>
   mutate(Id = id) |>
   select(-id) |>
   rename(latitude = upstream_lat,
@@ -143,13 +143,31 @@ survey_points <- read_csv(here::here('data-raw', 'redd_carcass_survey_data', 're
   select(-watershed) |>
   glimpse()
 
+
+#note that the reason why id numbers are missing is because extent was the same, we just added the extra species to the data entry
 all_surveys <- bind_rows(survey_lines_1, survey_lines_2, survey_points) |>
   clean_names() |>
-  select(-c(id, label)) |>
-  select(stream, sub_basin, data_type, species, temporal_coverage,everything()) |>
+  select(-c(label)) |>
+  select(id, stream, sub_basin, data_type, species, temporal_coverage,everything()) |>
+  glimpse()
+
+# redd/carcass data table
+redd_carcass_data <- all_surveys |>
+  mutate(coverage_start = temporal_coverage,
+         coverage_end = temporal_coverage) |>
+  select(id, upstream_rkm, downstream_rkm, species, coverage_start, coverage_end) |>
+  glimpse()
+# redd/carcass location table
+redd_carcass_location <- all_surveys |>
+  mutate(survey_type = data_type,
+         survey_species = species,
+         life_stage = NA) |>
+  select(stream, agency, survey_species, life_stage, survey_type, sub_basin) |> # TODO check - note that huc8 was replaced with sub-basin
   glimpse()
 
 # save rda files
 usethis::use_data(habitat_data, overwrite = TRUE)
 usethis::use_data(rst_sites, overwrite = TRUE)
 usethis::use_data(hatcheries, overwrite = TRUE)
+# usethis::use_data(redd_carcass_data, overwrite = TRUE)
+# usethis::use_data(redd_carcass_location, overwrite = TRUE)
