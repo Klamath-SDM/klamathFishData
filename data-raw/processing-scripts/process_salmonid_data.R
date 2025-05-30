@@ -35,37 +35,45 @@ assign_sub_basin <- function(data, sub_basin, is_point = TRUE, lon_col = "longit
 }
 
 
-# habitat data ---- #TODO check with Maddee on source of this table
-habitat_data <- read_csv(here::here('data-raw','tables_with_data','habitat_data.csv')) |>
-  clean_names() |>
-  mutate(longitude = as.numeric(longtidue)) |>
-  rename(stream = river) |>
-  assign_sub_basin(sub_basin) |>
-  select(-longtidue) |>
-  select(stream, sub_basin, everything()) |>
-  glimpse()
+# habitat data ---- #TODO check with Maddee on source of this table -this has to be moved to klamathHabitatData
+# habitat_data <- read_csv(here::here('data-raw','tables_with_data','habitat_data.csv')) |>
+#   clean_names() |>
+#   mutate(longitude = as.numeric(longtidue)) |>
+#   rename(stream = river) |>
+#   assign_sub_basin(sub_basin) |>
+#   select(-longtidue) |>
+#   select(stream, sub_basin, everything()) |>
+#   glimpse()
 
 # RST ----
 rst_sites <- read_csv(here::here('data-raw','tables_with_data', 'rst_sites.csv')) |>
   clean_names() |>
   mutate(data_type = "RST data",
-         stream = paste(watershed, "River")) |>
+         stream = paste(watershed, "River"),
+         site_name = rst_name,
+         agency = operator,
+         coverage_start = NA,
+         coverage_end = NA) |>
   assign_sub_basin(sub_basin) |>
-  select(stream, sub_basin, data_type, rst_name, operator, latitude, longitude, link) |>
+  select(stream, sub_basin, data_type, site_name, agency, coverage_start, coverage_end, latitude, longitude, link) |>
   glimpse()
 
 # hatcheries ----
 hatcheries <- read_csv(here::here('data-raw','tables_with_data', 'fish_hatchery_locations.csv')) |>
   clean_names() |>
   mutate(stream = paste(watershed, "River"),
-         data_type = "hatchery") |>
+         data_type = "hatchery",
+         coverage_start = NA,
+         coverage_end = NA,
+         link = resource) |>
   rename(agency = operator) |>
   assign_sub_basin(sub_basin) |>
   select(-c(google_earth_location,  watershed)) |>
-  select(stream, sub_basin, data_type, everything()) |>
+  # select(stream, sub_basin, data_type, everything()) |>
+  select(stream, sub_basin, data_type, site_name, agency, coverage_start, coverage_end, latitude, longitude, link) |>
   glimpse()
 
-# redd/carcass surveys
+# redd/carcass surveys ----
 # not about these data - it was compiled doing  literature review and documented on google sheets by Willie
 # https://docs.google.com/spreadsheets/d/1rk1uoicdGNwcT6UKDLlQr7YkX9W5Fh2FCea3FAxxbGg/edit?gid=444986309#gid=444986309
 # in order to get geodata, shapefiles were manually created on GIS, and linked to sheet
@@ -164,6 +172,9 @@ redd_carcass_location <- all_surveys |>
          life_stage = NA) |>
   select(stream, agency, survey_species, life_stage, survey_type, sub_basin) |> # TODO check - note that huc8 was replaced with sub-basin
   glimpse()
+# fields needed for location table
+# reach, upstream_rkm, upstream_latitude, upstream_longitude, downstream_rkm, downstream_latitude, downstream_longitude
+
 
 # save rda files
 usethis::use_data(habitat_data, overwrite = TRUE)
