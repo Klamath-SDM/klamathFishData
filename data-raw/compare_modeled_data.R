@@ -5,6 +5,12 @@ library(ggplot2)
 library(readxl)
 
 # The goal of this script is to figure out if CDFW modeled data and Ashley's prepared data are duplicates
+# also, to figure out if data inluded on the megatable is the same
+# main difference between the cdfw data and megatable:
+# megatable has Spawner escapement(Hatchery and Natural Spawners), data only has natural spawners
+# megatable includes more basins that just Scott and Shasta (data covers only those 2 basins)
+# megatable includes "in-river harvest" and "in-river run" (data only has SPAWNER ESCAPEMENT, natural spawners Totals)
+# megatable breaks down Grilse, Adults and Totals, data only has "totals"
 
 klamath_project_board <- pins::board_s3(bucket = "klamath-sdm", region = "us-east-1")
 
