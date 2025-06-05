@@ -3,7 +3,7 @@ library(dplyr)
 library(janitor)
 library(sf)
 library(tidyverse)
-
+library(pins)
 
 # library(googlesheets4)
 # note that if we want to source directly from google sheets we need to make the sheet public, lets discuss if we
@@ -175,6 +175,13 @@ redd_carcass_location <- all_surveys |>
 # fields needed for location table
 # reach, upstream_rkm, upstream_latitude, upstream_longitude, downstream_rkm, downstream_latitude, downstream_longitude
 
+# escapement modeled data ----
+klamath_project_board <- pins::board_s3(bucket = "klamath-sdm", region = "us-east-1")
+
+klamath_mainstem_fall_chinook_escapement <-  klamath_project_board |>
+  pin_read("klamath_mainstem_fall_chinook_escapement") |> glimpse()
+
+#TODO - filter so that it matches megatable
 
 # save rda files
 usethis::use_data(habitat_data, overwrite = TRUE)
