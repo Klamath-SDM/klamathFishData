@@ -25,15 +25,53 @@
 #' @name habitat_data
 #' @description This dataset compiles modeled salmon habitat data derived from literature reviews.
 #' It includes information on habitat model extent, data sources, and approximate geographic locations.
+#' #' #' @format A tibble with 15 rows and 13 columns
+#' \itemize{
+#'   \item \code{stream}:
+#'   \item \code{sub_basin}:
+#'   \item \code{location_name}:
+#'   \item \code{model_type}:
+#'   \item \code{length_miles}:
+#'   \item \code{rm_start}:
+#'   \item \code{rm_end}:
+#'   \item \code{status}:
+#'   \item \code{location_souorce}:
+#'   \item \code{source}:
+#'   \item \code{link}:
+#'   \item \code{latitude}:
+#'   \item \code{longitude}:
+#'   }
 'habitat_data'
 
 #' @title Rotary Screw Traps Data
 #' @name rst_sites
 #' @description This dataset compiles rotary screw traps across the Klamath Basin.
+#' #' @format A tibble with 6 rows and 8 columns
+#' \itemize{
+#'   \item \code{stream}:
+#'   \item \code{sub_basin}:
+#'   \item \code{data_type}:
+#'   \item \code{rst_name}:
+#'   \item \code{gency}:
+#'   \item \code{latitude}:
+#'   \item \code{longitude}:
+#'   \item \code{link}:
+#'   }
 'rst_sites'
 
 
 #' @title Hatchery Locations
 #' @name hatcheries
 #' @description This dataset contains the hatchery locations and resources to find more information about them.
+#' #' #' @format A tibble with 3 rows and 8 columns
+#' \itemize{
+#'   \item \code{stream}:
+#'   \item \code{sub_basin}:
+#'   \item \code{data_type}:
+#'   \item \code{rst_name}:
+#'   \item \code{gency}:
+#'   \item \code{latitude}:
+#'   \item \code{longitude}:
+#'   \item \code{link}:
+#'   }
 'hatcheries'
