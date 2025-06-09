@@ -1,0 +1,182 @@
+```{r include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, fig.width=15, fig.height=10)
+library(tidyverse)
+library(pins)
+library(dplyr)
+library(ggplot2)
+library(readxl)
+
+klamath_project_board <- pins::board_s3(bucket = "klamath-sdm", region = "us-east-1")
+
+```
+
+## CDFW Modeled Salmon Population
+
+```{r}
+klamath_cdfw_population_processed <-  klamath_project_board |>
+  pin_read("klamath_cdfw_population_processed") |> glimpse()
+```
+
+Years covered
+
+```{r echo=FALSE}
+sort(unique(klamath_cdfw_population_processed$julian_year)) # covers years 1978 - 2023
+```
+
+species
+
+```{r echo=FALSE}
+unique(klamath_cdfw_population_processed$species)
+```
+
+streams
+
+```{r echo=FALSE}
+unique(klamath_cdfw_population_processed$stream)
+```
+
+lifestage
+
+```{r echo=FALSE}
+unique(klamath_cdfw_population_processed$lifestage)
+```
+
+Years covered - coho salmon
+
+```{r echo=FALSE}
+klamath_cdfw_population_processed |> 
+  filter(species == "coho salmon") |> 
+  pull(julian_year) |> 
+  range()
+
+klamath_cdfw_population_processed |> 
+  filter(species == "coho salmon") |> 
+  ggplot(aes(x = julian_year, y = estimate, color = stream)) +
+  geom_line() +
+  # scale_color_manual(values = colors_five) +
+  facet_wrap(~lifestage, scales = "free_y") +
+  theme_bw() +
+  labs(x = "",
+       y = "Abundance estimate",
+       title = "coho",
+       color = "") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+```
+
+
+## AWS modeled data
+
+Years covered 
+
+```{r echo=FALSE}
+load(file = "data/model_output.rda")
+
+sort(unique(model_output$julian_year)) # covers years 1999 - 2016
+```
+
+species
+
+```{r echo=FALSE}
+unique(model_output$species)
+```
+
+streams
+
+```{r echo=FALSE}
+unique(model_output$stream)
+```
+
+lifestage
+
+```{r echo=FALSE}
+unique(model_output$lifestage)
+```
+
+Years covered - coho salmon
+
+```{r echo=FALSE}
+model_output <- model_output |>
+  mutate(lower_bounds_estimate = as.numeric(lower_bounds_estimate),
+         upper_bounds_estimate = as.numeric(upper_bounds_estimate),
+         stream = case_when(stream == "shasta" ~ "shasta river", # modifying so it is consistent with CDFW data names
+                            stream == "scott" ~ "scott river",
+                            T ~ stream)) 
+
+model_output |> 
+  filter(species == "coho") |> 
+  pull(julian_year) |> 
+  range()
+
+model_output |> 
+  filter(species == "coho") |> 
+  ggplot(aes(x = julian_year, y = estimate, color = stream)) +
+  geom_line() +
+  # scale_color_manual(values = colors_five) +
+  facet_wrap(~lifestage, scales = "free_y") +
+  theme_bw() +
+  labs(x = "",
+       y = "Abundance estimate",
+       title = "coho",
+       color = "") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+```
+
+coho combined
+
+```{r echo=FALSE}
+model_output$source <- "model"
+
+klamath_cdfw_population_processed$source <- "CDFW"
+
+#unifying lifestage categories
+cdfw_population_processed <- klamath_cdfw_population_processed |> 
+  mutate(lifestage = case_when(
+    lifestage %in% c("yoy", "age 1+", "age 2+") ~ "parr",
+    lifestage == "adult and subadult" ~ "adult",
+    lifestage == "smolt" ~ "smolts",
+    TRUE ~ lifestage))
+
+combined <- bind_rows(model_output, cdfw_population_processed)
+
+combined |> 
+  filter(species %in% c("coho", "coho salmon")) |> 
+  ggplot(aes(x = julian_year, y = estimate, color = source, linetype = source)) +
+  geom_line(linewidth = 0.5) +
+  geom_point(size = 1.5, alpha = 0.6) +
+  facet_wrap(~lifestage + stream, scales = "free_y") +
+  theme_bw() +
+  labs(x = "", y = "Estimate", title = "Model vs. CDFW Coho Estimates", color = "", linetype = "") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+
+```
+
+Trying the same than above but without unifying lifestages 
+
+coho 
+
+```{r echo=FALSE}
+# not unifying lifestage categories
+cdfw_population_processed_raw <- klamath_cdfw_population_processed |> 
+  mutate(lifestage = case_when(
+    lifestage == "adult and subadult" ~ "adult",
+    lifestage == "smolt" ~ "smolts",
+    TRUE ~ lifestage)) |> 
+  filter(lifestage == "adult" | lifestage == "parr" | lifestage == "smolts")
+
+combined_raw <- bind_rows(model_output, cdfw_population_processed_raw)
+
+combined_raw |> 
+  filter(species %in% c("coho", "coho salmon")) |> 
+  ggplot(aes(x = julian_year, y = estimate, color = source, linetype = source)) +
+  geom_line(linewidth = 0.5) +
+  geom_point(size = 1.5, alpha = 0.6) +
+  facet_wrap(~lifestage + stream, scales = "free_y") +
+  theme_bw() +
+  labs(x = "", y = "Estimate", title = "Model vs. CDFW Coho Estimates", color = "", linetype = "") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+```
+
+ - similarities: 
+  - smotls - shasta river
+  - adult - scott river
+  
