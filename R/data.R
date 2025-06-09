@@ -25,7 +25,7 @@
 #' @name habitat_data
 #' @description This dataset compiles modeled salmon habitat data derived from literature reviews.
 #' It includes information on habitat model extent, data sources, and approximate geographic locations.
-#' #' #' @format A tibble with 15 rows and 13 columns
+#' @format A tibble with 15 rows and 13 columns
 #' \itemize{
 #'   \item \code{stream}: stream
 #'   \item \code{sub_basin}: sub-basin name (Upper Klamath, Lower Klamath, Trinity)
@@ -46,16 +46,16 @@
 #' @title Rotary Screw Traps Data
 #' @name rst_sites
 #' @description This dataset compiles rotary screw traps across the Klamath Basin.
-#' #' @format A tibble with 6 rows and 8 columns
+#' @format A tibble with 6 rows and 8 columns
 #' \itemize{
-#'   \item \code{stream}:
-#'   \item \code{sub_basin}:
-#'   \item \code{data_type}:
-#'   \item \code{rst_name}:
-#'   \item \code{gency}:
-#'   \item \code{latitude}:
-#'   \item \code{longitude}:
-#'   \item \code{link}:
+#'   \item \code{stream}: stream
+#'   \item \code{sub_basin}: sub-basin name (Upper Klamath, Lower Klamath, Trinity, Shasta)
+#'   \item \code{data_type}: type of data (rotary screw trap data)
+#'   \item \code{rst_name}: name of rotary screw trap
+#'   \item \code{agency}: agency that manages/monitors screw trap
+#'   \item \code{latitude}: longitude
+#'   \item \code{longitude}: longitude
+#'   \item \code{link}: web link containing more information about rotary screw trap
 #'   }
 'rst_sites'
 
@@ -63,15 +63,15 @@
 #' @title Hatchery Locations
 #' @name hatcheries
 #' @description This dataset contains the hatchery locations and resources to find more information about them.
-#' #' #' @format A tibble with 3 rows and 8 columns
+#' @format A tibble with 3 rows and 8 columns
 #' \itemize{
-#'   \item \code{stream}:
-#'   \item \code{sub_basin}:
-#'   \item \code{data_type}:
-#'   \item \code{rst_name}:
-#'   \item \code{gency}:
-#'   \item \code{latitude}:
-#'   \item \code{longitude}:
-#'   \item \code{link}:
+#'   \item \code{stream}: stream
+#'   \item \code{sub_basin}: sub-basin name (Upper Klamath, Shasta)
+#'   \item \code{data_type}: type of data (hatchery data)
+#'   \item \code{site_name}: name of hatchery
+#'   \item \code{agency}: agency that manages/monitors hatchery
+#'   \item \code{latitude}: latitude
+#'   \item \code{longitude}: longitude
+#'   \item \code{link}: web link containing more information about hatchery
 #'   }
 'hatcheries'
