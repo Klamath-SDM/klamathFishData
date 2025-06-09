@@ -27,19 +27,19 @@
 #' It includes information on habitat model extent, data sources, and approximate geographic locations.
 #' #' #' @format A tibble with 15 rows and 13 columns
 #' \itemize{
-#'   \item \code{stream}:
-#'   \item \code{sub_basin}:
-#'   \item \code{location_name}:
-#'   \item \code{model_type}:
-#'   \item \code{length_miles}:
-#'   \item \code{rm_start}:
-#'   \item \code{rm_end}:
-#'   \item \code{status}:
-#'   \item \code{location_souorce}:
-#'   \item \code{source}:
-#'   \item \code{link}:
-#'   \item \code{latitude}:
-#'   \item \code{longitude}:
+#'   \item \code{stream}: stream
+#'   \item \code{sub_basin}: sub-basin name (Upper Klamath, Lower Klamath, Trinity)
+#'   \item \code{location_name}: location name
+#'   \item \code{model_type}: type of model used (2D hydrodynamic model, SRH-2D, micro-habitat models, HEC-EFM, SRH-1D)
+#'   \item \code{length_miles}: geographical length of data coverage in miles
+#'   \item \code{rm_start}: river mile of the beginning of extent, if applicable
+#'   \item \code{rm_end}: river mile of the end of extent, if applicable
+#'   \item \code{status}: status of model used (developed, in development)
+#'   \item \code{location_souorce}: source used to determine the coordinates
+#'   \item \code{source}: literature reference
+#'   \item \code{link}: web link containing more information about data
+#'   \item \code{latitude}: latitude of data location
+#'   \item \code{longitude}: longitude of data location
 #'   }
 'habitat_data'
 
