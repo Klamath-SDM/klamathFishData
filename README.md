@@ -1,0 +1,56 @@
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+# klamathFishData
+
+<!-- badges: start -->
+<!-- badges: end -->
+
+The **`klamathFishData`** package is an R data package developed by
+FlowWest to provide access to curated environmental and biological
+datasets on fish in the Klamath River Basin. It is designed to support
+research, modeling, and restoration planning.
+
+## Installation
+
+You can install the development version of klamathFishData from
+[GitHub](https://github.com/Klamath-SDM/klamathFishData/tree/main) with:
+
+``` r
+# install.packages("devtools")
+devtools::install_github("Klamath-SDM/klamathFishData")
+```
+
+## Data sources
+
+The data in this package comes from a variety of public sources,
+including:
+
+- California Department of Fish and Wildlife (CDFW)
+- US Geological Survey (USGS)
+- Literature-based habitat models
+- more…
+
+## Example
+
+This is a basic example which shows you how to solve a common problem:
+
+``` r
+library(klamathFishData)
+## basic example code
+```
+
+## What’s Included
+
+The package contains cleaned, documented data objects including:
+
+- `rst_sites` — rotary screw traps
+- `hatcheries` — hatchery locations and metadata  
+- `habitat_data` — modeled habitat availability by stream and species  
+- `model_output` — prespawn mortality and abundance estimates from
+  modeling  
+- `klamath_cdfw_population_processed` — CDFW salmonid population
+  estimates  
+- And more…
+
+Use `data(package = "klamathFishData")` to view all datasets included.
