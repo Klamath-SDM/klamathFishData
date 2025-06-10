@@ -4,6 +4,7 @@ library(dplyr)
 library(ggplot2)
 library(readxl)
 
+
 # The goal of this script is to figure out if CDFW modeled data and Ashley's prepared data are duplicates
 # also, to figure out if data inluded on the megatable is the same
 # main difference between the cdfw data and megatable:
@@ -14,36 +15,64 @@ library(readxl)
 
 klamath_project_board <- pins::board_s3(bucket = "klamath-sdm", region = "us-east-1")
 
+
+# CDFW Modeled Salmon Population  -----------------------------------------
+
+# for more info, look at data exploration: https://github.com/Klamath-SDM/KlamathEDA/blob/main/data-raw/fisheries/modeled/modeled-fisheries-data.Rmd
+klamath_cdfw_population_processed <-  klamath_project_board |>
+  pin_read("klamath_cdfw_population_processed") |> glimpse()
+
+sort(unique(klamath_cdfw_population_processed$julian_year)) # covers years 1978 - 2023
+
+klamath_cdfw_population_processed |>
+  filter(species == "coho salmon") |>
+  ggplot(aes(x = julian_year, y = estimate, color = stream)) +
+  geom_line() +
+  # scale_color_manual(values = colors_five) +
+  facet_wrap(~lifestage, scales = "free_y") +
+  theme_bw() +
+  labs(x = "",
+       y = "Abundance estimate",
+       title = "coho",
+       color = "")
+# AWS modeled data --------------------------------------------------------
+# this data came from CDFW (?) in AWS bucket (confirm source with Ashley), it was processed here:
+# https://github.com/Klamath-SDM/klamathFishData/blob/update-package/data-raw/processing-scripts/model-output.R
 # model-output
 load(file = "data/model_output.rda")
 
-sort(unique(model_output$julian_year))
+sort(unique(model_output$julian_year)) # covers years 1999 - 2016
 
 model_output <- model_output |>
   mutate(lower_bounds_estimate = as.numeric(lower_bounds_estimate),
          upper_bounds_estimate = as.numeric(upper_bounds_estimate),
-         stream = case_when(stream == "shasta" ~ "shasta river",
+         stream = case_when(stream == "shasta" ~ "shasta river", # modifying so it is consistent with CDFW data names
                             T ~ stream)) |>
   glimpse()
 
-# CDFW
-klamath_cdfw_population_processed <-  klamath_project_board |>
-  pin_read("klamath_cdfw_population_processed") |> glimpse()
-sort(unique(klamath_cdfw_population_processed$julian_year))
+klamath_cdfw_population_processed |>
+  filter(species == "coho salmon") |>
+  ggplot(aes(x = julian_year, y = estimate, color = stream)) +
+  geom_line() +
+  # scale_color_manual(values = colors_five) +
+  facet_wrap(~lifestage, scales = "free_y") +
+  theme_bw() +
+  labs(x = "",
+       y = "Abundance estimate",
+       title = "coho",
+       color = "")
 
-
-
+# adding source column to differentiate
 model_output <- model_output |> dplyr::mutate(source = "model")
 klamath_cdfw_population_processed <- klamath_cdfw_population_processed |> dplyr::mutate(source = "cdfw")
 
+# combining to find duplicates
 combined <- dplyr::bind_rows(model_output, klamath_cdfw_population_processed)
 
 dupes <- combined |> dplyr::select(-source) |> duplicated() |> which()
 
 # See duplicated rows
 combined[dupes, ]
-
-# there are defenitly duplicates, will plot to see if it helps for details
 
 model_output <- model_output |> mutate(source = "model")
 klamath_cdfw_population_processed <- klamath_cdfw_population_processed |> mutate(source = "cdfw")
@@ -56,7 +85,6 @@ combined <- combined |>
   mutate(overlap = n() > 1) |>
   ungroup()
 
-# the only data entries that show overlap are all cdfw data
 
 #reading in klamath_mainstem_fall_chinook_escapement to compare to mega table
 
