@@ -25,6 +25,8 @@
 #' @name habitat_data
 #' @description This dataset compiles modeled salmon habitat data derived from literature reviews.
 #' It includes information on habitat model extent, data sources, and approximate geographic locations.
+#' The Stream Salmonid Simulator (S3) model incorporates two-dimensional (2D) hydraulic models for specific Klamath River sections to calculate habitat suitability based on environmental variables, such as river flow and channel width. These models use Weighted Usable Habitat Area (WUA) curves created for specific life stages and habitat types of salmon. The WUA information derived from 2D models (covering 11.3 km or 3.6% of the Klamath’s river length) is extrapolated to unmodeled reaches, enabling habitat assessments across larger river sections.
+#' Three S3 models have been developed. The original model was developed to support Fall Run Chinook and later updated to include the Trinity River and Coho populations.
 #' @format A tibble with 15 rows and 13 columns
 #' \itemize{
 #'   \item \code{stream}: stream
@@ -41,6 +43,9 @@
 #'   \item \code{latitude}: latitude of data location
 #'   \item \code{longitude}: longitude of data location
 #'   }
+#' @details
+#' For more infomation about these data compilation visit {the exploratory markdown}{https://github.com/Klamath-SDM/klamath-map/blob/add-habitat/data-raw/habitat_summary.html}
+#'
 'habitat_data'
 
 #' @title Rotary Screw Traps Data
