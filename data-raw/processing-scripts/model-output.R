@@ -22,6 +22,9 @@ coho_adult_raw <-  klamath_project_board |>
 sucker_survival_raw <- klamath_project_board |>
   pin_read("survival_raw")
 
+fall_escapement_raw <- klamath_project_board |>
+  pin_read("escapement_processed")
+
 # process data ------------------------------------------------------------
 # Data schema is here: https://lucid.app/lucidchart/347f8e9d-1a80-4d4c-a02b-4400def18031/edit?viewport_loc=-304%2C-126%2C1514%2C1427%2C0_0&invitationId=inv_80bba736-9f3f-475b-920c-2cc754343974
 
@@ -81,13 +84,20 @@ sucker_data <- sucker_survival_raw |>
   select(julian_year, stream, species, lifestage, sex, estimate_type, estimate, confidence_interval,
          lower_bounds_estimate, upper_bounds_estimate, estimation_method, is_complete_estimate)
 
-model_output <- bind_rows(population_data, sucker_data)
+fall_escapement <- fall_escapement_raw |>
+  mutate(lifestage = "adult",
+         sex = NA,
+         estimate_type = "abundance",
+         confidence_interval = 95,
+         is_complete_estimate = T)
+
+fisheries_model_estimates <- bind_rows(population_data, sucker_data, fall_escapement)
 # save data ---------------------------------------------------------------
 
 # save locally
-save(model_output, file = "data/model_output.rda")
+save(fisheries_model_estimates, file = "data/fisheries_model_estimates.rda")
 
 # # save to s3 storage
-# klamath_project_board |> pins::pin_write(model_output,
+# klamath_project_board |> pins::pin_write(fisheries_model_estimates,
 #                                          type = "csv",
 #                                          title = "model output")

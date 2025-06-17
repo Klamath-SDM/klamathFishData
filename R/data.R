@@ -1,8 +1,10 @@
 #' @title Modeled Fisheries Data
-#' @name model_output
+#' @name fisheries_model_estimates
 #' @description This dataset compiles modeled estimates and credible intervals
 #' from fisheries models such as abundance and survival estimates. This dataset
 #' is not species or location specific.
+#' Data exploration was done in R Markdowns which also contain information on data source.
+#' {Modeled Fisheries Data R Markdown}{https://github.com/Klamath-SDM/KlamathEDA/blob/main/data-raw/fisheries/modeled/modeled-fisheries-data.md}
 #' @format A tibble with 316 rows and 11 columns
 #' \itemize{
 #'   \item \code{julian_year}: julian year
@@ -19,64 +21,20 @@
 #'   \item \code{is_complete_estimate}: data included in model are complete. In some cases, it is known that an
 #'   estimate is not complete, otherwise it is assumed that estimate is complete.
 #'   }
-'model_output'
+'fisheries_model_estimates'
 
-#' @title Salmon Habitat Data
-#' @name habitat_data
-#' @description This dataset compiles modeled salmon habitat data derived from literature reviews.
-#' It includes information on habitat model extent, data sources, and approximate geographic locations.
-#' The Stream Salmonid Simulator (S3) model incorporates two-dimensional (2D) hydraulic models for specific Klamath River sections to calculate habitat suitability based on environmental variables, such as river flow and channel width. These models use Weighted Usable Habitat Area (WUA) curves created for specific life stages and habitat types of salmon. The WUA information derived from 2D models (covering 11.3 km or 3.6% of the Klamath’s river length) is extrapolated to unmodeled reaches, enabling habitat assessments across larger river sections.
-#' Three S3 models have been developed. The original model was developed to support Fall Run Chinook and later updated to include the Trinity River and Coho populations.
-#' @format A tibble with 15 rows and 13 columns
-#' \itemize{
-#'   \item \code{stream}: stream
-#'   \item \code{sub_basin}: sub-basin name (Upper Klamath, Lower Klamath, Trinity)
-#'   \item \code{location_name}: location name
-#'   \item \code{model_type}: type of model used (2D hydrodynamic model, SRH-2D, micro-habitat models, HEC-EFM, SRH-1D)
-#'   \item \code{length_miles}: geographical length of data coverage in miles
-#'   \item \code{rm_start}: river mile of the beginning of extent, if applicable
-#'   \item \code{rm_end}: river mile of the end of extent, if applicable
-#'   \item \code{status}: status of model used (developed, in development)
-#'   \item \code{location_souorce}: source used to determine the coordinates
-#'   \item \code{source}: literature reference
-#'   \item \code{link}: web link containing more information about data
-#'   \item \code{latitude}: latitude of data location
-#'   \item \code{longitude}: longitude of data location
-#'   }
-#' @details
-#' For more infomation about these data compilation visit {the exploratory markdown}{https://github.com/Klamath-SDM/klamath-map/blob/add-habitat/data-raw/habitat_summary.html}
-#'
-'habitat_data'
-
-#' @title Rotary Screw Traps Data
-#' @name rst_sites
-#' @description This dataset compiles rotary screw traps across the Klamath Basin.
+#' @title Fisheries Location Lookup
+#' @name fisheries_location_lookup
+#' @description This dataset compiles location data relevant to fisheries data collection efforts from across the Klamath Basin.
 #' @format A tibble with 6 rows and 8 columns
 #' \itemize{
 #'   \item \code{stream}: stream
-#'   \item \code{sub_basin}: sub-basin name (Upper Klamath, Lower Klamath, Trinity, Shasta)
-#'   \item \code{data_type}: type of data (rotary screw trap data)
-#'   \item \code{rst_name}: name of rotary screw trap
-#'   \item \code{agency}: agency that manages/monitors screw trap
+#'   \item \code{sub_basin}: sub-basin name (upper klamath, lower klamath, trinity, shasta)
+#'   \item \code{data_type}: type of data (rst, hatchery)
+#'   \item \code{site_name}: name of site such as a RST site or hatchery location (big bar, shasta river, bogus, willow creek, pear creek, weitchpec, iron gate fish hatchery, trinity river hatchery, klamath hatchery)
+#'   \item \code{agency}: agency that manages/monitors the site (arcata fwo, arcata fwo, cdfw, hoopa tribal fisheries department, karuk, yurok tribal fisheries program)
 #'   \item \code{latitude}: longitude
 #'   \item \code{longitude}: longitude
 #'   \item \code{link}: web link containing more information about rotary screw trap
 #'   }
-'rst_sites'
-
-
-#' @title Hatchery Locations
-#' @name hatcheries
-#' @description This dataset contains the hatchery locations and resources to find more information about them.
-#' @format A tibble with 3 rows and 8 columns
-#' \itemize{
-#'   \item \code{stream}: stream
-#'   \item \code{sub_basin}: sub-basin name (Upper Klamath, Shasta)
-#'   \item \code{data_type}: type of data (hatchery data)
-#'   \item \code{site_name}: name of hatchery
-#'   \item \code{agency}: agency that manages/monitors hatchery
-#'   \item \code{latitude}: latitude
-#'   \item \code{longitude}: longitude
-#'   \item \code{link}: web link containing more information about hatchery
-#'   }
-'hatcheries'
+'fisheries_location_lookup'
