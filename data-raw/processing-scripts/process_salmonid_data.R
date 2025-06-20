@@ -4,6 +4,7 @@ library(janitor)
 library(sf)
 library(tidyverse)
 library(pins)
+library(readxl)
 
 # library(googlesheets4)
 # note that if we want to source directly from google sheets we need to make the sheet public, lets discuss if we
@@ -193,7 +194,7 @@ cdfw_population_raw <- read_xlsx(here::here("data-raw", "tables_with_data", "mod
 klamath_cdfw_population_raw <- cdfw_population_raw |>
   filter(Watershed %in% c("Trinity River", "Scott River", "Shasta River", "Lower Klamath","Klamath River"))
 
-klamath_cdfw_population_processed <- klamath_cdfw_population_raw |>
+fisheries_model_estimates <- klamath_cdfw_population_raw |>
   janitor::clean_names() |>
   rename(stream = population,
          lifestage = life_stage) |>
@@ -217,6 +218,7 @@ klamath_cdfw_population_processed <- klamath_cdfw_population_raw |>
 
 # save rda files
 usethis::use_data(fisheries_location_lookup, overwrite = TRUE)
+usethis::use_data(fisheries_model_estimates, overwrite = TRUE)
 # usethis::use_data(rst_sites, overwrite = TRUE)
 # usethis::use_data(hatcheries, overwrite = TRUE)
 # usethis::use_data(redd_carcass_data, overwrite = TRUE)

@@ -5,7 +5,7 @@
 #' is not species or location specific.
 #' Data exploration was done in R Markdowns which also contain information on data source.
 #' {Modeled Fisheries Data R Markdown}{https://github.com/Klamath-SDM/KlamathEDA/blob/main/data-raw/fisheries/modeled/modeled-fisheries-data.md}
-#' @format A tibble with 316 rows and 11 columns
+#' @format A tibble with 127 rows and 12 columns
 #' \itemize{
 #'   \item \code{julian_year}: julian year
 #'   \item \code{stream}: stream (INSERT LINK TO DOCUMENTATION for location here)
