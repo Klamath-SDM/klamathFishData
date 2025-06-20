@@ -24,7 +24,8 @@ assign_sub_basin <- function(data, sub_basin, is_point = TRUE, lon_col = "longit
   sf_data <- sf_data |>
     st_transform(st_crs(sub_basin)) |>
     st_join(sub_basin[sub_basin_col]) |>
-    rename(sub_basin = !!sub_basin_col)
+    rename(sub_basin = !!sub_basin_col) |>
+    mutate(sub_basin = tolower(sub_basin))
   if (is_point) {
     coords <- st_coordinates(sf_data)
     sf_data[[lon_col]] <- coords[, 1]
@@ -45,23 +46,24 @@ assign_sub_basin <- function(data, sub_basin, is_point = TRUE, lon_col = "longit
 #   select(stream, sub_basin, everything()) |>
 #   glimpse()
 
-# RST ----
+# fisheries_location_lookup  ----
+# RST
 rst_sites <- read_csv(here::here('data-raw','tables_with_data', 'rst_sites.csv')) |>
   clean_names() |>
-  mutate(data_type = "RST data",
-         stream = paste(watershed, "River"),
-         site_name = rst_name,
-         agency = operator,
+  mutate(data_type = "rst",
+         stream = tolower(paste(watershed, "River")),
+         site_name = tolower(rst_name),
+         agency = tolower(operator),
          coverage_start = NA,
          coverage_end = NA) |>
   assign_sub_basin(sub_basin) |>
   select(stream, sub_basin, data_type, site_name, agency, coverage_start, coverage_end, latitude, longitude, link) |>
   glimpse()
 
-# hatcheries ----
+# hatcheries
 hatcheries <- read_csv(here::here('data-raw','tables_with_data', 'fish_hatchery_locations.csv')) |>
   clean_names() |>
-  mutate(stream = paste(watershed, "River"),
+  mutate(stream = tolower(paste(watershed, "River")),
          data_type = "hatchery",
          coverage_start = NA,
          coverage_end = NA,
@@ -72,6 +74,8 @@ hatcheries <- read_csv(here::here('data-raw','tables_with_data', 'fish_hatchery_
   # select(stream, sub_basin, data_type, everything()) |>
   select(stream, sub_basin, data_type, site_name, agency, coverage_start, coverage_end, latitude, longitude, link) |>
   glimpse()
+
+fisheries_location_lookup <- bind_rows(rst_sites, hatcheries)
 
 # redd/carcass surveys ----
 # not about these data - it was compiled doing  literature review and documented on google sheets by Willie
@@ -212,8 +216,8 @@ klamath_cdfw_population_processed <- klamath_cdfw_population_raw |>
 
 
 # save rda files
-usethis::use_data(habitat_data, overwrite = TRUE)
-usethis::use_data(rst_sites, overwrite = TRUE)
-usethis::use_data(hatcheries, overwrite = TRUE)
+usethis::use_data(fisheries_location_lookup, overwrite = TRUE)
+# usethis::use_data(rst_sites, overwrite = TRUE)
+# usethis::use_data(hatcheries, overwrite = TRUE)
 # usethis::use_data(redd_carcass_data, overwrite = TRUE)
 # usethis::use_data(redd_carcass_location, overwrite = TRUE)

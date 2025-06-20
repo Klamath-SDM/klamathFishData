@@ -26,7 +26,7 @@
 #' @title Fisheries Location Lookup
 #' @name fisheries_location_lookup
 #' @description This dataset compiles location data relevant to fisheries data collection efforts from across the Klamath Basin.
-#' @format A tibble with 6 rows and 8 columns
+#' @format A tibble with 9 rows and 10 columns
 #' \itemize{
 #'   \item \code{stream}: stream
 #'   \item \code{sub_basin}: sub-basin name (upper klamath, lower klamath, trinity, shasta)
