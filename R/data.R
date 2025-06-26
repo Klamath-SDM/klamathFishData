@@ -38,3 +38,18 @@
 #'   \item \code{link}: web link containing more information about rotary screw trap
 #'   }
 'fisheries_location_lookup'
+
+#' @title
+#' @name redd_carcass_surveys
+#' @description
+#' @format
+#' \itemize{
+#'   \item \code{}:
+#'   \item \code{}:
+#'   \item \code{}:
+#'   \item \code{}:
+#'   \item \code{}:
+#'   \item \code{}:
+#'   \item \code{}:
+#'   }
+'redd_carcass_surveys'

@@ -82,11 +82,10 @@ fisheries_location_lookup <- bind_rows(rst_sites, hatcheries)
 # redd/carcass surveys ----
 # not about these data - it was compiled doing  literature review and documented on google sheets by Willie
 # https://docs.google.com/spreadsheets/d/1rk1uoicdGNwcT6UKDLlQr7YkX9W5Fh2FCea3FAxxbGg/edit?gid=444986309#gid=444986309
-# in order to get geodata, shapefiles were manually created on GIS, and linked to sheet
-# for some of the surveys we have "extent", and for others we have "points"
+# for now, I have left out the shapefiles created to associate geodata, and rely on lat long (will work on schema)
 
 ## Survey Lines
-redd_carcass <- read_csv(here::here('data-raw', 'redd_carcass_survey_data' ,'redd_carcass.csv')) |>
+redd_carcass_surveys <- read_csv(here::here('data-raw', 'redd_carcass_survey_data' ,'redd_carcass.csv')) |>
   clean_names() |>
   select(-c(upstream_river_access, upstream_google_earth, downstream_access, downstream_lat, downstream_long, downstream_google_earth,
             has_holding, had_redd, has_carcass)) |>
