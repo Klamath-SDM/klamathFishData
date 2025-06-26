@@ -13,43 +13,26 @@ klamath_project_board <- pins::board_s3(
   region = "us-east-1"
 )
 
-coho_juvenile_raw <-  klamath_project_board |>
-  pin_read("juvenile_raw")
-
-coho_adult_raw <-  klamath_project_board |>
-  pin_read("spawner_raw")
-
+# Exploratory analysis: https://github.com/Klamath-SDM/KlamathEDA/blob/main/data-raw/fisheries/modeled/modeled-fisheries-data.md
 sucker_survival_raw <- klamath_project_board |>
-  pin_read("survival_raw")
+  pin_read("sucker_survival_model")
 
-fall_escapement_raw <- klamath_project_board |>
-  pin_read("escapement_processed")
+cdfw_population_raw <- klamath_project_board |>
+  pin_read("klamath_cdfw_population_processed")
+
+klamath_mainstem_fall_escapement_raw <- klamath_project_board |>
+  pin_read("klamath_mainstem_fall_chinook_escapement")
 
 # process data ------------------------------------------------------------
 # Data schema is here: https://lucid.app/lucidchart/347f8e9d-1a80-4d4c-a02b-4400def18031/edit?viewport_loc=-304%2C-126%2C1514%2C1427%2C0_0&invitationId=inv_80bba736-9f3f-475b-920c-2cc754343974
 
-# TODO we need to fill in estimation method for adult data
-
-population_data <- coho_juvenile_raw |>
-  rename(estimate = juvenile_abundance) |>
-  bind_rows(coho_adult_raw |>
-              rename(year = adult_year,
-                     estimate = spawners) |>
+population_data <- cdfw_population_raw |>
+  bind_rows(klamath_mainstem_fall_escapement_raw |>
               mutate(lifestage = "adult",
-                     temp = as_date(weir_removed),
-                     is_complete_estimate = case_when(month(temp) %in% 11:12 & year(temp) < 2025 ~ F,
-                                                      T ~ T)) |>
-              select(-c(temp, weir_removed))) |>
-  rename(julian_year = year) |>
-  mutate(species = "coho",
-         estimate_type = "abundance",
-         lower_bounds_estimate = NA,
-         upper_bounds_estimate = NA,
-         confidence_interval = NA,
-         sex = NA,
-         is_complete_estimate = ifelse(is.na(is_complete_estimate), T, is_complete_estimate)) |>
-  select(julian_year, stream, species, lifestage, sex, estimate_type, estimate, confidence_interval, lower_bounds_estimate, upper_bounds_estimate,
-         estimation_method, is_complete_estimate)
+                     sex = NA,
+                     estimate_type = "abundance",
+                     confidence_interval = 95,
+                     is_complete_estimate = NA))
 
 sucker_data <- sucker_survival_raw |>
   select(sex, year, population, apparent_survival_CI, apparent_survival_estimate) |>
@@ -80,18 +63,13 @@ sucker_data <- sucker_survival_raw |>
            stream = "upper klamath lake",
            lifestage = "adult",
            estimation_method = "Cormark-Jolly-Seber model",
+           lower_bounds_estimate = as.numeric(lower_bounds_estimate),
+           upper_bounds_estimate = as.numeric(upper_bounds_estimate),
            is_complete_estimate = T) |>
   select(julian_year, stream, species, lifestage, sex, estimate_type, estimate, confidence_interval,
          lower_bounds_estimate, upper_bounds_estimate, estimation_method, is_complete_estimate)
 
-fall_escapement <- fall_escapement_raw |>
-  mutate(lifestage = "adult",
-         sex = NA,
-         estimate_type = "abundance",
-         confidence_interval = 95,
-         is_complete_estimate = T)
-
-fisheries_model_estimates <- bind_rows(population_data, sucker_data, fall_escapement)
+fisheries_model_estimates <- bind_rows(population_data, sucker_data)
 # save data ---------------------------------------------------------------
 
 # save locally
