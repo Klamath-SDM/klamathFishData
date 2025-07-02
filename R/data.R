@@ -26,30 +26,18 @@
 #' @title Fisheries Location Lookup
 #' @name fisheries_location_lookup
 #' @description This dataset compiles location data relevant to fisheries data collection efforts from across the Klamath Basin.
-#' @format A tibble with 9 rows and 10 columns
+#' @format A tibble with 35 rows and 10 columns
 #' \itemize{
 #'   \item \code{stream}: stream
 #'   \item \code{sub_basin}: sub-basin name (upper klamath, lower klamath, trinity, shasta)
-#'   \item \code{data_type}: type of data (rst, hatchery)
+#'   \item \code{data_type}: type of data (rst, hatchery, redd/carcass survey)
 #'   \item \code{site_name}: name of site such as a RST site or hatchery location (big bar, shasta river, bogus, willow creek, pear creek, weitchpec, iron gate fish hatchery, trinity river hatchery, klamath hatchery)
-#'   \item \code{agency}: agency that manages/monitors the site (arcata fwo, arcata fwo, cdfw, hoopa tribal fisheries department, karuk, yurok tribal fisheries program)
+#'   \item \code{agency}: agency that manages/monitors the site (arcata fwo, arcata fwo, cdfw, hoopa tribal fisheries department, karuk, yurok tribal fisheries program, usfws)
 #'   \item \code{latitude}: longitude
 #'   \item \code{longitude}: longitude
-#'   \item \code{link}: web link containing more information about rotary screw trap
+#'   \item \code{downstream_latitude}: Latitude of the downstream end of the feature's extent, applicable for survey extents
+#'   \item \code{downstream_longitude}: Longitude of the downstream end of the feature's extent, applicable for survey extents
+#'   \item \code{link}: web link containing more information about fisheries locations
 #'   }
 'fisheries_location_lookup'
 
-#' @title
-#' @name redd_carcass_surveys
-#' @description
-#' @format
-#' \itemize{
-#'   \item \code{}:
-#'   \item \code{}:
-#'   \item \code{}:
-#'   \item \code{}:
-#'   \item \code{}:
-#'   \item \code{}:
-#'   \item \code{}:
-#'   }
-'redd_carcass_surveys'

@@ -15,10 +15,10 @@ rst_sites <- read_csv(here::here('data-raw','tables_with_data', 'rst_sites.csv')
          stream = tolower(paste(watershed, "River")),
          site_name = tolower(rst_name),
          agency = tolower(operator),
-         coverage_start = NA,
-         coverage_end = NA) |>
+         downstream_latitude = NA,
+         downstream_longitude = NA) |>
   assign_sub_basin(sub_basin) |>
-  select(stream, sub_basin, data_type, site_name, agency, coverage_start, coverage_end, latitude, longitude, link) |>
+  select(stream, sub_basin, data_type, site_name, agency, latitude, longitude, downstream_latitude, downstream_longitude, link) |>
   glimpse()
 
 # hatcheries
@@ -26,17 +26,15 @@ hatcheries <- read_csv(here::here('data-raw','tables_with_data', 'fish_hatchery_
   clean_names() |>
   mutate(stream = tolower(paste(watershed, "River")),
          data_type = "hatchery",
-         coverage_start = NA,
-         coverage_end = NA,
-         link = resource) |>
+         link = resource,
+         downstream_latitude = NA,
+         downstream_longitude = NA) |>
   rename(agency = operator) |>
   assign_sub_basin(sub_basin) |>
   select(-c(google_earth_location,  watershed)) |>
   # select(stream, sub_basin, data_type, everything()) |>
-  select(stream, sub_basin, data_type, site_name, agency, coverage_start, coverage_end, latitude, longitude, link) |>
+  select(stream, sub_basin, data_type, site_name, agency, latitude, longitude, downstream_latitude, downstream_longitude, link) |>
   glimpse()
-
-fisheries_location_lookup <- bind_rows(rst_sites, hatcheries)
 
 # redd/carcass surveys ----
 # not about these data - it was compiled doing  literature review and documented on google sheets by Willie
@@ -46,19 +44,29 @@ fisheries_location_lookup <- bind_rows(rst_sites, hatcheries)
 ## Survey Lines
 redd_carcass_surveys <- read_csv(here::here('data-raw', 'redd_carcass_survey_data' ,'redd_carcass.csv')) |>
   clean_names() |>
-  select(-c(upstream_river_access, upstream_google_earth, downstream_access, downstream_lat, downstream_long, downstream_google_earth,
+  select(-c(id, upstream_river_access, upstream_google_earth, downstream_access, downstream_google_earth, downstream_rkm, upstream_rkm,
             has_holding, had_redd, has_carcass)) |>
   rename(latitude = upstream_lat,
-         longitude = upstream_long) |>
+         longitude = upstream_long,
+         downstream_latitude = downstream_lat,
+         downstream_longitude = downstream_long) |>
   mutate(agency = tolower(agency),
          species = tolower(species),
          data_type = "redd and carcass survey",
-         stream_short = tolower(watershed),
+         stream = tolower(paste(watershed, "River")),
+         site_name = NA,
+         # stream_short = tolower(watershed),
          agency = case_when(is.na(agency) ~ "usfws",
                             T ~ agency)) |>
   filter(!is.na(latitude) | !is.na(longitude)) |>
-  st_as_sf(coords = c("longitude", "latitude"), crs = 4326) |>
+  select(-watershed) |>
+  assign_sub_basin(sub_basin) |>
+  select(stream, sub_basin, data_type, site_name, agency, latitude, longitude, downstream_latitude, downstream_longitude, link) |>
+  # st_as_sf(coords = c("longitude", "latitude"), crs = 4326) |>
+  # find_nearest_river_miles() |>
   glimpse()
+
+fisheries_location_lookup <- bind_rows(rst_sites, hatcheries, redd_carcass_surveys)
 
 # escapement modeled data ----
 klamath_project_board <- pins::board_s3(bucket = "klamath-sdm", region = "us-east-1")
