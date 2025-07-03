@@ -117,7 +117,7 @@ long_format <- cleaned |>
 
 # Utilizing AI tools option ----
 
-raw_escapement <- read_csv("data-raw/Klamath_Spawner_Escapement_raw_ai_v2.csv")
+raw_escapement <- read_csv("data-raw/Klamath_Spawner_Escapement_processed_v2.csv")
 
 # checks
 colnames(raw_escapement)
