@@ -125,4 +125,16 @@ unique(raw_escapement$location)
 unique(raw_escapement$estimate_type)
 unique(raw_escapement$year)
 
-# TODO - this might be the cleanest option, some additional checks and wrangling should be done
+
+
+# checks
+
+raw_escapement |>
+  filter(year %in% c("1978", "1979", "1980"),
+         estimate_type == "In-river Harvest") |>
+  view()
+
+# Trying tabula without subheaders - approach above has too many inconsistencies ----
+
+raw_escapement_tabula <- read_csv("data-raw/tabula-2022_no_categories.csv", col_names = TRUE, skip = 1) |> glimpse()
+
