@@ -138,3 +138,110 @@ raw_escapement |>
 
 raw_escapement_tabula <- read_csv("data-raw/tabula-2022_no_categories.csv", col_names = TRUE, skip = 1) |> glimpse()
 
+
+
+# reading PDF with code ----
+
+library(pdftools)
+library(tidyverse)
+
+pdf_text <- pdf_text("data-raw/page1_megatable_raw.pdf")
+lines <- strsplit(pdf_text[1], "\n")[[1]]
+
+# === Step 2: Fix broken lines (e.g., location name on one line, parentheses on next) ===
+fix_multiline_locations <- function(lines) {
+  fixed <- c()
+  i <- 1
+  while (i <= length(lines)) {
+    line <- lines[i]
+
+    if (str_detect(str_trim(line), "^\\(.*\\)")) {
+      # Append to previous line if it starts with parentheses
+      if (length(fixed) > 0) {
+        fixed[length(fixed)] <- paste(fixed[length(fixed)], line)
+      }
+    } else {
+      fixed <- c(fixed, line)
+    }
+    i <- i + 1
+  }
+  return(fixed)
+}
+
+trimmed_lines <- str_trim(lines)
+
+start_idx <- which(trimmed_lines == "SPAWNER ESCAPEMENT") + 1
+end_idx <- which(trimmed_lines == "IN-RIVER HARVEST") - 1
+
+# Safety check
+if (length(start_idx) == 0 || length(end_idx) == 0) {
+  stop("Could not find one or both section headers. Check line spacing and capitalization.")
+}
+
+# Extract only the spawner escapement block
+spawner_block <- fixed_lines[start_idx:end_idx]
+
+# Recombine multiline names like before
+joined_lines <- c()
+i <- 1
+while (i <= length(spawner_block)) {
+  line <- spawner_block[i]
+
+  # If next line is only a parenthesis (name continuation), merge
+  if (i < length(spawner_block) && str_detect(spawner_block[i + 1], "^\\(.*\\)$")) {
+    line <- paste0(line, " ", str_trim(spawner_block[i + 1]))
+    i <- i + 1
+  }
+
+  joined_lines <- c(joined_lines, line)
+  i <- i + 1
+}
+
+
+# === Step 3: Filter only Spawner Escapement section ===
+spawner_lines <- joined_lines[which(
+  grepl("Iron Gate Hatchery|Trinity River Hatchery|Subtotals|Trinity River basin|Salmon River|Scott River|Shasta River|Bogus Creek|Main Stem Klamath River|Misc\\.|Reservation tribs|Total Spawner Escapement", joined_lines)
+)]
+
+# === Step 4: Parse each row into tidy format ===
+parse_row <- function(line) {
+  line <- str_replace_all(line, "\\s*[a-d]/", "")
+
+  # Extract number-like tokens and "--"
+  raw_values <- str_extract_all(line, "[0-9,]+|--")[[1]]
+
+  # Clean and convert to numeric, treat "--" as NA
+  values <- str_replace_all(raw_values, ",", "")
+  values <- ifelse(values == "--", NA, values)
+  values <- suppressWarnings(as.numeric(values))
+
+  # Pad or trim to exactly 9 values (3 years × 3 categories)
+  if (length(values) < 9) values <- c(values, rep(NA, 9 - length(values)))
+  if (length(values) > 9) values <- values[1:9]
+
+  # Extract location (text before numbers)
+  name <- str_trim(str_extract(line, "^[^0-9\\-–]+"))
+
+  # Tidy output
+  tibble(Location = name,
+         Year = rep(c(1978, 1979, 1980), each = 3),
+         Category = rep(c("Grilse", "Adults", "Total"), times = 3),
+         Value = values)
+  }
+
+# Apply parsing to each line
+spawner_df <- map_dfr(spawner_lines, parse_row)
+
+# === Step 5: Add Section and Subsection tags ===
+spawner_df <- spawner_df |>
+  mutate(Section = "Spawner Escapement",
+         Subsection = case_when(
+           str_detect(Location, "Hatchery") ~ "Hatchery Spawners",
+           str_detect(Location, "Subtotals") ~ "Subtotal",
+           str_detect(Location, "Total Spawner Escapement") ~ "Total",
+           TRUE ~ "Natural Spawners"))
+
+#TODO from this point on, everything look good except that Trinity River basin numbers are skipping Grilse value
+# up to this point the Spawner Scapement data is pretty clean once Trinity River basin is worked out
+
+
