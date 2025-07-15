@@ -67,8 +67,8 @@ raw_data_long <- pdf_raw_data |>
   pivot_longer(cols = -Location,
                names_to = c("Metric", "Year"),
                names_sep = "_",
-               values_to = "Value") %>%
-  pivot_wider(names_from = Metric, values_from = Value) %>%
+               values_to = "Value") |>
+  pivot_wider(names_from = Metric, values_from = Value) |>
   arrange(Year, Location)
 
 print(unique(raw_data_long$Location))
@@ -179,7 +179,7 @@ if (length(start_idx) == 0 || length(end_idx) == 0) {
 }
 
 # Extract only the spawner escapement block
-spawner_block <- fixed_lines[start_idx:end_idx]
+spawner_block <- trimmed_lines[start_idx:end_idx]
 
 # Recombine multiline names like before
 joined_lines <- c()
@@ -232,7 +232,47 @@ parse_row <- function(line) {
 # Apply parsing to each line
 spawner_df <- map_dfr(spawner_lines, parse_row)
 
-# === Step 5: Add Section and Subsection tags ===
+## making sure that the subtotal fields are specified what they correspond to
+
+assign_subsections <- function(df) {
+  current_subsection <- NA
+  subsection_col <- character(nrow(df))
+
+  for (i in seq_len(nrow(df))) {
+    loc <- df$Location[i]
+
+    if (str_detect(loc, "Hatchery")) {
+      current_subsection <- "Hatchery Spawners"
+    } else if (str_detect(loc, "Reservation tribs|River|Creek|Misc|basin")) {
+      current_subsection <- "Natural Spawners"
+    } else if (str_detect(loc, "Total Spawner Escapement")) {
+      current_subsection <- "Total"
+    } else if (str_detect(loc, "Subtotal")) {
+      # Only wrap if current_subsection is not already a subtotal
+      if (!str_detect(current_subsection, "^Subtotal")) {
+        current_subsection <- paste0("Subtotal (", current_subsection, ")")
+      }
+    }
+
+    subsection_col[i] <- current_subsection
+  }
+
+  df$Subsection <- subsection_col
+  return(df)
+}
+
+spawner_df <- spawner_df |>
+  mutate(Section = "Spawner Escapement") |>
+  assign_subsections()
+# end of subtotal fields fix
+
+
+# Optional: clean up "Subtotal" label
+spawner_df <- spawner_df |>
+  mutate(Location = ifelse(str_detect(Location, "Subtotals"), "Subtotal", Location))
+
+
+# Add Section and Subsection tags ===
 spawner_df <- spawner_df |>
   mutate(Section = "Spawner Escapement",
          Subsection = case_when(
