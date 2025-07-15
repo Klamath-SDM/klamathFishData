@@ -185,18 +185,19 @@ spawner_block <- trimmed_lines[start_idx:end_idx]
 joined_lines <- c()
 i <- 1
 while (i <= length(spawner_block)) {
-  line <- spawner_block[i]
+  line1 <- str_trim(spawner_block[i])
+  line2 <- if (i + 1 <= length(spawner_block)) str_trim(spawner_block[i + 1]) else ""
 
-  # If next line is only a parenthesis (name continuation), merge
-  if (i < length(spawner_block) && str_detect(spawner_block[i + 1], "^\\(.*\\)$")) {
-    line <- paste0(line, " ", str_trim(spawner_block[i + 1]))
+  # If next line is a parenthetical and contains numbers, it's the main data line
+  if (str_detect(line2, "^\\(.*\\)") && str_detect(line2, "[0-9]")) {
+    full_line <- paste(line1, line2)
+    joined_lines <- c(joined_lines, full_line)
+    i <- i + 2  # skip the next line
+  } else {
+    joined_lines <- c(joined_lines, line1)
     i <- i + 1
   }
-
-  joined_lines <- c(joined_lines, line)
-  i <- i + 1
 }
-
 
 # === Step 3: Filter only Spawner Escapement section ===
 spawner_lines <- joined_lines[which(
@@ -283,5 +284,9 @@ spawner_df <- spawner_df |>
 
 #TODO from this point on, everything look good except that Trinity River basin numbers are skipping Grilse value
 # up to this point the Spawner Scapement data is pretty clean once Trinity River basin is worked out
+
+
+library(pdftools)
+library(tidyverse)
 
 
