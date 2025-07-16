@@ -170,6 +170,8 @@ fix_multiline_locations <- function(lines) {
 
 trimmed_lines <- str_trim(lines)
 
+# SPAWNING ESCAPEMENT SECTION ----
+
 start_idx <- which(trimmed_lines == "SPAWNER ESCAPEMENT") + 1
 end_idx <- which(trimmed_lines == "IN-RIVER HARVEST") - 1
 
@@ -262,12 +264,6 @@ parse_row <- function(line) {
   )
 }
 
-
-##TRY
-
-
-
-
 # Apply parsing to each line
 spawner_df <- map_dfr(spawner_lines, parse_row)
 
@@ -323,7 +319,105 @@ spawner_df <- spawner_df |>
 #TODO from this point on, everything look good except that Trinity River basin numbers are skipping Grilse value
 # up to this point the Spawner Scapement data is pretty clean once Trinity River basin is worked out
 
-library(pdftools)
-library(tidyverse)
+# IN-HARVEST SECTION ----
 
+# === Step 1: Get lines from IN-RIVER HARVEST section ===
+start_idx_hrv <- which(trimmed_lines == "IN-RIVER HARVEST") + 1
+end_idx_hrv <- which(trimmed_lines == "IN-RIVER RUN") - 1
+harvest_block <- trimmed_lines[start_idx_hrv:end_idx_hrv]
+
+# === Step 2: Fix broken rows where name is on one line and numbers on the next ===
+joined_lines_hrv <- c()
+i <- 1
+while (i <= length(harvest_block)) {
+  line1 <- str_trim(harvest_block[i])
+
+  # Skip column headers (repeating Grilse, Adults, Totals row)
+  if (str_detect(line1, "^Angler Harvest\\s+Grilse\\s+Adults") ||
+      str_detect(line1, "Grilse\\s+Adults\\s+Totals\\s+Grilse")) {
+    i <- i + 1
+    next
+  }
+
+  # Check if this line contains NO numbers, and next line does → join them
+  line2 <- if (i + 1 <= length(harvest_block)) str_trim(harvest_block[i + 1]) else ""
+
+  if (!str_detect(line1, "\\d{3,}") && str_detect(line2, "\\d{3,}")) {
+    merged <- paste(line1, line2)
+    joined_lines_hrv <- c(joined_lines_hrv, merged)
+    i <- i + 2
+  } else {
+    joined_lines_hrv <- c(joined_lines_hrv, line1)
+    i <- i + 1
+  }
+}
+
+
+
+# === Step 3: Filter only lines of interest ===
+harvest_lines <- joined_lines_hrv[which(
+  grepl("Klamath River \\(below Hwy 101 bridge\\)|Trinity River basin \\(above Willow Creek\\)|Balance of Klamath system|Klamath River \\(Hwy 101 to Trinity mouth\\)|Trinity River \\(Hoopa Reservation\\)|Subtotals|Total In-river Harvest", joined_lines_hrv)
+)]
+
+# === Step 4: Parse each row into tidy format ===
+parse_row_harvest <- function(line) {
+  line <- str_replace_all(line, "\\s*[a-d]/", "")
+
+  # Extract location
+  name <- str_trim(str_extract(line, "^.*?(?=\\s+[0-9]|\\s+--)"))
+
+  # Extract numbers
+  values_only <- str_remove(line, fixed(name))
+  raw_values <- str_extract_all(values_only, "[0-9,]+|--")[[1]]
+  values <- str_replace_all(raw_values, ",", "")
+  values <- ifelse(values == "--", NA, values)
+  values <- suppressWarnings(as.numeric(values))
+  values <- values[1:min(9, length(values))]
+  if (length(values) < 9) values <- c(values, rep(NA, 9 - length(values)))
+
+  tibble(
+    Location = name,
+    Year = rep(c(1978, 1979, 1980), each = 3),
+    Category = rep(c("Grilse", "Adults", "Total"), times = 3),
+    Value = values
+  )
+}
+
+harvest_df <- map_dfr(harvest_lines, parse_row_harvest)
+
+# === Step 5: Assign Subsections based on order ===
+assign_subsections_harvest <- function(df) {
+  current_subsection <- NA
+  subsection_col <- character(nrow(df))
+
+  for (i in seq_len(nrow(df))) {
+    loc <- df$Location[i]
+
+    if (str_detect(loc, "Trinity River basin|Balance of Klamath system|Klamath River \\(below Hwy 101 bridge\\)")) {
+      current_subsection <- "Angler Harvest"
+    } else if (str_detect(loc, "Trinity River \\(Hoopa Reservation\\)|Klamath River \\(Hwy 101 to Trinity mouth\\)")) {
+      current_subsection <- "Indian Net Harvest"
+    } else if (str_detect(loc, "Subtotal")) {
+      if (!str_detect(current_subsection, "^Subtotal")) {
+        current_subsection <- paste0("Subtotal (", current_subsection, ")")
+      }
+    } else if (str_detect(loc, "Total In-river Harvest")) {
+      current_subsection <- "Total"
+    }
+
+    subsection_col[i] <- current_subsection
+  }
+
+  df$Subsection <- subsection_col
+  return(df)
+}
+
+# === Step 6: Finalize dataframe ===
+harvest_df <- harvest_df |>
+  mutate(Section = "In-River Harvest") |>
+  assign_subsections_harvest() |>
+  mutate(Location = ifelse(str_detect(Location, "Subtotals"), "Subtotal", Location))
+
+
+#TODO this section still needs work, names that contain numbers are not being read properly
 
