@@ -205,30 +205,68 @@ spawner_lines <- joined_lines[which(
 )]
 
 # === Step 4: Parse each row into tidy format ===
+# parse_row <- function(line) {
+#   line <- str_replace_all(line, "\\s*[a-d]/", "")
+#
+#   # Extract number-like tokens and "--"
+#   raw_values <- str_extract_all(line, "[0-9,]+|--")[[1]]
+#
+#   # Clean and convert to numeric, treat "--" as NA
+#   values <- str_replace_all(raw_values, ",", "")
+#   values <- ifelse(values == "--", NA, values)
+#   values <- suppressWarnings(as.numeric(values))
+#
+#   # Pad or trim to exactly 9 values (3 years × 3 categories)
+#   if (length(values) < 9) values <- c(values, rep(NA, 9 - length(values)))
+#   if (length(values) > 9) values <- values[1:9]
+#
+#   # Extract location (text before numbers)
+#   name <- str_trim(str_extract(line, "^[^0-9\\-–]+"))
+#
+#   # Tidy output
+#   tibble(Location = name,
+#          Year = rep(c(1978, 1979, 1980), each = 3),
+#          Category = rep(c("Grilse", "Adults", "Total"), times = 3),
+#          Value = values)
+#   }
+
+### TRY
 parse_row <- function(line) {
-  line <- str_replace_all(line, "\\s*[a-d]/", "")
+  # Remove any footnotes like "c/", "d/" (but preserve "--")
+  clean_line <- str_replace_all(line, "\\s*[a-d]/", "")
 
-  # Extract number-like tokens and "--"
-  raw_values <- str_extract_all(line, "[0-9,]+|--")[[1]]
+  # Extract the location name — all text up to the first number or "--"
+  name <- str_trim(str_extract(clean_line, "^.*?(?=\\s+[0-9]|\\s+--)"))
 
-  # Clean and convert to numeric, treat "--" as NA
+  # Remove location name from the string
+  numbers_only <- str_remove(clean_line, fixed(name))
+
+  # Extract numbers and "--"
+  raw_values <- str_extract_all(numbers_only, "[0-9,]+|--")[[1]]
+
+  # Clean values: convert "--" to NA, remove commas
   values <- str_replace_all(raw_values, ",", "")
   values <- ifelse(values == "--", NA, values)
   values <- suppressWarnings(as.numeric(values))
 
-  # Pad or trim to exactly 9 values (3 years × 3 categories)
+  # Ensure we always have exactly 9 values
+  values <- values[1:min(9, length(values))]
   if (length(values) < 9) values <- c(values, rep(NA, 9 - length(values)))
-  if (length(values) > 9) values <- values[1:9]
 
-  # Extract location (text before numbers)
-  name <- str_trim(str_extract(line, "^[^0-9\\-–]+"))
+  # Return tidy row
+  tibble(
+    Location = name,
+    Year = rep(c(1978, 1979, 1980), each = 3),
+    Category = rep(c("Grilse", "Adults", "Total"), times = 3),
+    Value = values
+  )
+}
 
-  # Tidy output
-  tibble(Location = name,
-         Year = rep(c(1978, 1979, 1980), each = 3),
-         Category = rep(c("Grilse", "Adults", "Total"), times = 3),
-         Value = values)
-  }
+
+##TRY
+
+
+
 
 # Apply parsing to each line
 spawner_df <- map_dfr(spawner_lines, parse_row)
@@ -284,7 +322,6 @@ spawner_df <- spawner_df |>
 
 #TODO from this point on, everything look good except that Trinity River basin numbers are skipping Grilse value
 # up to this point the Spawner Scapement data is pretty clean once Trinity River basin is worked out
-
 
 library(pdftools)
 library(tidyverse)
