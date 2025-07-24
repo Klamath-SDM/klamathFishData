@@ -447,8 +447,8 @@ megatable_clean_2 <- megatable_2 |>
   mutate(across(c(totals_1978, grilse_1979), ~ readr::parse_number(.)))
 
 # Slice and rename columns
-in_havest_df <- megatable_clean_2 |>
-  slice(3:12) |>
+in_harvest_df <- megatable_clean_2 |>
+  slice(2:12) |>
   rename(location = subtotals,
          grilse_1978 = x16_414,
          adults_1978 = x58_492,
@@ -462,19 +462,19 @@ in_havest_df <- megatable_clean_2 |>
   # mutate(across(-location, ~ na_if(., "--")))
 
 # assign subsection from group headers
-#TODO figure out why Angler Harvest is not being assigned
-in_havest_df <- in_havest_df |>
+in_harvest_df_clean <- in_harvest_df |>
   mutate(subsection = case_when(
     str_detect(location, "Angler Harvest") ~ "Angler Harvest",
     str_detect(location, "Tribal Net Harvest") ~ "Tribal Net Harvest",
     TRUE ~ NA_character_)) |>
   fill(subsection, .direction = "down") |>
-  filter(!location %in% c("Angler Harvest", "Tribal Net Harvest  e/", "Subtotals", "Total In-river Harvest"),
+  filter(!location %in% c("Angler Harvest", "Tribal Net Harvest  e/"),
+                          # "Subtotals", "Total In-river Harvest"),
          !is.na(location)) |>
   mutate(section = "In-River Harvest")
 
 # pivot longer
-in_havest_long <- in_havest_df |>
+in_harvest_long <- in_harvest_df_clean |>
   mutate(across(matches("_(1978|1979|1980)$"), as.character)) |>
   pivot_longer(cols = matches("_(1978|1979|1980)$"),
                names_to = c("category", "year"),
