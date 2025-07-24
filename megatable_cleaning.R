@@ -485,3 +485,88 @@ in_harvest_long <- in_harvest_df_clean |>
          # value = parse_number(value)
          value = readr::parse_number(value)) |>
   view()
+
+## IN- RIVER RUN ----
+
+megatable_3 <- tables_stream[[2]]  # or tables_stream[[1]] depending on quality
+
+megatable_clean_3 <- megatable_3 |>
+  filter(if_any(everything(), ~ . != "")) |>
+  janitor::clean_names() |>
+  slice(15:21) |>
+  # separate(x74_906_6_761, into = c("totals_1978", "grilse_1979"), sep = "\\s+", convert = TRUE) |> view()
+  extract(x74_906_6_761,
+          into = c("totals_1978", "grilse_1979"),
+          regex = "^(-- d/|\\d{1,3}(?:,\\d{3})*)\\s+(\\d{1,3}(?:,\\d{3})*)$",
+          remove = TRUE) |>
+  mutate(across(where(is.character), ~ na_if(., "--"))) |>
+  mutate(across(c(totals_1978, grilse_1979), ~ readr::parse_number(.))) |>
+  view()
+
+# Slice and rename columns
+in_river_df <- megatable_clean_3 |>
+  slice(-(1:2)) |>
+  rename(location = subtotals,
+         grilse_1978 = x16_414,
+         adults_1978 = x58_492,
+         adults_1979 = x30_637,
+         totals_1979 = x37_398,
+         grilse_1980 = x26_982,
+         adults_1980 = x21_483,
+         totals_1980 = x48_465,) |>
+  select(location, grilse_1978, adults_1978, totals_1978, grilse_1979, adults_1979,
+         totals_1979, grilse_1980, adults_1980, totals_1980)
+# mutate(across(-location, ~ na_if(., "--")))
+
+# assign subsection from group headers
+in_river_df_clean <- in_river_df |>
+  mutate(subsection = case_when(
+    str_detect(location, "Totals") ~ "Totals",
+    TRUE ~ NA_character_)) |>
+  fill(subsection, .direction = "down") |>
+  filter(!location == "Totals",
+         # "Subtotals", "Total In-river Harvest"),
+         !is.na(location)) |>
+  mutate(section = "In-River Run")
+
+# pivot longer
+in_river_long <- in_river_df_clean |>
+  mutate(across(matches("_(1978|1979|1980)$"), as.character)) |>
+  pivot_longer(cols = matches("_(1978|1979|1980)$"),
+               names_to = c("category", "year"),
+               names_sep = "_",
+               values_to = "value") |>
+  mutate(year = as.integer(year),
+         category = str_to_title(category),
+         # value = parse_number(value)
+         value = readr::parse_number(value)) |>
+  view()
+
+## spawner escapement ---- (trying same approach as the last two sections)
+
+megatable_1 <- tables_stream[[1]]  # or tables_stream[[1]] depending on quality
+
+megatable_clean_1 <- megatable_1 |>
+  filter(if_any(everything(), ~ . != "")) |>
+  janitor::clean_names() |>
+  extract(spawner_escapement,
+          into = c("totals_1978", "grilse_1979"),
+          regex = "^(-- d/|\\d{1,3}(?:,\\d{3})*)\\s+(\\d{1,3}(?:,\\d{3})*)$",
+          remove = TRUE) |>
+  # mutate(across(where(is.character), ~ na_if(., "--"))) |>
+  # mutate(across(c(totals_1978, grilse_1979), ~ readr::parse_number(.))) |>
+  view()
+
+in_river_df <- megatable_clean_1 |>
+  # slice(-(1:2)) |>
+  rename(location = x1,
+         grilse_1978 = x2,
+         adults_1978 = x4,
+         adults_1979 = x7,
+         totals_1979 = x9,
+         grilse_1980 = x11,
+         adults_1980 = x13,
+         totals_1980 = x15,) |>
+  select(location, grilse_1978, adults_1978, totals_1978, grilse_1979, adults_1979,
+         totals_1979, grilse_1980, adults_1980, totals_1980)
+#TODO the location names in spawner escapement have the same reading issue, might be best to fix manually
