@@ -12,190 +12,7 @@ library(tabulizer)
 library(purrr)
 
 
-# Define the PDF file path (download it manually first)
-pdf_path <- "data-raw/2022_Klamath_Basin_Megatable_20230216.pdf"
-
-# Try stream method with tibble output
-tables_stream <- extract_tables(pdf_path, method = "stream", output = "tibble")
-
-## Page 1 ----
-
-### Spawner Escapement ----
-
-spawner_1 <- tables_stream[[1]]
-
-spawner_1_clean <- spawner_1 |>
-  filter(if_any(everything(), ~ . != "")) |>
-  janitor::clean_names() |>
-  extract(spawner_escapement,
-          into = c("totals_1978", "grilse_1979"),
-          regex = "^(-- d/|\\d{1,3}(?:,\\d{3})*)\\s+(\\d{1,3}(?:,\\d{3})*)$",
-          remove = TRUE)
-
-spawner_1_df <- spawner_1_clean |>
-  # slice(-(1:2)) |>
-  rename(location = x1,
-         grilse_1978 = x2,
-         adults_1978 = x4,
-         adults_1979 = x7,
-         totals_1979 = x9,
-         grilse_1980 = x11,
-         adults_1980 = x13,
-         totals_1980 = x15,) |>
-  select(location, grilse_1978, adults_1978, totals_1978, grilse_1979, adults_1979,
-         totals_1979, grilse_1980, adults_1980, totals_1980)
-
-spawner_1_df_clean <- spawner_1_df |>
-  mutate(is_continuation = str_starts(location, "\\("),
-         location = if_else(is_continuation, paste0(lag(location), " ", location), location)) |>
-  filter(!(lead(is_continuation, default = FALSE))) |>
-  select(-is_continuation) |>
-  mutate(subsection = case_when(
-    str_detect(location, "Hatchery Spawners") ~ "Hatchery Spawners",
-    str_detect(location, "Natural Spawners") ~ "Natural Spawners",
-    TRUE ~ NA_character_)) |>
-  fill(subsection, .direction = "down") |>
-  filter(!location %in% c("Hatchery Spawners", "Natural Spawners"),
-         # "Subtotals", "Total In-river Harvest"),
-         !is.na(location)) |>
-  mutate(section = "Spawning Escapement")
-
-
-# pivot longer
-spawner_1_long <- spawner_1_df_clean |>
-  mutate(across(matches("_(1978|1979|1980)$"), as.character)) |>
-  pivot_longer(cols = matches("_(1978|1979|1980)$"),
-               names_to = c("category", "year"),
-               names_sep = "_",
-               values_to = "value") |>
-  mutate(year = as.integer(year),
-         category = str_to_title(category),
-         # value = parse_number(value)
-         value = readr::parse_number(value)) |>
-  view()
-
-### In-River Harvest ----
-harvest_1 <- tables_stream[[2]]  # or tables_stream[[1]] depending on quality
-
-harvest_1_clean <- harvest_1 |>
-  filter(if_any(everything(), ~ . != "")) |>
-  janitor::clean_names() |>
-  slice(3:14) |>
-  # separate(x74_906_6_761, into = c("totals_1978", "grilse_1979"), sep = "\\s+", convert = TRUE) |> view()
-  extract(x74_906_6_761,
-          into = c("totals_1978", "grilse_1979"),
-          regex = "^(-- d/|\\d{1,3}(?:,\\d{3})*)\\s+(\\d{1,3}(?:,\\d{3})*)$",
-          remove = TRUE) |>
-  mutate(across(where(is.character), ~ na_if(., "--"))) |>
-  mutate(across(c(totals_1978, grilse_1979), ~ readr::parse_number(.)))
-
-# Slice and rename columns
-harvest_1_clean_df <- harvest_1_clean |>
-  slice(2:12) |>
-  rename(location = subtotals,
-         grilse_1978 = x16_414,
-         adults_1978 = x58_492,
-         adults_1979 = x30_637,
-         totals_1979 = x37_398,
-         grilse_1980 = x26_982,
-         adults_1980 = x21_483,
-         totals_1980 = x48_465,) |>
-  select(location, grilse_1978, adults_1978, totals_1978, grilse_1979, adults_1979,
-         totals_1979, grilse_1980, adults_1980, totals_1980)
-# mutate(across(-location, ~ na_if(., "--")))
-
-# assign subsection from group headers
-harvest_1_clean_df_clean <- harvest_1_clean_df |>
-  mutate(subsection = case_when(
-    str_detect(location, "Angler Harvest") ~ "Angler Harvest",
-    str_detect(location, "Tribal Net Harvest") ~ "Tribal Net Harvest",
-    TRUE ~ NA_character_)) |>
-  fill(subsection, .direction = "down") |>
-  filter(!location %in% c("Angler Harvest", "Tribal Net Harvest  e/"),
-         # "Subtotals", "Total In-river Harvest"),
-         !is.na(location)) |>
-  mutate(section = "In-River Harvest")
-
-# pivot longer
-harvest_1_df_long <- harvest_1_clean_df_clean |>
-  mutate(across(matches("_(1978|1979|1980)$"), as.character)) |>
-  pivot_longer(cols = matches("_(1978|1979|1980)$"),
-               names_to = c("category", "year"),
-               names_sep = "_",
-               values_to = "value") |>
-  mutate(year = as.integer(year),
-         category = str_to_title(category),
-         # value = parse_number(value)
-         value = readr::parse_number(value)) |>
-  view()
-
-### In-River Run ----
-
-run_1 <- tables_stream[[2]]  # or tables_stream[[1]] depending on quality
-
-run_1_clean <- run_1 |>
-  filter(if_any(everything(), ~ . != "")) |>
-  janitor::clean_names() |>
-  slice(15:21) |>
-  # separate(x74_906_6_761, into = c("totals_1978", "grilse_1979"), sep = "\\s+", convert = TRUE) |> view()
-  extract(x74_906_6_761,
-          into = c("totals_1978", "grilse_1979"),
-          regex = "^(-- d/|\\d{1,3}(?:,\\d{3})*)\\s+(\\d{1,3}(?:,\\d{3})*)$",
-          remove = TRUE) |>
-  mutate(across(where(is.character), ~ na_if(., "--"))) |>
-  mutate(across(c(totals_1978, grilse_1979), ~ readr::parse_number(.)))
-
-# Slice and rename columns
-run_1_clean_df <- run_1_clean |>
-  slice(-(1:2)) |>
-  rename(location = subtotals,
-         grilse_1978 = x16_414,
-         adults_1978 = x58_492,
-         adults_1979 = x30_637,
-         totals_1979 = x37_398,
-         grilse_1980 = x26_982,
-         adults_1980 = x21_483,
-         totals_1980 = x48_465,) |>
-  select(location, grilse_1978, adults_1978, totals_1978, grilse_1979, adults_1979,
-         totals_1979, grilse_1980, adults_1980, totals_1980)
-# mutate(across(-location, ~ na_if(., "--")))
-
-# assign subsection from group headers
-run_1_clean_df_clean <- run_1_clean_df |>
-  mutate(subsection = case_when(
-    str_detect(location, "Totals") ~ "Totals",
-    TRUE ~ NA_character_)) |>
-  fill(subsection, .direction = "down") |>
-  filter(!location == "Totals",
-         # "Subtotals", "Total In-river Harvest"),
-         !is.na(location)) |>
-  mutate(section = "In-River Run")
-
-# pivot longer
-run_1_df_long <- run_1_clean_df_clean |>
-  mutate(across(matches("_(1978|1979|1980)$"), as.character)) |>
-  pivot_longer(cols = matches("_(1978|1979|1980)$"),
-               names_to = c("category", "year"),
-               names_sep = "_",
-               values_to = "value") |>
-  mutate(year = as.integer(year),
-         category = str_to_title(category),
-         # value = parse_number(value)
-         value = readr::parse_number(value)) |>
-  view()
-
-
-#combine all 3 sections of first page
-
-megatable_first_page <- bind_rows(spawner_1_long, harvest_1_df_long, run_1_df_long)
-
-
 ##  ---- SPAWNER ----
-
-library(tidyverse)
-library(tabulizer)
-library(janitor)
-
 pdf_path <- "data-raw/2022_Klamath_Basin_Megatable_20230216.pdf"
 tables_stream <- extract_tables(pdf_path, method = "stream", output = "tibble")
 
@@ -236,8 +53,7 @@ spawner_3 <- spawner_list[[3]]  # NOT same structure as 1, fixing so it matches 
 spawner_3_test <- spawner_3 |>
   select(1:7, 9, 11) |>
   rename(...8 = ...9,
-         ...9 = ...11) |>
-  view()
+         ...9 = ...11)
 # harvest_3 <- harvest_list[[3]]
 # run_3 <- run_list[[3]]
 
@@ -251,7 +67,7 @@ spawner_5 <- spawner_list[[5]] # same structure as 1
 # harvest_5 <- harvest_list[[5]]
 # run_5 <- run_list[[5]]
 
-### automating spawning 1, 2, 4, 5 ####
+# automating spawning 1, 2, 4, 5
 clean_spawner_table <- function(tbl, start_year) {
   # Dynamically create the years for 3-year windows
   years <- start_year:(start_year + 2)
@@ -342,14 +158,13 @@ combined_spawner <- bind_rows(spawner_cleaned) # 1, 2, 4, 5
 
 ### SPAWNER rest of pages #### ----
 spawner_3 <- spawner_3 |>
+  select(1:7, 9, 11) |>
   rename("...8" = "...9",
          "...9" = "...11")
 
 # 1993 - 1995
 spawner_6 <- spawner_list[[6]] |>  # 6 and 7, 8, 9 same structure
   slice(1:19)
-# harvest_6 <- harvest_list[[6]]
-# run_6 <- run_list[[6]]
 
 # 1996 - 1998 - it reads the entire page at once
 spawner_7 <- spawner_list[[7]] |>  # 6 and 7, 8, 9 same structure
@@ -452,26 +267,9 @@ clean_spawner_table_2 <- function(tbl, start_year) {
   return(spawning_long)
 }
 
-# After creating spawner_3 to spawner_15
-# Ensure all of these are defined above this block
-
-spawner_list_cleaned <- list(
-  spawner_1,  # optional: if already cleaned
-  spawner_2,  # optional
-  spawner_3,  # renamed cols
-  spawner_4,
-  spawner_5,
-  spawner_6,
-  spawner_7,
-  spawner_8,  # from tables_stream[[14]]
-  spawner_9,  # from tables_stream[[15]]
-  spawner_10, # renamed cols
-  spawner_11,
-  spawner_12,
-  spawner_13,
-  spawner_14,
-  spawner_15
-)
+spawner_list_cleaned <- list(spawner_1, spawner_2, spawner_3, spawner_4, spawner_5,
+                             spawner_6, spawner_7, spawner_8, spawner_9, spawner_10,
+                             spawner_11, spawner_12, spawner_13, spawner_14, spawner_15)
 
 
 spawner_indices_2 <- c(3, 6:15)
@@ -480,12 +278,7 @@ spawner_years_2 <- c(1984, 1993, 1996, 1999, 2002, 2005, 2008, 2011, 2014, 2017,
 spawner_cleaned_2 <- purrr::map2(
   .x = spawner_list_cleaned[spawner_indices_2],
   .y = spawner_years_2,
-  .f = clean_spawner_table_2
-)
+  .f = clean_spawner_table_2)
 
 combined_spawner_2 <- bind_rows(spawner_cleaned_2) # 3, 6-15
 clean_spawner_escapement <- bind_rows(combined_spawner, combined_spawner_2)
-
-
-# spawner_14 <- tables_stream[[20]] # this is in-river table 2014-2016
-# spawner_15 <- tables_stream[[22]] # this is in-river table 2017-2019
