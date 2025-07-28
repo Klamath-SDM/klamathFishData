@@ -251,7 +251,7 @@ spawner_5 <- spawner_list[[5]] # same structure as 1
 # harvest_5 <- harvest_list[[5]]
 # run_5 <- run_list[[5]]
 
-# automating spawning 1, 2, 4, 5
+### automating spawning 1, 2, 4, 5 ####
 clean_spawner_table <- function(tbl, start_year) {
   # Dynamically create the years for 3-year windows
   years <- start_year:(start_year + 2)
@@ -340,33 +340,152 @@ spawner_cleaned <- purrr::map2(
 
 combined_spawner <- bind_rows(spawner_cleaned) # 1, 2, 4, 5
 
-
-
-### SPAWNER rest of pages ----
-
-
-# spawner_3 dont forget this needs to be included
+### SPAWNER rest of pages #### ----
+spawner_3 <- spawner_3 |>
+  rename("...8" = "...9",
+         "...9" = "...11")
 
 # 1993 - 1995
-spawner_6 <- spawner_list[[6]] # 6 and 7, 8, 9 same structure
+spawner_6 <- spawner_list[[6]] |>  # 6 and 7, 8, 9 same structure
+  slice(1:19)
 # harvest_6 <- harvest_list[[6]]
 # run_6 <- run_list[[6]]
 
 # 1996 - 1998 - it reads the entire page at once
-spawner_7 <- spawner_list[[7]] # 6 and 7, 8, 9 same structure
-spawner_8 <- tables_stream[[14]] # doing this since reading of tables changed after this
+spawner_7 <- spawner_list[[7]] |>  # 6 and 7, 8, 9 same structure
+  slice(1:19)
+spawner_8 <- tables_stream[[14]] |> # reading from tables_stream since reading of tables changed after this
+  slice(1:24)
+spawner_9 <- tables_stream[[15]] |>
+  slice(1:24)
+spawner_10 <- tables_stream[[16]] |>
+  select(1:5, 7:10) |>
+  rename(...6 = ...7,
+         ...7 = ...8,
+         ...8 = ...9,
+         ...9 = ...10)
+spawner_11 <- tables_stream[[17]] |>
+  slice(1:24)
+spawner_12 <- tables_stream[[18]] |>
+  slice(1:24)
+spawner_13 <- tables_stream[[19]]
+spawner_14 <- tables_stream[[21]] # spawner 2017-2019
+spawner_15 <- tables_stream[[23]]
 
-spawner_9 <- tables_stream[[16]]
-spawner_10 <- tables_stream[[17]]
-spawner_11 <- tables_stream[[18]]
-spawner_12 <- tables_stream[[19]]
-spawner_13 <- tables_stream[[20]] # reading changes again soon #TODO check approach
-spawner_14 <- tables_stream[[21]]
-spawner_15 <- tables_stream[[22]]
+# automating spawning
+clean_spawner_table_2 <- function(tbl, start_year) {
+  # Dynamically create the years for 3-year windows
+  years <- start_year:(start_year + 2)
+
+  # Standardize and clean names
+  tbl_clean <- tbl |>
+    filter(if_any(everything(), ~ . != "")) |>
+    janitor::clean_names()
+
+  # Find the column that contains the values to split (likely always 6th)
+  split_col <- names(tbl_clean)[4]
+
+  # Extract the "totals_Y1 grilse_Y2" column into two
+  tbl_clean <- tbl_clean |>
+    extract(
+      {{split_col}},
+      into = c(paste0("totals_", years[1]), paste0("grilse_", years[2])),
+      regex = "^([\\d,]+|--)[ ]*[a-zA-Z/]*[ ]+([\\d,]+|--)[ ]*[a-zA-Z/]*$",
+      remove = TRUE
+    )
+
+  # Rename known columns (same x# structure as original example)
+  tbl_renamed <- tbl_clean |>
+    rename(
+      location = x1,
+      !!paste0("grilse_", years[1]) := x2,
+      !!paste0("adults_", years[1]) := x3,
+      !!paste0("adults_", years[2]) := x5,
+      !!paste0("totals_", years[2]) := x6,
+      !!paste0("grilse_", years[3]) := x7,
+      !!paste0("adults_", years[3]) := x8,
+      !!paste0("totals_", years[3]) := x9
+    )
+
+  # Keep only the columns we just renamed
+  value_cols <- c("location",
+                  paste0("grilse_", years),
+                  paste0("adults_", years),
+                  paste0("totals_", years))
+  spawning_df <- tbl_renamed |>
+    select(any_of(value_cols))
+
+  # Fix location continuations and assign subsections
+  spawning_df_clean <- spawning_df |>
+    mutate(is_continuation = str_starts(location, "\\("),
+           location = if_else(is_continuation, paste0(lag(location), " ", location), location)) |>
+    filter(!(lead(is_continuation, default = FALSE))) |>
+    select(-is_continuation) |>
+    mutate(subsection = case_when(
+      str_detect(location, "Hatchery Spawners") ~ "Hatchery Spawners",
+      str_detect(location, "Natural Spawners") ~ "Natural Spawners",
+      TRUE ~ NA_character_
+    )) |>
+    fill(subsection, .direction = "down") |>
+    filter(!location %in% c("Hatchery Spawners", "Natural Spawners"),
+           !is.na(location)) |>
+    mutate(section = "Spawning Escapement")
+
+  # Pivot longer for tidy structure
+  spawning_long <- spawning_df_clean |>
+    mutate(across(-location, as.character)) |>
+    pivot_longer(
+      cols = -c(location, subsection, section),
+      names_to = c("category", "year"),
+      names_sep = "_",
+      values_to = "value"
+    ) |>
+    mutate(
+      year = as.integer(year),
+      category = str_to_title(category),
+      value = value |>
+        str_remove("\\s*[a-zA-Z]+/?$") |>  # remove "n/", "p/", "hh/"
+        na_if("--") |>                     # "--" as NA
+        readr::parse_number()
+    )
+
+  return(spawning_long)
+}
+
+# After creating spawner_3 to spawner_15
+# Ensure all of these are defined above this block
+
+spawner_list_cleaned <- list(
+  spawner_1,  # optional: if already cleaned
+  spawner_2,  # optional
+  spawner_3,  # renamed cols
+  spawner_4,
+  spawner_5,
+  spawner_6,
+  spawner_7,
+  spawner_8,  # from tables_stream[[14]]
+  spawner_9,  # from tables_stream[[15]]
+  spawner_10, # renamed cols
+  spawner_11,
+  spawner_12,
+  spawner_13,
+  spawner_14,
+  spawner_15
+)
 
 
+spawner_indices_2 <- c(3, 6:15)
+spawner_years_2 <- c(1984, 1993, 1996, 1999, 2002, 2005, 2008, 2011, 2014, 2017, 2020)
+
+spawner_cleaned_2 <- purrr::map2(
+  .x = spawner_list_cleaned[spawner_indices_2],
+  .y = spawner_years_2,
+  .f = clean_spawner_table_2
+)
+
+combined_spawner_2 <- bind_rows(spawner_cleaned_2) # 3, 6-15
+clean_spawner_escapement <- bind_rows(combined_spawner, combined_spawner_2)
 
 
-
-
-
+# spawner_14 <- tables_stream[[20]] # this is in-river table 2014-2016
+# spawner_15 <- tables_stream[[22]] # this is in-river table 2017-2019
