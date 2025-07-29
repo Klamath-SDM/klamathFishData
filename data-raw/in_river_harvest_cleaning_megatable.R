@@ -43,7 +43,6 @@ harvest_3 <- harvest_list[[3]] |> slice(2:14) |> select(1:4, 7, 9, 11:13)
 harvest_4 <- harvest_list[[4]] |> slice(2:14) |> select(1:4, 6:10)
 harvest_5 <- harvest_list[[5]] |> slice(2:14) |> select(1:4, 6:10)
 harvest_6 <- harvest_list[[6]] |> slice(2:14) |> select(1:4, 6:10)
-
 harvest_7 <- tables_stream[[13]] |>  # reads entire page, needs to crop out escapement
   slice(20:33)
 harvest_8 <- tables_stream[[14]] |>
@@ -57,7 +56,6 @@ harvest_11 <- tables_stream[[17]] |>
   slice(25:38)
 harvest_12 <- tables_stream[[18]] |>
   slice(25:38)
-
 harvest_13 <- tables_stream[[20]] |> # only in-river harvest 2014-2016
   slice(9:22) |>
   select(1:4, 6:10)
@@ -69,7 +67,6 @@ harvest_15 <- tables_stream[[24]] |> # only in-river harvest
   select(1:4, 6:10)
 
 # automating
-
 clean_harvest_table <- function(tbl, start_year, tribal_label = "Indian Net Harvest  e/") {
   years <- start_year:(start_year + 2)
 
@@ -85,8 +82,7 @@ clean_harvest_table <- function(tbl, start_year, tribal_label = "Indian Net Harv
       {{split_col}},
       into = c(paste0("totals_", years[1]), paste0("grilse_", years[2])),
       regex = "^([\\d,]+|--)[ ]*[a-zA-Z/]*[ ]+([\\d,]+|--)[ ]*[a-zA-Z/]*$",
-      remove = TRUE
-    )
+      remove = TRUE)
 
   tbl_renamed <- tbl_clean |>
     rename(
@@ -97,8 +93,7 @@ clean_harvest_table <- function(tbl, start_year, tribal_label = "Indian Net Harv
       !!paste0("totals_", years[2]) := x6,
       !!paste0("grilse_", years[3]) := x7,
       !!paste0("adults_", years[3]) := x8,
-      !!paste0("totals_", years[3]) := x9
-    )
+      !!paste0("totals_", years[3]) := x9)
 
   value_cols <- c("location",
                   paste0("grilse_", years),
@@ -114,8 +109,7 @@ clean_harvest_table <- function(tbl, start_year, tribal_label = "Indian Net Harv
     mutate(subsection = case_when(
       str_detect(location, "Angler Harvest") ~ "Angler Harvest",
       str_detect(location, tribal_label) ~ tribal_label,
-      TRUE ~ NA_character_
-    )) |>
+      TRUE ~ NA_character_)) |>
     fill(subsection, .direction = "down") |>
     filter(!location %in% c("Angler Harvest", tribal_label),
            !is.na(location)) |>
@@ -127,16 +121,14 @@ clean_harvest_table <- function(tbl, start_year, tribal_label = "Indian Net Harv
       cols = -c(location, subsection, section),
       names_to = c("category", "year"),
       names_sep = "_",
-      values_to = "value"
-    ) |>
-    mutate(
-      year = as.integer(year),
-      category = str_to_title(category),
-      value = value |>
-        str_remove("\\s*[a-zA-Z]+/?$") |>
-        na_if("--") |>
-        readr::parse_number()
-    )
+      values_to = "value") |>
+    mutate(year = as.integer(year),
+           category = str_to_title(category),
+           value = value |>
+             str_remove("\\s*[a-zA-Z]+/?$") |>
+             na_if("--") |>
+             readr::parse_number()
+           )
 
   return(harvest_long)
 }
@@ -160,7 +152,110 @@ tribal_labels <- ifelse(seq_along(harvest_list_cleaned) %in% tribal_label_overri
 
 harvest_cleaned <- pmap(
   list(harvest_list_cleaned, harvest_years, tribal_labels),
-  clean_harvest_table
-)
+  clean_harvest_table)
 
 combined_harvest <- bind_rows(harvest_cleaned)
+
+## IN-RIVER RUN ----
+
+run_1 <- run_list[[1]] |> slice(15:21) |> select(1, 2, 4, 6, 8:12) # 1978-80
+run_2 <- run_list[[2]] |> slice(15:21) |> select(1:4, 6:10) # 1981-83
+run_3 <- run_list[[3]] |> slice(15:21) |> select(1:4, 7, 9, 11:13) #1984-86
+run_4 <- run_list[[4]] |> slice(15:21) |> select(1:4, 6:10) #1987-89
+run_5 <- run_list[[5]] |> slice(15:21) |> select(1:4, 6:10) #1990-92
+run_6 <- run_list[[6]] |> slice(15:21) |> select(1:4, 6:10) #1993-95
+run_7 <- tables_stream[[13]] |> slice(34:40) # 1996-1998
+run_8 <- run_list[[7]] |> slice(39:45) # 1999-2001
+run_9 <- tables_stream[[15]] |> slice(39:46) # 2002-04
+run_10 <- run_list[[8]] |> slice(39:46) |> select(1:5, 7:10) #2005-2007
+run_11 <- tables_stream[[17]] |> slice(39:45)  # 2008-2010
+run_12 <- run_list[[9]] |> slice(39:45) #2011-2013
+
+
+# different methodology for last 3 pages since extract_tables is no working the same way
+area_run <- list(c(500, 0, 792, 612))
+end_pages <- 13:15
+# Extract and name each run table
+run_13_15 <- map(end_pages, ~ extract_tables(file = pdf_path, pages = .x, area = area_run,
+                                             method = "stream", guess = FALSE, output = "tibble")[[1]])
+run_13 <- run_13_15[[1]] |> slice(5:12) |> select(1:4, 6:10) #2014-2016
+run_14 <- run_13_15[[2]] |> slice(5:12) |> select(1:4, 6:10) #2017-2019
+run_15 <- run_13_15[[3]] |> slice(5:12) |> select(1:4, 6:10) #2020-2022
+
+# automating
+clean_in_river_run_table <- function(tbl_totals, start_year) {
+  # Dynamically create the years for 3-year windows
+  years <- start_year:(start_year + 2)
+  # Standardize and clean names
+  tbl_totals_clean <- tbl_totals |>
+    filter(if_any(everything(), ~ . != "")) |>
+    janitor::clean_names()
+
+  colnames(tbl_totals_clean) <- paste0("x", seq_len(ncol(tbl_totals_clean)))
+  split_col <- names(tbl_totals_clean)[4]
+
+  tbl_totals_clean <- tbl_totals_clean |>
+    extract(
+      {{split_col}},
+      into = c(paste0("totals_", years[1]), paste0("grilse_", years[2])),
+      regex = "^([\\d,]+|--)[ ]*[a-zA-Z/]*[ ]+([\\d,]+|--)[ ]*[a-zA-Z/]*$",
+      remove = TRUE)
+
+  tbl_totals_renamed <- tbl_totals_clean |>
+    rename(
+      location = x1,
+      !!paste0("grilse_", years[1]) := x2,
+      !!paste0("adults_", years[1]) := x3,
+      !!paste0("adults_", years[2]) := x5,
+      !!paste0("totals_", years[2]) := x6,
+      !!paste0("grilse_", years[3]) := x7,
+      !!paste0("adults_", years[3]) := x8,
+      !!paste0("totals_", years[3]) := x9)
+
+  value_cols <- c("location",
+                  paste0("grilse_", years),
+                  paste0("adults_", years),
+                  paste0("totals_", years))
+
+  totals_df_clean <- tbl_totals_renamed |>
+    select(any_of(value_cols)) |>
+    mutate(is_continuation = str_starts(location, "\\("),
+           location = if_else(is_continuation, paste0(lag(location), " ", location), location)) |>
+    filter(!(lead(is_continuation, default = FALSE))) |>
+    select(-is_continuation) |>
+    mutate(subsection = case_when(
+      str_detect(location, "Totals") ~ "Totals",
+      TRUE ~ NA_character_)) |>
+    fill(subsection, .direction = "down") |>
+    filter(!location == "Totals",
+           !is.na(location)) |>
+    mutate(section = "In-River Run")
+
+  totals_long <- totals_df_clean |>
+    mutate(across(-location, as.character)) |>
+    pivot_longer(cols = -c(location, subsection, section),
+                 names_to = c("category", "year"),
+                 names_sep = "_",
+                 values_to = "value") |>
+    mutate(year = as.integer(year),
+           category = str_to_title(category),
+           value = value |>
+             str_remove("\\s*[a-zA-Z]+/?$") |>
+             na_if("--") |>
+             readr::parse_number())
+
+  return(totals_long)
+}
+
+inriver_run_cleaned_list <- list(run_1, run_2, run_3, run_4, run_5,
+                             run_6, run_7, run_8, run_9, run_10,
+                             run_11, run_12, run_13, run_14, run_15)
+
+all_years <- seq(1978, by = 3, length.out = 15)
+
+inriver_run_cleaned <- pmap(
+  list(inriver_run_cleaned_list, all_years),
+  clean_in_river_run_table)
+
+inriver_run_cleaned_df <- bind_rows(inriver_run_cleaned)
+
