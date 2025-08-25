@@ -8,7 +8,6 @@ library(janitor)
 # options(java.parameters = "-Xmx600m")
 library(tabulapdf)
 library(tidyverse)
-library(tabulizer)
 library(purrr)
 
 
