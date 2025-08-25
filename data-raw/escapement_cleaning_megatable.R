@@ -282,3 +282,4 @@ spawner_cleaned_2 <- purrr::map2(
 
 combined_spawner_2 <- bind_rows(spawner_cleaned_2) # 3, 6-15
 clean_spawner_escapement <- bind_rows(combined_spawner, combined_spawner_2)
+
