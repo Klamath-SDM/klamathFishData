@@ -12,7 +12,7 @@ library(purrr)
 pdf_path <- "data-raw/Avian_Predation_on_UKB_Suckers_Summary_Report_2021_2023.pdf"
 tables <- extract_tables(pdf_path, method = "stream", output = "tibble")
 
-
+#### PIT-tagged LRS, SNS, KLS, SNS-KLS and SARP ----
 tag_data_raw <- tables[[2]] |> glimpse()
 
 tag_data_raw <- as.data.frame(tag_data_raw, stringsAsFactors = FALSE) %>%
@@ -46,7 +46,8 @@ tag_data_split <- tag_data_raw |>
     .names = "{.col}_{.fn}"))
 
 # remove the original columns
-tag_data_split <- tag_data_split %>% select(-matches("^x20\\d{2}$"))
+tag_data_split <- tag_data_split |>
+  select(-matches("^x20\\d{2}$"))
 
 
 tag_data_clean <- tag_data_split |>
@@ -58,11 +59,10 @@ tag_data_clean <- tag_data_split |>
     TRUE ~ location_1)) |>
   slice(-c(5))
 
-
 # year columns
 year_cols <- grep("^x20\\d{2}_(available|recovered)$", names(tag_data_split), value = TRUE)
 
-tag_dat <- tag_data_clean |>
+avian_predation_pit_tag <- tag_data_clean |>
   mutate(fish_group_2 = na_if(str_trim(fish_group_2), "")) |>
   filter(!(is.na(fish_group_2) & rowSums(!is.na(across(all_of(year_cols)))) == 0)) |>
   pivot_longer(cols = all_of(year_cols),
@@ -73,11 +73,27 @@ tag_dat <- tag_data_clean |>
          value = suppressWarnings(as.numeric(value))) |>
   pivot_wider(names_from  = metric,
               values_from = value) |>
-  arrange(location_1, fish_group_2, year) |>
+  rename(location = location_1,
+         fish_group = fish_group_2) |>
+  arrange(location, fish_group, year) |>
   as.tibble() |>
   # mutate(recovered_rate = if_else(!is.na(available) & available > 0, recovered / available, NA_real_))
   glimpse()
 
-# save clean data
+# save clean data - how many tagged suckers were available and how many were recovered on bird colonies
+# usethis::use_data(avian_predation_pit_tag, overwrite = TRUE)
 
 
+#TODO decide if we want the two tables below
+
+#### estimate predation rates - LRS, SNS, KLS, SNS-KLS and SARP (UKL and Clear Lake) ----
+estimate_predation_raw <- tables[[3]] |> glimpse()
+
+estimate_predation_raw <- as.data.frame(estimate_predation_raw, stringsAsFactors = FALSE) |>
+  clean_names()
+
+#### Estimates of predation rates PIT-tagged Sucker Assisted Rearing Program (SARP) juvenile suckers ----
+estimate_predation_sarp_raw <- tables[[4]] |> glimpse()
+
+estimate_predation_sarp_raw <- as.data.frame(estimate_predation_sarp_raw, stringsAsFactors = FALSE) |>
+  clean_names()
