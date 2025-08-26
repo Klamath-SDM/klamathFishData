@@ -1,0 +1,259 @@
+```{r include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, fig.width=15, fig.height=10)
+library(tidyverse)
+library(pins)
+library(dplyr)
+library(ggplot2)
+library(readxl)
+
+klamath_project_board <- pins::board_s3(bucket = "klamath-sdm", region = "us-east-1")
+
+```
+
+The goal of this script is to figure out if CDFW modeled data and Ashley's prepared data are duplicates. Also, to figure out if data included on the megatable is the same.
+
+Summary of findings:
+
+ - [CDFW Modeled Salmon Population](https://github.com/Klamath-SDM/KlamathEDA/blob/main/data-raw/fisheries/modeled/modeled-fisheries-data.Rmd) vs [AWS modeled data](https://github.com/Klamath-SDM/klamathFishData/blob/update-package/data-raw/processing-scripts/model-output.R) Note: this data came from CDFW (?) in AWS bucket (confirm source with Ashley), it was processed using juvenile, adult and survival data. Similarities: 
+ 
+  - Estimate numbers match for "smotls" in shasta river, and "adult" in scott river
+  - other estimates vary 
+
+Summary of comparison between cdfw data and megatable:
+
+  - megatable has Spawner escapement(Hatchery and Natural Spawners), data only has natural spawners
+  - megatable includes more basins that just Scott and Shasta (data covers only those 2 basins)
+  - megatable includes "in-river harvest" and "in-river run" (data only has SPAWNER ESCAPEMENT, natural spawners Totals)
+  - megatable breaks down Grilse, Adults and Totals, data only has "totals"
+    
+    
+## CDFW Modeled Salmon Population
+
+```{r}
+klamath_cdfw_population_processed <-  klamath_project_board |>
+  pin_read("klamath_cdfw_population_processed") |> glimpse()
+```
+
+Years covered
+
+```{r echo=FALSE}
+sort(unique(klamath_cdfw_population_processed$julian_year)) # covers years 1978 - 2023
+```
+
+species
+
+```{r echo=FALSE}
+unique(klamath_cdfw_population_processed$species)
+```
+
+streams
+
+```{r echo=FALSE}
+unique(klamath_cdfw_population_processed$stream)
+```
+
+lifestage
+
+```{r echo=FALSE}
+unique(klamath_cdfw_population_processed$lifestage)
+```
+
+Years covered - coho salmon
+
+```{r echo=FALSE}
+klamath_cdfw_population_processed |> 
+  filter(species == "coho salmon") |> 
+  pull(julian_year) |> 
+  range()
+
+klamath_cdfw_population_processed |> 
+  filter(species == "coho salmon") |> 
+  ggplot(aes(x = julian_year, y = estimate, color = stream)) +
+  geom_line() +
+  # scale_color_manual(values = colors_five) +
+  facet_wrap(~lifestage, scales = "free_y") +
+  theme_bw() +
+  labs(x = "",
+       y = "Abundance estimate",
+       title = "coho",
+       color = "") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+```
+
+
+## AWS modeled data
+
+Years covered 
+
+```{r echo=FALSE}
+load(file = "data/model_output.rda")
+
+sort(unique(model_output$julian_year)) # covers years 1999 - 2016
+```
+
+species
+
+```{r echo=FALSE}
+unique(model_output$species)
+```
+
+streams
+
+```{r echo=FALSE}
+unique(model_output$stream)
+```
+
+lifestage
+
+```{r echo=FALSE}
+unique(model_output$lifestage)
+```
+
+Years covered - coho salmon
+
+```{r echo=FALSE}
+model_output <- model_output |>
+  mutate(lower_bounds_estimate = as.numeric(lower_bounds_estimate),
+         upper_bounds_estimate = as.numeric(upper_bounds_estimate),
+         stream = case_when(stream == "shasta" ~ "shasta river", # modifying so it is consistent with CDFW data names
+                            stream == "scott" ~ "scott river",
+                            T ~ stream)) 
+
+model_output |> 
+  filter(species == "coho") |> 
+  pull(julian_year) |> 
+  range()
+
+model_output |> 
+  filter(species == "coho") |> 
+  ggplot(aes(x = julian_year, y = estimate, color = stream)) +
+  geom_line() +
+  # scale_color_manual(values = colors_five) +
+  facet_wrap(~lifestage, scales = "free_y") +
+  theme_bw() +
+  labs(x = "",
+       y = "Abundance estimate",
+       title = "coho",
+       color = "") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+```
+
+Plotting both datasets, filtering out to only coho. Also, lifestage has been manipulated to see if it matches modeled data
+
+```{r echo=FALSE}
+model_output$source <- "model"
+
+klamath_cdfw_population_processed$source <- "CDFW"
+```
+
+
+```{r echo=TRUE}
+#unifying lifestage categories
+cdfw_population_processed <- klamath_cdfw_population_processed |> 
+  mutate(lifestage = case_when(
+    lifestage %in% c("yoy", "age 1+", "age 2+") ~ "parr",
+    lifestage == "adult and subadult" ~ "adult",
+    lifestage == "smolt" ~ "smolts",
+    TRUE ~ lifestage))
+```
+
+
+```{r echo=FALSE}
+combined <- bind_rows(model_output, cdfw_population_processed)
+
+combined |> 
+  filter(species %in% c("coho", "coho salmon")) |> 
+  ggplot(aes(x = julian_year, y = estimate, color = source, linetype = source)) +
+  geom_line(linewidth = 0.5) +
+  geom_point(size = 1.5, alpha = 0.6) +
+  facet_wrap(~lifestage + stream, scales = "free_y") +
+  theme_bw() +
+  labs(x = "", y = "Estimate", title = "Model vs. CDFW Coho Estimates", color = "", linetype = "") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+
+```
+
+Trying the same than above but without unifying lifestages (only selecting "adult", "par" and "smolts". Leaving out 
+"yoy", "age 1+" and "age 2+")
+
+*coho* 
+
+```{r echo=TRUE}
+# not unifying lifestage categories
+cdfw_population_processed_raw <- klamath_cdfw_population_processed |> 
+  mutate(lifestage = case_when(
+    lifestage == "adult and subadult" ~ "adult",
+    lifestage == "smolt" ~ "smolts",
+    TRUE ~ lifestage)) |> 
+  filter(lifestage == "adult" | lifestage == "parr" | lifestage == "smolts")
+```
+
+
+```{r echo=FALSE}
+combined_raw <- bind_rows(model_output, cdfw_population_processed_raw)
+
+combined_raw |> 
+  filter(species %in% c("coho", "coho salmon")) |> 
+  ggplot(aes(x = julian_year, y = estimate, color = source, linetype = source)) +
+  geom_line(linewidth = 0.5) +
+  geom_point(size = 1.5, alpha = 0.6) +
+  facet_wrap(~lifestage + stream, scales = "free_y") +
+  theme_bw() +
+  labs(x = "", y = "Estimate", title = "Model vs. CDFW Coho Estimates", color = "", linetype = "") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+```
+
+
+# Megatable exploration
+
+Data exploration of [CDFW Modeled Salmon Population](https://github.com/Klamath-SDM/KlamathEDA/blob/main/data-raw/fisheries/modeled/modeled-fisheries-data.Rmd) to compare to [Klamath Basin Mega table](https://github.com/user-attachments/files/20469344/2022.Klamath.Basin.Megatable_20230216.1.2.pdf)
+
+Notes about Mega table: 
+
+  - Contains data of Fall Chinook salmon
+  - Temporal coverage is 1978 to 2022
+  - Geographical coverage is Main Stem Klamath River, Salmon, Scott, Shasta, Bogus, and other Klamath tributaries
+  
+Findings:
+
+  - CDFW Modeled Salmon Population fall chinook adult count estimates match mega table, however:
+  - CDFW data only covers shasta and scott river
+  - there are some years with two data entries for the same river (mostly shasta river), only one of those matches the mega table
+  - after looking into data, I think this is related to cdfw raw data column "origin", it should be "mixed" in order to match megatable
+
+  
+```{r include=FALSE}
+unique(klamath_cdfw_population_processed$estimate_type)
+
+klamath_cdfw_population_processed |> filter(species == "fall chinook salmon" & estimate_type == "count") |> view()
+
+# adding the code from KlamathEDA modeled-fisheries-data.Rmd below
+
+cdfw_population_raw <- read_xlsx(here::here("data-raw", "tables_with_data", "modeled", "Salmonid_Population_Monitoring_Data_CMPv2023.xlsx"), sheet = "Population Data")
+
+klamath_cdfw_population_raw <- cdfw_population_raw |>
+  filter(Watershed %in% c("Trinity River", "Scott River", "Shasta River", "Lower Klamath","Klamath River"))
+
+klamath_cdfw_population_processed <- klamath_cdfw_population_raw |>
+  janitor::clean_names() |>
+  rename(stream = population,
+         lifestage = life_stage) |>
+  mutate(species = ifelse(!is.na(run_designation), tolower(paste0(run_designation, " ", species)), tolower(species)),
+         julian_year = as.numeric(ifelse(!is.na(brood_year), brood_year, survey_season)),
+         stream = tolower(stream),
+         lifestage = tolower(lifestage),
+         estimate_type = tolower(metric),
+         estimation_method = tolower(estimation_method),
+         sex = NA,
+         estimate = value,
+         confidence_interval = 95,
+         lower_bounds_estimate = x95_lower_ci,
+         upper_bounds_estimate = x95_upper_ci,
+         is_complete_estimate = ifelse(full_population_estimate == "N", F, T)) |>
+  filter(origin == "Mixed") |>
+  select(julian_year, stream, species, lifestage, sex, estimate_type, estimate, confidence_interval,
+         lower_bounds_estimate, upper_bounds_estimate, estimation_method, is_complete_estimate) |>
+  glimpse()
+
+```
+  
