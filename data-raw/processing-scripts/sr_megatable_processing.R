@@ -9,6 +9,8 @@ library(janitor)
 library(tabulapdf)
 library(tidyverse)
 library(purrr)
+library(tabulizer)
+
 
 
 ##  ---- SPAWNER ----
@@ -40,6 +42,49 @@ spawner_13_1 <- tables_stream[[36]] # the following 3 tables have data for spawn
 spawner_13_2 <- tables_stream[[37]] #
 spawner_13_3 <- tables_stream[[38]] # check this one since it is only one line of data
 
+#TODO automate this for spawner 14 and 15
+spawner_13_2 <- spawner_13_2 |>
+  select(1:4, 6:8, 10:12) |>
+  mutate(x1 = as.character(`Klamath River Basin`),
+         x2 = as.character(...2),
+         x3 = as.character(...3),
+         x4 = as.character(...4),
+         x5 = as.character(...6),
+         x6 = as.character(...7),
+         x7 = as.character(...8),
+         x8 = as.character(...10),
+         x9 = as.character(...11),
+         x10 = as.character(...12)) |>
+  select(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10)
+
+spawner_13_1 <- spawner_13_1 |>
+  rename(x1 = ...1,
+         x2 = ...2,
+         x3 = `2016`,
+         x4 = ...4,
+         x5 = ...5,
+         x6 = `2017`,
+         x7 = ...7,
+         x8 = ...8,
+         x9 = `2018`,
+         x10 = ...10)|>
+  glimpse()
+
+spawner_13_3 <- as.data.frame(spawner_13_3)
+
+# Extract numbers and convert to numeric
+numbers <- str_extract_all(spawner_13_3, "\\d{1,3}(?:,\\d{3})*")[[1]] |>
+  readr::parse_number()
+
+# Build tidy dataframe
+spawner_13_3_clean <- tibble( x1 = "Total Spawner Escapement",
+                        value = as.character(numbers)) |>
+  mutate(field = paste0("x", row_number() + 1)) |>
+  pivot_wider(names_from = field, values_from = value)
+
+spawner_13 <- bind_rows(spawner_13_2, spawner_13_3_clean)
+
+
 harvest_13 <- tables_stream[[39]] # harvest 2016 - 2018
 harvest_13_1 <- tables_stream[[40]] # total river harvest 2016 - 2018
 run_size_13 <- tables_stream[[41]] # total run-size 2016 - 2018
@@ -64,15 +109,18 @@ harvest_15_2 <- tables_stream[[52]] # Total river harvest 2022 - 2024
 run_size_15 <- tables_stream[[53]] # total run-size 2022 - 2024
 
 
+# 1, 3 - 12
+spawner_pt_1 <- bind_rows(spawner_1, spawner_3, spawner_4, spawner_5, spawner_6, spawner_7,
+                          spawner_8, spawner_9, spawner_10, spawner_11, spawner_12)
 
 # function from fall spawner escapement - testing
 
 # automating spawning 1, 2, 4, 5
-# clean_spawner_table <- function(tbl, start_year) {
+clean_spawner_table <- function(tbl, start_year) {
   # Dynamically create the years for 3-year windows
   years <- start_year:(start_year + 2)
   # Standardize and clean names
-  tbl_clean <- spawner_3 |>
+  tbl_clean <- tbl |>
     filter(if_any(everything(), ~ . != "")) |>
     janitor::clean_names()
 
@@ -140,11 +188,23 @@ run_size_15 <- tables_stream[[53]] # total run-size 2022 - 2024
       category = str_to_title(category),
       value = readr::parse_number(value))
 
-#   return(spawning_long)
-# }
+  return(spawning_long)
+}
 
+spawner_indices_1 <- c(3, 6, 9, 11, 14, 17, 20, 23, 26, 29, 32, 35)
+# 1, 3 - 12
+spawner_years_1 <- c(1980, 1983, 1986, 1989, 1992, 1995, 1998, 2001, 2004, 2007, 2010, 2013)
 
+spawner_cleaned <- purrr::map2(
+  .x = tables_stream[spawner_indices_1],
+  .y = spawner_years_1,
+  .f = clean_spawner_table
+)
 
+# first part of cleaning spawner tables
+combined_spawner_1 <- bind_rows(spawner_cleaned) # 1, 3 - 12
+
+#TODO need to clean 2016-18, 2019-21, 2022-2024
 
 
 
