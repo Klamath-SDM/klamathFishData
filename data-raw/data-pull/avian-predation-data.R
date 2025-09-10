@@ -84,16 +84,33 @@ avian_predation_pit_tag <- tag_data_clean |>
 # usethis::use_data(avian_predation_pit_tag, overwrite = TRUE)
 
 
-#TODO decide if we want the two tables below
-
 #### estimate predation rates - LRS, SNS, KLS, SNS-KLS and SARP (UKL and Clear Lake) ----
 estimate_predation_raw <- tables[[3]] |> glimpse()
 
-estimate_predation_raw <- as.data.frame(estimate_predation_raw, stringsAsFactors = FALSE) |>
-  clean_names()
+pred_raw_clean <- estimate_predation_raw |>
+  separate(col = 'Upper Klamath Lake Suckers', # split the mixed SNS/KLS column into two
+           into = c("UKL_Adult_SNS", "UKL_Adult_KLS"),
+           sep = "(?<=\\)|%)\\s+",
+           extra = "merge",
+           fill = "right") |>
+  separate(col = 'Clear Lake Reservoir Suckers', # same for the Clear Lake combined column
+           into = c("CLR_Adult_SNS", "CLR_Adult_KLS"),
+           sep = "(?<=\\)|%)\\s+",
+           extra = "merge",
+           fill  = "right") |>
+  separate(col = CLR_Adult_KLS,
+           into = c("CLR_Adult_KLS", "CLR_Wild_Juv"),
+           sep = "(?<=\\)|%)\\s+",
+           extra = "merge",
+           fill  = "right") |>
+  mutate(across(starts_with("UKL_Adult_") | starts_with("CLR_Adult_"), str_trim)) # trim any whitespace off each new column
 
-#### Estimates of predation rates PIT-tagged Sucker Assisted Rearing Program (SARP) juvenile suckers ----
-estimate_predation_sarp_raw <- tables[[4]] |> glimpse()
+#TODO now that fields have been split, need to clean column and rows
 
-estimate_predation_sarp_raw <- as.data.frame(estimate_predation_sarp_raw, stringsAsFactors = FALSE) |>
-  clean_names()
+
+
+ #### Estimates of predation rates PIT-tagged Sucker Assisted Rearing Program (SARP) juvenile suckers ----
+ estimate_predation_sarp_raw <- tables[[4]] |> glimpse()
+
+ estimate_predation_sarp_raw <- as.data.frame(estimate_predation_sarp_raw, stringsAsFactors = FALSE) |>
+   clean_names()
