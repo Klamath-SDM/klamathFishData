@@ -105,8 +105,77 @@ pred_raw_clean <- estimate_predation_raw |>
            fill  = "right") |>
   mutate(across(starts_with("UKL_Adult_") | starts_with("CLR_Adult_"), str_trim)) # trim any whitespace off each new column
 
-#TODO now that fields have been split, need to clean column and rows
+pred_raw_clean[8, c("CLR_Adult_SNS", "CLR_Adult_KLS", "CLR_Wild_Juv")] <- # migrating values from row 8 to row 7
+  dplyr::coalesce(pred_raw_clean[8, c("CLR_Adult_SNS", "CLR_Adult_KLS", "CLR_Wild_Juv")],
+                  pred_raw_clean[7, c("CLR_Adult_SNS", "CLR_Adult_KLS", "CLR_Wild_Juv")])
 
+# Columns 2-5 = Upper Klamath Lake groups, columns 6-8 = Clear Lake Reservoir
+names(pred_raw_clean)[2:5] <- c("UKL_Adult_LRS", "UKL_Adult_SNS", "UKL_Adult_KLS", "UKL_Juveniles")
+names(pred_raw_clean)[6:8] <- c("CLR_Adult_LRS", "CLR_Adult_SNS_KLS", "CLR_Juveniles")
+
+# Row indices where the years are listed
+year_map <- tibble(row_index = c(4, 6, 8, 9, 10, 12),
+                   year = c(2021, 2021, 2022, 2022, 2023, 2023))
+
+# parse "estimate (lcl–ucl)"
+parse_pred <- function(x) {
+  if (is.na(x) || x %in% c("NA","–")) {
+    return(tibble(est_pct = NA_character_, lcl_pct = NA_real_, ucl_pct = NA_real_))
+    }
+
+  # keep "<"
+  x_clean <- str_remove_all(x, "[()%]")
+
+  # range (CI)
+  if (str_detect(x_clean, "–")) {
+    rng <- str_split(x_clean, "–")[[1]] |>  str_trim()
+    tibble(est_pct = NA_character_,
+           lcl_pct = suppressWarnings(as.numeric(str_remove(rng[1], "%"))),
+           ucl_pct = suppressWarnings(as.numeric(str_remove(rng[2], "%"))))
+
+    # explicit "<" value (e.g. "< 0.1%")
+    } else if (str_detect(x_clean, "<")) {
+      tibble(est_pct = str_trim(x_clean),  # keep as character, e.g. "<0.1%"
+             lcl_pct = NA_real_,
+             ucl_pct = NA_real_)
+
+      # normal percentage
+      } else {
+        tibble(est_pct = str_trim(str_remove(x_clean, "%")),
+               lcl_pct = NA_real_,
+               ucl_pct = NA_real_)
+      }
+}
+
+# build table
+estimates_suckers_clean <- map2_dfr(year_map$row_index, year_map$year, function(i, yr){
+  row_vals <- pred_raw_clean[i, ]
+  # Each column corresponds to one group
+  bind_rows(
+    parse_pred(row_vals$UKL_Adult_LRS) %>% mutate(location_1="Upper Klamath Lake", fish_group_2="Adult LRS", year=yr),
+    parse_pred(row_vals$UKL_Adult_SNS) %>% mutate(location_1="Upper Klamath Lake", fish_group_2="Adult SNS", year=yr),
+    parse_pred(row_vals$UKL_Adult_KLS) %>% mutate(location_1="Upper Klamath Lake", fish_group_2="Adult KLS", year=yr),
+    parse_pred(row_vals$UKL_Juveniles) %>% mutate(location_1="Upper Klamath Lake", fish_group_2="Juveniles", year=yr),
+    parse_pred(row_vals$CLR_Adult_LRS) %>% mutate(location_1="Clear Lake Reservoir", fish_group_2="Adult LRS", year=yr),
+    parse_pred(row_vals$CLR_Adult_SNS_KLS) %>% mutate(location_1="Clear Lake Reservoir", fish_group_2="Adult SNS-KLS", year=yr),
+    parse_pred(row_vals$CLR_Juveniles) %>% mutate(location_1="Clear Lake Reservoir", fish_group_2="Juveniles", year=yr)
+  )
+})
+
+
+estimates_suckers_clean <- estimates_suckers_clean |>
+group_by(location_1, fish_group_2, year) |>
+  summarise(est_pct = suppressWarnings(max(est_pct, na.rm = TRUE)) %>% { ifelse(is.infinite(.), NA_real_, .) },
+            lcl_pct   = suppressWarnings(max(lcl_pct, na.rm = TRUE)) %>% { ifelse(is.infinite(.), NA_real_, .) },
+            ucl_pct   = suppressWarnings(max(ucl_pct, na.rm = TRUE)) %>% { ifelse(is.infinite(.), NA_real_, .) },
+            .groups = "drop")
+
+
+# save clean data -  Estimates of predation rates (95% credible intervals) on PIT-tagged Lost River suckers (LRS),
+# Shortnose suckers (SNS), Klamath Largescale suckers (KLS), Shortnose/Klamath Largescale suckers (SNS-KLS), and wild juvenile suckers by piscivorous colonial waterbirds nesting at colonies in Upper Klamath
+# Lake and Clear Lake Reservoir (i.e., cumulative predation effects)
+#TODO
+# usethis::use_data(pikc_a_name, overwrite = TRUE)
 
 
  #### Estimates of predation rates PIT-tagged Sucker Assisted Rearing Program (SARP) juvenile suckers ----
