@@ -175,7 +175,7 @@ group_by(location_1, fish_group_2, year) |>
 # Shortnose suckers (SNS), Klamath Largescale suckers (KLS), Shortnose/Klamath Largescale suckers (SNS-KLS), and wild juvenile suckers by piscivorous colonial waterbirds nesting at colonies in Upper Klamath
 # Lake and Clear Lake Reservoir (i.e., cumulative predation effects)
 #TODO
-# usethis::use_data(pikc_a_name, overwrite = TRUE)
+# usethis::use_data(pick_a_name, overwrite = TRUE)
 
 
  #### Estimates of predation rates PIT-tagged Sucker Assisted Rearing Program (SARP) juvenile suckers ----
@@ -183,3 +183,80 @@ group_by(location_1, fish_group_2, year) |>
 
  estimate_predation_sarp_raw <- as.data.frame(estimate_predation_sarp_raw, stringsAsFactors = FALSE) |>
    clean_names()
+
+ estimate_predation_sarp <- estimate_predation_sarp_raw |>
+   separate(col = 'upper_klamath_lake', # split the mixed column into two
+          into = c("ukl_sarp_fall_win", "ukl_chin_spr_sum"),
+          sep = "(?<=\\)|%)\\s+",
+          extra = "merge",
+          fill = "right") |>
+   rename(ukl_chin_fall_win = x4,
+          kr_chin_spr_sum = klamath_river,
+          shpy_sarp_spr_sum = sheepy_lake,
+          ukl_sarp_spr_sum = x2) |>
+   glimpse()
+
+ year_map_2 <- tibble(row_index = c(4, 6, 7, 9, 10, 12),
+                    year = c(2021, 2021, 2022, 2022, 2023, 2023))
+
+
+ # parse "estimate (lcl–ucl)"
+ parse_sarp <- function(x) {
+   if (is.na(x) || x %in% c("NA","–")) {
+     return(tibble(est_pct = NA_character_, lcl_pct = NA_real_, ucl_pct = NA_real_))
+   }
+
+   # keep "<"
+   x_clean <- str_remove_all(x, "[()%]")
+
+   # range (CI)
+   if (str_detect(x_clean, "–")) {
+     rng <- str_split(x_clean, "–")[[1]] |>  str_trim()
+     tibble(est_pct = NA_character_,
+            lcl_pct = suppressWarnings(as.numeric(str_remove(rng[1], "%"))),
+            ucl_pct = suppressWarnings(as.numeric(str_remove(rng[2], "%"))))
+
+     # explicit "<" value (e.g. "< 0.1%")
+   } else if (str_detect(x_clean, "<")) {
+     tibble(est_pct = str_trim(x_clean),  # keep as character, e.g. "<0.1%"
+            lcl_pct = NA_real_,
+            ucl_pct = NA_real_)
+
+     # normal percentage
+   } else {
+     tibble(est_pct = str_trim(str_remove(x_clean, "%")),
+            lcl_pct = NA_real_,
+            ucl_pct = NA_real_)
+   }
+ }
+
+ # build table
+ estimate_predation_sarp_clean <- map2_dfr(year_map_2$row_index, year_map_2$year, function(i, yr){
+   row_vals <- estimate_predation_sarp[i, ]
+   # Each column corresponds to one group
+   bind_rows(
+     parse_sarp(row_vals$ukl_sarp_spr_sum) %>% mutate(location_1="Upper Klamath Lake", fish_group_2="SARP Spring/Summer", year=yr),
+     parse_sarp(row_vals$ukl_sarp_fall_win) %>% mutate(location_1="Upper Klamath Lake", fish_group_2="SARP Fall/Winter", year=yr),
+     parse_sarp(row_vals$ukl_chin_spr_sum) %>% mutate(location_1="Upper Klamath Lake", fish_group_2="Chinook Spring/Summer", year=yr),
+     parse_sarp(row_vals$ukl_chin_fall_win) %>% mutate(location_1="Upper Klamath Lake", fish_group_2="Chinook Fall/Winter", year=yr),
+     parse_sarp(row_vals$kr_chin_spr_sum) %>% mutate(location_1="Klamath River", fish_group_2="Chinook Spring/Summer", year=yr),
+     parse_sarp(row_vals$shpy_sarp_spr_sum) %>% mutate(location_1="Sheepy Lake", fish_group_2="SARP Spring/Summer", year=yr)
+   )
+ })
+
+
+ estimate_predation_sarp_clean <- estimate_predation_sarp_clean |>
+   group_by(location_1, fish_group_2, year) |>
+   summarise(est_pct = suppressWarnings(max(est_pct, na.rm = TRUE)) %>% { ifelse(is.infinite(.), NA_real_, .) },
+             lcl_pct   = suppressWarnings(max(lcl_pct, na.rm = TRUE)) %>% { ifelse(is.infinite(.), NA_real_, .) },
+             ucl_pct   = suppressWarnings(max(ucl_pct, na.rm = TRUE)) %>% { ifelse(is.infinite(.), NA_real_, .) },
+             .groups = "drop")
+
+ # save clean data -   Estimates of predation rates (95% credible intervals) on PIT-tagged Sucker Assisted Rearing
+ # Program (SARP) juvenile suckers and juvenile Chinook Salmon (Chinook) by piscivorous colonial
+ # waterbirds nesting at colonies in Upper Klamath Lake, Clear Lake Reservoir, and Sheepy Lake combined
+ # (i.e., cumulative predation effects).
+ #TODO
+ # usethis::use_data(pick_a_name, overwrite = TRUE)
+
+#TODO the last step should be doing a final review of data, combine, and save as data object
