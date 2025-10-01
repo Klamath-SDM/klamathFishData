@@ -81,7 +81,7 @@ avian_predation_pit_tag <- tag_data_clean |>
   glimpse()
 
 # save clean data - how many tagged suckers were available and how many were recovered on bird colonies
-# usethis::use_data(avian_predation_pit_tag, overwrite = TRUE)
+usethis::use_data(avian_predation_pit_tag, overwrite = TRUE)
 
 
 #### estimate predation rates - LRS, SNS, KLS, SNS-KLS and SARP (UKL and Clear Lake) ----
@@ -120,7 +120,7 @@ year_map <- tibble(row_index = c(4, 6, 8, 9, 10, 12),
 # parse "estimate (lcl–ucl)"
 parse_pred <- function(x) {
   if (is.na(x) || x %in% c("NA","–")) {
-    return(tibble(est_pct = NA_character_, lcl_pct = NA_real_, ucl_pct = NA_real_))
+    return(tibble(estimate_pct = NA_character_, lower_ci_pct = NA_real_, upper_ci_pct = NA_real_))
     }
 
   # keep "<"
@@ -129,21 +129,21 @@ parse_pred <- function(x) {
   # range (CI)
   if (str_detect(x_clean, "–")) {
     rng <- str_split(x_clean, "–")[[1]] |>  str_trim()
-    tibble(est_pct = NA_character_,
-           lcl_pct = suppressWarnings(as.numeric(str_remove(rng[1], "%"))),
-           ucl_pct = suppressWarnings(as.numeric(str_remove(rng[2], "%"))))
+    tibble(estimate_pct = NA_character_,
+           lower_ci_pct = suppressWarnings(as.numeric(str_remove(rng[1], "%"))),
+           upper_ci_pct = suppressWarnings(as.numeric(str_remove(rng[2], "%"))))
 
     # explicit "<" value (e.g. "< 0.1%")
     } else if (str_detect(x_clean, "<")) {
-      tibble(est_pct = str_trim(x_clean),  # keep as character, e.g. "<0.1%"
-             lcl_pct = NA_real_,
-             ucl_pct = NA_real_)
+      tibble(estimate_pct = str_trim(x_clean),  # keep as character, e.g. "<0.1%"
+             lower_ci_pct = NA_real_,
+             upper_ci_pct = NA_real_)
 
       # normal percentage
       } else {
-        tibble(est_pct = str_trim(str_remove(x_clean, "%")),
-               lcl_pct = NA_real_,
-               ucl_pct = NA_real_)
+        tibble(estimate_pct = str_trim(str_remove(x_clean, "%")),
+               lower_ci_pct = NA_real_,
+               upper_ci_pct = NA_real_)
       }
 }
 
@@ -163,19 +163,22 @@ estimates_suckers_clean <- map2_dfr(year_map$row_index, year_map$year, function(
 })
 
 
-estimates_suckers_clean <- estimates_suckers_clean |>
+predation_estimates_wild <- estimates_suckers_clean |>
 group_by(location_1, fish_group_2, year) |>
-  summarise(est_pct = suppressWarnings(max(est_pct, na.rm = TRUE)) %>% { ifelse(is.infinite(.), NA_real_, .) },
-            lcl_pct   = suppressWarnings(max(lcl_pct, na.rm = TRUE)) %>% { ifelse(is.infinite(.), NA_real_, .) },
-            ucl_pct   = suppressWarnings(max(ucl_pct, na.rm = TRUE)) %>% { ifelse(is.infinite(.), NA_real_, .) },
-            .groups = "drop")
+  summarise(estimate_pct = suppressWarnings(max(estimate_pct, na.rm = TRUE)) %>% { ifelse(is.infinite(.), NA_real_, .) },
+            lower_ci_pct   = suppressWarnings(max(lower_ci_pct, na.rm = TRUE)) %>% { ifelse(is.infinite(.), NA_real_, .) },
+            upper_ci_pct   = suppressWarnings(max(upper_ci_pct, na.rm = TRUE)) %>% { ifelse(is.infinite(.), NA_real_, .) },
+            .groups = "drop") |>
+  rename(location = location_1,
+         fish_group = fish_group_2) |>
+  glimpse()
 
 
 # save clean data -  Estimates of predation rates (95% credible intervals) on PIT-tagged Lost River suckers (LRS),
 # Shortnose suckers (SNS), Klamath Largescale suckers (KLS), Shortnose/Klamath Largescale suckers (SNS-KLS), and wild juvenile suckers by piscivorous colonial waterbirds nesting at colonies in Upper Klamath
 # Lake and Clear Lake Reservoir (i.e., cumulative predation effects)
-#TODO
-# usethis::use_data(pick_a_name, overwrite = TRUE)
+
+usethis::use_data(predation_estimates_wild, overwrite = TRUE)
 
 
  #### Estimates of predation rates PIT-tagged Sucker Assisted Rearing Program (SARP) juvenile suckers ----
@@ -203,7 +206,7 @@ group_by(location_1, fish_group_2, year) |>
  # parse "estimate (lcl–ucl)"
  parse_sarp <- function(x) {
    if (is.na(x) || x %in% c("NA","–")) {
-     return(tibble(est_pct = NA_character_, lcl_pct = NA_real_, ucl_pct = NA_real_))
+     return(tibble(estimate_pct = NA_character_, lower_ci_pct = NA_real_, upper_ci_pct = NA_real_))
    }
 
    # keep "<"
@@ -212,21 +215,21 @@ group_by(location_1, fish_group_2, year) |>
    # range (CI)
    if (str_detect(x_clean, "–")) {
      rng <- str_split(x_clean, "–")[[1]] |>  str_trim()
-     tibble(est_pct = NA_character_,
-            lcl_pct = suppressWarnings(as.numeric(str_remove(rng[1], "%"))),
-            ucl_pct = suppressWarnings(as.numeric(str_remove(rng[2], "%"))))
+     tibble(estimate_pct = NA_character_,
+            lower_ci_pct = suppressWarnings(as.numeric(str_remove(rng[1], "%"))),
+            upper_ci_pct = suppressWarnings(as.numeric(str_remove(rng[2], "%"))))
 
      # explicit "<" value (e.g. "< 0.1%")
    } else if (str_detect(x_clean, "<")) {
-     tibble(est_pct = str_trim(x_clean),  # keep as character, e.g. "<0.1%"
-            lcl_pct = NA_real_,
-            ucl_pct = NA_real_)
+     tibble(estimate_pct = str_trim(x_clean),  # keep as character, e.g. "<0.1%"
+            lower_ci_pct = NA_real_,
+            upper_ci_pct = NA_real_)
 
      # normal percentage
    } else {
-     tibble(est_pct = str_trim(str_remove(x_clean, "%")),
-            lcl_pct = NA_real_,
-            ucl_pct = NA_real_)
+     tibble(estimate_pct = str_trim(str_remove(x_clean, "%")),
+            lower_ci_pct = NA_real_,
+            upper_ci_pct = NA_real_)
    }
  }
 
@@ -245,18 +248,19 @@ group_by(location_1, fish_group_2, year) |>
  })
 
 
- estimate_predation_sarp_clean <- estimate_predation_sarp_clean |>
+ estimate_predation_sarp <- estimate_predation_sarp_clean |>
    group_by(location_1, fish_group_2, year) |>
-   summarise(est_pct = suppressWarnings(max(est_pct, na.rm = TRUE)) %>% { ifelse(is.infinite(.), NA_real_, .) },
-             lcl_pct   = suppressWarnings(max(lcl_pct, na.rm = TRUE)) %>% { ifelse(is.infinite(.), NA_real_, .) },
-             ucl_pct   = suppressWarnings(max(ucl_pct, na.rm = TRUE)) %>% { ifelse(is.infinite(.), NA_real_, .) },
-             .groups = "drop")
+   summarise(estimate_pct = suppressWarnings(max(estimate_pct, na.rm = TRUE)) %>% { ifelse(is.infinite(.), NA_real_, .) },
+             lower_ci_pct   = suppressWarnings(max(lower_ci_pct, na.rm = TRUE)) %>% { ifelse(is.infinite(.), NA_real_, .) },
+             upper_ci_pct   = suppressWarnings(max(upper_ci_pct, na.rm = TRUE)) %>% { ifelse(is.infinite(.), NA_real_, .) },
+             .groups = "drop") |>
+   rename(location = location_1,
+          fish_group = fish_group_2)
 
- # save clean data -   Estimates of predation rates (95% credible intervals) on PIT-tagged Sucker Assisted Rearing
- # Program (SARP) juvenile suckers and juvenile Chinook Salmon (Chinook) by piscivorous colonial
- # waterbirds nesting at colonies in Upper Klamath Lake, Clear Lake Reservoir, and Sheepy Lake combined
- # (i.e., cumulative predation effects).
- #TODO
- # usethis::use_data(pick_a_name, overwrite = TRUE)
+# save clean data -   Estimates of predation rates (95% credible intervals) on PIT-tagged Sucker Assisted Rearing
+# Program (SARP) juvenile suckers and juvenile Chinook Salmon (Chinook) by piscivorous colonial
+# waterbirds nesting at colonies in Upper Klamath Lake, Clear Lake Reservoir, and Sheepy Lake combined
+# (i.e., cumulative predation effects).
 
-#TODO the last step should be doing a final review of data, combine, and save as data object
+usethis::use_data(estimate_predation_sarp, overwrite = TRUE)
+
