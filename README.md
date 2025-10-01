@@ -44,13 +44,17 @@ library(klamathFishData)
 
 The package contains cleaned, documented data objects including:
 
-- `rst_sites` — rotary screw traps
-- `hatcheries` — hatchery locations and metadata  
-- `habitat_data` — modeled habitat availability by stream and species  
-- `model_output` — prespawn mortality and abundance estimates from
-  modeling  
-- `klamath_cdfw_population_processed` — CDFW salmonid population
-  estimates  
+- `fisheries_location_lookup` - This dataset compiles location data
+  relevant to fisheries data collection efforts from across the Klamath
+  Basin. (rotary screw traps, hatchery, redd/carcass survey data)
+
+- `fisheries_model_estimates` - Modeled estimates and credible intervals
+  from fisheries models such as abundance and survival estimates.
+
+- `avian_predation_pit_tag`, `predation_estimates_wild` and
+  `estimate_predation_sarp` - Predation Estimates on SARP, Chinook and
+  wild Suckers, and Avian Predation PIT-tag Recoveries
+
 - And more…
 
 Use `data(package = "klamathFishData")` to view all datasets included.
