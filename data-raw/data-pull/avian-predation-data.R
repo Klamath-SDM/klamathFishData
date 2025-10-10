@@ -80,7 +80,7 @@ avian_predation_pit_tag <- tag_data_clean |>
   # mutate(recovered_rate = if_else(!is.na(available) & available > 0, recovered / available, NA_real_))
   glimpse()
 
-avian_predation_pit_tag_clean <- avian_predation_pit_tag |>
+predation_estimates_avian_pit_tag <- avian_predation_pit_tag |>
   mutate(
   species = case_when(
     str_detect(fish_group, "LRS") ~ "lost river sucker",
@@ -112,8 +112,7 @@ avian_predation_pit_tag_clean <- avian_predation_pit_tag |>
 
 
 # save clean data - how many tagged suckers were available and how many were recovered on bird colonies
-# usethis::use_data(avian_predation_pit_tag_clean, overwrite = TRUE)
-#TODO overwrite
+usethis::use_data(predation_estimates_avian_pit_tag, overwrite = TRUE)
 
 
 #### estimate predation rates - LRS, SNS, KLS, SNS-KLS and SARP (UKL and Clear Lake) ----
@@ -224,8 +223,8 @@ predation_estimates_wild <- predation_estimates_wild_clean |>
 # Shortnose suckers (SNS), Klamath Largescale suckers (KLS), Shortnose/Klamath Largescale suckers (SNS-KLS), and wild juvenile suckers by piscivorous colonial waterbirds nesting at colonies in Upper Klamath
 # Lake and Clear Lake Reservoir (i.e., cumulative predation effects)
 
-# usethis::use_data(predation_estimates_wild, overwrite = TRUE)
-#TODO overwrite
+usethis::use_data(predation_estimates_wild, overwrite = TRUE)
+
 
  #### Estimates of predation rates PIT-tagged Sucker Assisted Rearing Program (SARP) juvenile suckers ----
  estimate_predation_sarp_raw <- tables[[4]] |> glimpse()
@@ -328,6 +327,4 @@ predation_estimate_hatchery <- estimate_predation_sarp |>
 # waterbirds nesting at colonies in Upper Klamath Lake, Clear Lake Reservoir, and Sheepy Lake combined
 # (i.e., cumulative predation effects).
 
-# usethis::use_data(predation_estimate_hatchery, overwrite = TRUE)
-
-#TODO overwrite
+usethis::use_data(predation_estimate_hatchery, overwrite = TRUE)
