@@ -301,7 +301,7 @@ usethis::use_data(predation_estimates_wild, overwrite = TRUE)
    rename(location = location_1,
           fish_group = fish_group_2)
 
-predation_estimate_hatchery <- estimate_predation_sarp |>
+predation_estimates_hatchery <- estimate_predation_sarp |>
   mutate(
    species = case_when(
      str_detect(fish_group, "SARP") ~ "sucker",
@@ -325,4 +325,4 @@ predation_estimate_hatchery <- estimate_predation_sarp |>
 # waterbirds nesting at colonies in Upper Klamath Lake, Clear Lake Reservoir, and Sheepy Lake combined
 # (i.e., cumulative predation effects).
 
-usethis::use_data(predation_estimate_hatchery, overwrite = TRUE)
+usethis::use_data(predation_estimates_hatchery, overwrite = TRUE)
