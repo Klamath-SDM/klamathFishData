@@ -195,7 +195,7 @@ estimates_suckers_clean <- map2_dfr(year_map$row_index, year_map$year, function(
 })
 
 
-predation_estimates_wild <- estimates_suckers_clean |>
+predation_estimates_wild_clean <- estimates_suckers_clean |>
 group_by(location_1, fish_group_2, year) |>
   summarise(estimate_pct = suppressWarnings(max(estimate_pct, na.rm = TRUE)) %>% { ifelse(is.infinite(.), NA_real_, .) },
             lower_ci_pct   = suppressWarnings(max(lower_ci_pct, na.rm = TRUE)) %>% { ifelse(is.infinite(.), NA_real_, .) },
@@ -205,7 +205,7 @@ group_by(location_1, fish_group_2, year) |>
          fish_group = fish_group_2) |>
   glimpse()
 
-predation_estimates_wild_clean <- predation_estimates_wild |>
+predation_estimates_wild <- predation_estimates_wild_clean |>
   mutate(
   species = case_when(
     str_detect(fish_group, "LRS") ~ "lost river sucker",
@@ -214,16 +214,17 @@ predation_estimates_wild_clean <- predation_estimates_wild |>
     str_detect(fish_group, "KLS") ~ "klamath largescale sucker",
     str_detect(fish_group, "Juvenile") ~ "sucker",
     TRUE ~ NA_character_),
+  origin = "wild",
   life_stage = if_else(str_detect(fish_group, "Adult"), "adult", "juvenile")) |>
   select(-fish_group) |>
-  relocate(species, life_stage, .after = location) |> glimpse()
+  relocate(species, life_stage, origin, .after = location) |> glimpse()
 
 
 # save clean data -  Estimates of predation rates (95% credible intervals) on PIT-tagged Lost River suckers (LRS),
 # Shortnose suckers (SNS), Klamath Largescale suckers (KLS), Shortnose/Klamath Largescale suckers (SNS-KLS), and wild juvenile suckers by piscivorous colonial waterbirds nesting at colonies in Upper Klamath
 # Lake and Clear Lake Reservoir (i.e., cumulative predation effects)
 
-# usethis::use_data(predation_estimates_wild_clean, overwrite = TRUE)
+# usethis::use_data(predation_estimates_wild, overwrite = TRUE)
 #TODO overwrite
 
  #### Estimates of predation rates PIT-tagged Sucker Assisted Rearing Program (SARP) juvenile suckers ----
@@ -302,7 +303,7 @@ predation_estimates_wild_clean <- predation_estimates_wild |>
    rename(location = location_1,
           fish_group = fish_group_2)
 
-estimate_predation_sarp_clean <- estimate_predation_sarp |>
+predation_estimate_hatchery <- estimate_predation_sarp |>
   mutate(
    species = case_when(
      str_detect(fish_group, "SARP") ~ "sucker",
@@ -327,6 +328,6 @@ estimate_predation_sarp_clean <- estimate_predation_sarp |>
 # waterbirds nesting at colonies in Upper Klamath Lake, Clear Lake Reservoir, and Sheepy Lake combined
 # (i.e., cumulative predation effects).
 
-usethis::use_data(estimate_predation_sarp, overwrite = TRUE)
+# usethis::use_data(predation_estimate_hatchery, overwrite = TRUE)
 
 #TODO overwrite
