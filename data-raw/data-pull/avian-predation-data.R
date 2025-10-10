@@ -90,7 +90,7 @@ avian_predation_pit_tag_clean <- avian_predation_pit_tag |>
     str_detect(fish_group, "Chinook") ~ "chinook salmon",
     str_detect(fish_group, "Juvenile suckers") ~ "sucker juveniles",
     str_detect(fish_group, "Juvenile sucker") ~ "sucker juveniles",
-    str_detect(fish_group, "SARP–Spr/Sum") ~ "sucker juveniles",
+    str_detect(fish_group, "SARP–Spr/Sum") ~ "sucker",
     TRUE ~ NA_character_),
   life_stage = if_else(str_detect(fish_group, "Adult"), "adult", "juvenile"),
   origin = case_when(
@@ -112,7 +112,8 @@ avian_predation_pit_tag_clean <- avian_predation_pit_tag |>
 
 
 # save clean data - how many tagged suckers were available and how many were recovered on bird colonies
-usethis::use_data(avian_predation_pit_tag, overwrite = TRUE)
+# usethis::use_data(avian_predation_pit_tag_clean, overwrite = TRUE)
+#TODO overwrite
 
 
 #### estimate predation rates - LRS, SNS, KLS, SNS-KLS and SARP (UKL and Clear Lake) ----
@@ -204,13 +205,26 @@ group_by(location_1, fish_group_2, year) |>
          fish_group = fish_group_2) |>
   glimpse()
 
+predation_estimates_wild_clean <- predation_estimates_wild |>
+  mutate(
+  species = case_when(
+    str_detect(fish_group, "LRS") ~ "lost river sucker",
+    str_detect(fish_group, "SNS-KLS") ~ "shortnose and klamath largescale suckers",
+    str_detect(fish_group, "SNS") ~ "shortnose sucker",
+    str_detect(fish_group, "KLS") ~ "klamath largescale sucker",
+    str_detect(fish_group, "Juvenile") ~ "sucker",
+    TRUE ~ NA_character_),
+  life_stage = if_else(str_detect(fish_group, "Adult"), "adult", "juvenile")) |>
+  select(-fish_group) |>
+  relocate(species, life_stage, .after = location) |> glimpse()
+
 
 # save clean data -  Estimates of predation rates (95% credible intervals) on PIT-tagged Lost River suckers (LRS),
 # Shortnose suckers (SNS), Klamath Largescale suckers (KLS), Shortnose/Klamath Largescale suckers (SNS-KLS), and wild juvenile suckers by piscivorous colonial waterbirds nesting at colonies in Upper Klamath
 # Lake and Clear Lake Reservoir (i.e., cumulative predation effects)
 
-usethis::use_data(predation_estimates_wild, overwrite = TRUE)
-
+# usethis::use_data(predation_estimates_wild_clean, overwrite = TRUE)
+#TODO overwrite
 
  #### Estimates of predation rates PIT-tagged Sucker Assisted Rearing Program (SARP) juvenile suckers ----
  estimate_predation_sarp_raw <- tables[[4]] |> glimpse()
