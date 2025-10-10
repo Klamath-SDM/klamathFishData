@@ -54,8 +54,13 @@
 #'
 #' @format A tibble with columns:
 #' \describe{
-#'   \item{location}{Waterbody where releases occurred (Upper Klamath Lake, Clear Lake Reservoir, etc.)}
-#'   \item{fish_group}{Fish group (e.g., Adult LRS, Adult SNS, Juvenile suckers (SARP–Spr/Sum), Chinook, etc.)}
+#'   \item{location}{Waterbody where releases occurred (upper klamath lake, clear lake reservoir, etc.)}
+#'   \item{species}{Fish species (e.g., lost river sucker, shortnose and klamath largescale suckers, sucker juveniles, chinook salmon,
+#'   sucker, klamath largescale sucker, shortnose sucker)}
+#'   \item{life_stage}{Fish life stage (e.g. adult, juvenile)}
+#'   \item{origin}{Origin of realeased fish (e.g. wild, hatchery)}
+#'   \item{release_season}{Season when fish were realeased (e.g. spring_summer, fall_winter)}
+#'   \item{sarp_program}{Wheather fish are part of the Sucker Assisted Rearing Program (SARP) (e.g. TRUE, FALSE)}
 #'   \item{year}{Year of release / monitoring (2021–2023)}
 #'   \item{available}{Number of PIT-tagged fish available to predators}
 #'   \item{recovered}{Number of PIT-tags recovered on piscivorous waterbird colonies during the 2021–2023 breeding seasons}
@@ -63,7 +68,7 @@
 #'
 #' @source Bird Research Northwest (2023)
 #' [Avian Predation on UKB Suckers 2021–2023 Summary Report](https://www.birdresearchnw.org/Avian%20Predation%20on%20UKB%20Suckers_Summary%20Report%202021-2023.pdf)
-"avian_predation_pit_tag"
+"predation_estimates_avian_pit_tag"
 
 
 #' Predation Estimates on Wild Suckers
@@ -79,7 +84,10 @@
 #' @format A tibble with columns:
 #' \describe{
 #'   \item{location}{Waterbody (Upper Klamath Lake, Clear Lake Reservoir)}
-#'   \item{fish_group}{Fish group (Adult LRS, Adult SNS, Adult KLS, SNS–KLS, Wild Juveniles)}
+#'   \item{species}{Fish species (e.g., lost river sucker, shortnose and klamath largescale suckers, sucker juveniles,
+#'   sucker, klamath largescale sucker, shortnose sucker)}
+#'   \item{life_stage}{Fish life stage (e.g. adult, juvenile)}
+#'   \item{origin}{Origin of realeased fish (e.g. wild)}
 #'   \item{year}{Year (2021–2023)}
 #'   \item{estimate_pct}{Estimated predation rate (% of available fish consumed)}
 #'   \item{lower_ci_pct}{Lower 95% credible interval}
@@ -105,7 +113,11 @@
 #' @format A tibble with columns:
 #' \describe{
 #'   \item{location}{Waterbody (Upper Klamath Lake, Clear Lake Reservoir, Sheepy Lake)}
-#'   \item{fish_group}{Fish group (SARP–Spr/Sum, SARP–Fall/Win, Chinook–Spr/Sum, Chinook–Fall/Win)}
+#'   \item{species}{Fish species (e.g. sucker, chinook salmon)}
+#'   \item{life_stage}{Fish life stage (e.g. juvenile)}
+#'   \item{origin}{Origin of realeased fish (e.g. hatchery)}
+#'   \item{release_season}{Season when fish were realeased (e.g. spring_summer, fall_winter)}
+#'   \item{sarp_program}{Wheather fish are part of the Sucker Assisted Rearing Program (SARP) (e.g. TRUE, FALSE)}
 #'   \item{year}{Year (2021–2023)}
 #'   \item{estimate_pct}{Estimated predation rate (% of available fish consumed)}
 #'   \item{lower_ci_pct}{Lower 95% credible interval}
@@ -114,6 +126,6 @@
 #'
 #' @source Bird Research Northwest (2023)
 #' [Avian Predation on UKB Suckers 2021–2023 Summary Report](https://www.birdresearchnw.org/Avian%20Predation%20on%20UKB%20Suckers_Summary%20Report%202021-2023.pdf)
-"estimate_predation_sarp"
+"predation_estimates_hatchery"
 
 
