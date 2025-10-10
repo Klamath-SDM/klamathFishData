@@ -80,6 +80,37 @@ avian_predation_pit_tag <- tag_data_clean |>
   # mutate(recovered_rate = if_else(!is.na(available) & available > 0, recovered / available, NA_real_))
   glimpse()
 
+avian_predation_pit_tag_clean <- avian_predation_pit_tag |>
+  mutate(
+  species = case_when(
+    str_detect(fish_group, "LRS") ~ "lost river sucker",
+    str_detect(fish_group, "SNS-KLS") ~ "shortnose and klamath largescale suckers",
+    str_detect(fish_group, "SNS") ~ "shortnose sucker",
+    str_detect(fish_group, "KLS") ~ "klamath largescale sucker",
+    str_detect(fish_group, "Chinook") ~ "chinook salmon",
+    str_detect(fish_group, "Juvenile suckers") ~ "sucker juveniles",
+    str_detect(fish_group, "Juvenile sucker") ~ "sucker juveniles",
+    str_detect(fish_group, "SARP–Spr/Sum") ~ "sucker juveniles",
+    TRUE ~ NA_character_),
+  life_stage = if_else(str_detect(fish_group, "Adult"), "adult", "juvenile"),
+  origin = case_when(
+    str_detect(fish_group, "Wild") ~ "wild",
+    str_detect(fish_group, "SARP") | str_detect(fish_group, "Chinook") ~ "hatchery",
+    TRUE ~ "wild"),
+  release_season = case_when(
+    str_detect(fish_group, "Spr/Sum") ~ "spring_summer",
+    str_detect(fish_group, "Fall/Win") ~ "fall_winter",
+    TRUE ~ NA_character_
+  ),
+  hatchery_program = case_when(
+    str_detect(fish_group, "SARP") ~ "SARP",
+    str_detect(fish_group, "Chinook") ~ "chinook hatchery",
+    TRUE ~ NA_character_)) |>
+  select(-fish_group) |>
+  relocate(species, life_stage, origin, release_season, hatchery_program, .after = location) |> glimpse()
+  # life_stage = if_else(str_detect(fish_group_2, "Adult"), "Adult", "Juvenile"),
+
+
 # save clean data - how many tagged suckers were available and how many were recovered on bird colonies
 usethis::use_data(avian_predation_pit_tag, overwrite = TRUE)
 
