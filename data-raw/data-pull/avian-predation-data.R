@@ -102,12 +102,11 @@ predation_estimates_avian_pit_tag <- avian_predation_pit_tag |>
     str_detect(fish_group, "Fall/Win") ~ "fall_winter",
     TRUE ~ NA_character_
   ),
-  hatchery_program = case_when(
-    str_detect(fish_group, "SARP") ~ "SARP",
-    str_detect(fish_group, "Chinook") ~ "chinook hatchery",
-    TRUE ~ NA_character_)) |>
+  sarp_program = case_when(
+    str_detect(fish_group, "SARP") ~ TRUE,
+    TRUE ~ FALSE)) |>
   select(-fish_group) |>
-  relocate(species, life_stage, origin, release_season, hatchery_program, .after = location) |> glimpse()
+  relocate(species, life_stage, origin, release_season, sarp_program, .after = location) |> glimpse()
   # life_stage = if_else(str_detect(fish_group_2, "Adult"), "Adult", "Juvenile"),
 
 
@@ -315,12 +314,11 @@ predation_estimate_hatchery <- estimate_predation_sarp |>
      str_detect(fish_group, "Fall/Win") ~ "fall_winter",
      TRUE ~ NA_character_
    ),
-   hatchery_program = case_when(
-     str_detect(fish_group, "SARP") ~ "SARP",
-     str_detect(fish_group, "Chinook") ~ "chinook hatchery",
-     TRUE ~ NA_character_)) |>
+   sarp_program = case_when(
+     str_detect(fish_group, "SARP") ~ TRUE,
+     TRUE ~ FALSE)) |>
    select(-fish_group) |>
-   relocate(species, life_stage, origin, release_season, hatchery_program, .after = location) |> glimpse()
+   relocate(species, life_stage, origin, release_season, sarp_program, .after = location) |> glimpse()
 
 # save clean data -   Estimates of predation rates (95% credible intervals) on PIT-tagged Sucker Assisted Rearing
 # Program (SARP) juvenile suckers and juvenile Chinook Salmon (Chinook) by piscivorous colonial
