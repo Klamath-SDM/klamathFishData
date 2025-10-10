@@ -302,6 +302,26 @@ predation_estimates_wild_clean <- predation_estimates_wild |>
    rename(location = location_1,
           fish_group = fish_group_2)
 
+estimate_predation_sarp_clean <- estimate_predation_sarp |>
+  mutate(
+   species = case_when(
+     str_detect(fish_group, "SARP") ~ "sucker",
+     str_detect(fish_group, "Chinook") ~ "chinook salmon",
+     TRUE ~ NA_character_),
+   life_stage = "juvenile",
+   origin = "hatchery",
+   release_season = case_when(
+     str_detect(fish_group, "Spring/Summer") ~ "spring_summer",
+     str_detect(fish_group, "Fall/Win") ~ "fall_winter",
+     TRUE ~ NA_character_
+   ),
+   hatchery_program = case_when(
+     str_detect(fish_group, "SARP") ~ "SARP",
+     str_detect(fish_group, "Chinook") ~ "chinook hatchery",
+     TRUE ~ NA_character_)) |>
+   select(-fish_group) |>
+   relocate(species, life_stage, origin, release_season, hatchery_program, .after = location) |> glimpse()
+
 # save clean data -   Estimates of predation rates (95% credible intervals) on PIT-tagged Sucker Assisted Rearing
 # Program (SARP) juvenile suckers and juvenile Chinook Salmon (Chinook) by piscivorous colonial
 # waterbirds nesting at colonies in Upper Klamath Lake, Clear Lake Reservoir, and Sheepy Lake combined
@@ -309,3 +329,4 @@ predation_estimates_wild_clean <- predation_estimates_wild |>
 
 usethis::use_data(estimate_predation_sarp, overwrite = TRUE)
 
+#TODO overwrite
