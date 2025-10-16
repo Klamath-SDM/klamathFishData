@@ -88,8 +88,8 @@ predation_estimates_avian_pit_tag <- avian_predation_pit_tag |>
     str_detect(fish_group, "SNS") ~ "shortnose sucker",
     str_detect(fish_group, "KLS") ~ "klamath largescale sucker",
     str_detect(fish_group, "Chinook") ~ "chinook salmon",
-    str_detect(fish_group, "Juvenile suckers") ~ "sucker juveniles",
-    str_detect(fish_group, "Juvenile sucker") ~ "sucker juveniles",
+    str_detect(fish_group, "Juvenile suckers") ~ "sucker",
+    str_detect(fish_group, "Juvenile sucker") ~ "sucker",
     str_detect(fish_group, "SARP–Spr/Sum") ~ "sucker",
     TRUE ~ NA_character_),
   life_stage = if_else(str_detect(fish_group, "Adult"), "adult", "juvenile"),
@@ -326,3 +326,4 @@ predation_estimates_hatchery <- estimate_predation_sarp |>
 # (i.e., cumulative predation effects).
 
 usethis::use_data(predation_estimates_hatchery, overwrite = TRUE)
+
