@@ -53,7 +53,7 @@ The package contains cleaned, documented data objects including:
 
 - `fisheries_location_lookup` - This dataset compiles location data relevant to fisheries data collection efforts from across the Klamath Basin. (rotary screw traps, hatchery, redd/carcass survey data)
 - `fisheries_model_estimates` - Modeled estimates and credible intervals from fisheries models such as abundance and survival estimates.
-- `avian_predation_pit_tag`, `predation_estimates_wild` and `estimate_predation_sarp` - Predation Estimates on SARP, Chinook and wild Suckers, and Avian Predation PIT-tag Recoveries
+- `predation_estimates_avian_pit_tag`, `predation_estimates_wild` and `predation_estimates_hatchery` - Predation Estimates on SARP, Chinook and wild Suckers, and Avian Predation PIT-tag Recoveries
  
 - And more...
  
