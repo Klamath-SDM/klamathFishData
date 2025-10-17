@@ -43,32 +43,35 @@ spawner_13_2 <- tables_stream[[37]] #
 spawner_13_3 <- tables_stream[[38]] # check this one since it is only one line of data
 
 #TODO automate this for spawner 14 and 15
-spawner_13_2 <- spawner_13_2 |>
+spawner_13_2_clean <- spawner_13_2 |>
   select(1:4, 6:8, 10:12) |>
-  mutate(x1 = as.character(`Klamath River Basin`),
-         x2 = as.character(...2),
-         x3 = as.character(...3),
-         x4 = as.character(...4),
-         x5 = as.character(...6),
-         x6 = as.character(...7),
-         x7 = as.character(...8),
-         x8 = as.character(...10),
-         x9 = as.character(...11),
-         x10 = as.character(...12)) |>
-  select(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10)
+  mutate(location = as.character(`Klamath River Basin`),
+         grilse_2016 = as.character(...2),
+         adults_2016 = as.character(...3),
+         totals_2016 = as.character(...4),
+         grilse_2017 = as.character(...6),
+         adults_2017 = as.character(...7),
+         totals_2017 = as.character(...8),
+         grilse_2018 = as.character(...10),
+         adults_2018 = as.character(...11),
+         totals_2018 = as.character(...12)) |>
+  select(location, grilse_2016, adults_2016, totals_2016, grilse_2017, adults_2017, totals_2017, grilse_2018, adults_2018, totals_2018)
 
-spawner_13_1 <- spawner_13_1 |>
-  rename(x1 = ...1,
-         x2 = ...2,
-         x3 = `2016`,
-         x4 = ...4,
-         x5 = ...5,
-         x6 = `2017`,
-         x7 = ...7,
-         x8 = ...8,
-         x9 = `2018`,
-         x10 = ...10)|>
+spawner_13_1_clean <- spawner_13_1 |>
+  rename(location = ...1,
+         grilse_2016 = ...2,
+         adults_2016 = `2016`,
+         totals_2016 = ...4,
+         grilse_2017 = ...5,
+         adults_2017 = `2017`,
+         totals_2017 = ...7,
+         grilse_2018 = ...8,
+         adults_2018 = `2018`,
+         totals_2018 = ...10)|>
+  select(location, grilse_2016, adults_2016, totals_2016, grilse_2017, adults_2017,
+         totals_2017, grilse_2018, adults_2018, totals_2018) |>
   glimpse()
+
 
 spawner_13_3 <- as.data.frame(spawner_13_3)
 
@@ -80,9 +83,36 @@ numbers <- str_extract_all(spawner_13_3, "\\d{1,3}(?:,\\d{3})*")[[1]] |>
 spawner_13_3_clean <- tibble( x1 = "Total Spawner Escapement",
                         value = as.character(numbers)) |>
   mutate(field = paste0("x", row_number() + 1)) |>
-  pivot_wider(names_from = field, values_from = value)
+  pivot_wider(names_from = field, values_from = value) |>
+  rename(location = x1,
+         grilse_2016 = x2,
+         adults_2016 = x3,
+         totals_2016 = x4,
+         grilse_2017 = x5,
+         adults_2017 = x6,
+         totals_2017 = x7,
+         grilse_2018 = x8,
+         adults_2018 = x9,
+         totals_2018 = x10)|>
+  select(location, grilse_2016, adults_2016, totals_2016, grilse_2017, adults_2017,
+                    totals_2017, grilse_2018, adults_2018, totals_2018) |>
+  glimpse()
 
-spawner_13 <- bind_rows(spawner_13_2, spawner_13_3_clean)
+spawner_13 <- bind_rows(spawner_13_1_clean, spawner_13_2_clean, spawner_13_3_clean)
+
+spawner_13_clean <- spawner_13 |>
+mutate(subsection = case_when(
+  str_detect(location, "Hatchery Spawners") ~ "Hatchery Spawners",
+  str_detect(location, "Salmon River") ~ "Natural Spawners",
+  TRUE ~ NA_character_
+)) |>
+  fill(subsection, .direction = "down") |>
+  filter(!location == "Hatchery Spawners",
+         !is.na(location)) |>
+  mutate(section = "Spawning Escapement")
+#TODO - at this point the 2016 - 2018 spawner table is clean and I should try to match similar
+# structure for 2019 - 2021 and 2022 - 2024 so I can create one function for all.
+# this will then be combined with "combined_spawner_1"
 
 
 harvest_13 <- tables_stream[[39]] # harvest 2016 - 2018
