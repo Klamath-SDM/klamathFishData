@@ -38,25 +38,21 @@ spawner_10 <- tables_stream[[29]] # 2007 - 2009
 spawner_11 <- tables_stream[[32]] # 2010 - 2012
 spawner_12 <- tables_stream[[35]] # 2013 - 2015
 
+# tables 13 - 15 are read a bit differently, so they will have a different cleaning approach
 spawner_13_1 <- tables_stream[[36]] # the following 3 tables have data for spawner 2016 - 2018
 spawner_13_2 <- tables_stream[[37]] #
 spawner_13_3 <- tables_stream[[38]] # check this one since it is only one line of data
 
-#TODO automate this for spawner 14 and 15
-spawner_13_2_clean <- spawner_13_2 |>
-  select(1:4, 6:8, 10:12) |>
-  mutate(location = as.character(`Klamath River Basin`),
-         grilse_2016 = as.character(...2),
-         adults_2016 = as.character(...3),
-         totals_2016 = as.character(...4),
-         grilse_2017 = as.character(...6),
-         adults_2017 = as.character(...7),
-         totals_2017 = as.character(...8),
-         grilse_2018 = as.character(...10),
-         adults_2018 = as.character(...11),
-         totals_2018 = as.character(...12)) |>
-  select(location, grilse_2016, adults_2016, totals_2016, grilse_2017, adults_2017, totals_2017, grilse_2018, adults_2018, totals_2018)
+# these 3 are together
+spawner_14_1 <- tables_stream[[42]] # 2019 -2021 Note that it skips "Natural Spawner and Klamath Basin"
+spawner_14_2 <- tables_stream[[43]] # 2019 -2021
+spawner_14_3 <- tables_stream[[44]] # 2019 -2021 - total spawner escapent check this one since it is only one line of data
 
+spawner_15_1 <- tables_stream[[48]] # 2022 - 2024 spawner
+spawner_15_2 <- tables_stream[[49]] # 2022 - 2024 Note that it skips "Natural Spawner and Klamath Basin"
+spawner_15_3 <- tables_stream[[50]] # 2022 - 2024 - total spawner escapent check this one since it is only one line of data
+
+#TODO automate this for spawner 14 and 15
 spawner_13_1_clean <- spawner_13_1 |>
   rename(location = ...1,
          grilse_2016 = ...2,
@@ -71,6 +67,20 @@ spawner_13_1_clean <- spawner_13_1 |>
   select(location, grilse_2016, adults_2016, totals_2016, grilse_2017, adults_2017,
          totals_2017, grilse_2018, adults_2018, totals_2018) |>
   glimpse()
+
+spawner_13_2_clean <- spawner_13_2 |>
+  select(1:4, 6:8, 10:12) |>
+  mutate(location = as.character(`Klamath River Basin`),
+         grilse_2016 = as.character(...2),
+         adults_2016 = as.character(...3),
+         totals_2016 = as.character(...4),
+         grilse_2017 = as.character(...6),
+         adults_2017 = as.character(...7),
+         totals_2017 = as.character(...8),
+         grilse_2018 = as.character(...10),
+         adults_2018 = as.character(...11),
+         totals_2018 = as.character(...12)) |>
+  select(location, grilse_2016, adults_2016, totals_2016, grilse_2017, adults_2017, totals_2017, grilse_2018, adults_2018, totals_2018)
 
 
 spawner_13_3 <- as.data.frame(spawner_13_3)
@@ -114,29 +124,80 @@ mutate(subsection = case_when(
 # structure for 2019 - 2021 and 2022 - 2024 so I can create one function for all.
 # this will then be combined with "combined_spawner_1"
 
+#automating tables 13-15
+clean_spawner_group <- function(tbl1, tbl2, tbl3, start_year) {
+  years <- start_year:(start_year + 2)
 
-harvest_13 <- tables_stream[[39]] # harvest 2016 - 2018
-harvest_13_1 <- tables_stream[[40]] # total river harvest 2016 - 2018
-run_size_13 <- tables_stream[[41]] # total run-size 2016 - 2018
+  # clean table ---
+  tbl1_clean <- tbl1 |>
+    rename(location = ...1,
+           !!paste0("grilse_", years[1]) := ...2,
+           !!paste0("adults_", years[1]) := all_of(as.character(years[1])),
+           !!paste0("totals_", years[1]) := ...4,
+           !!paste0("grilse_", years[2]) := ...5,
+           !!paste0("adults_", years[2]) := all_of(as.character(years[2])),
+           !!paste0("totals_", years[2]) := ...7,
+           !!paste0("grilse_", years[3]) := ...8,
+           !!paste0("adults_", years[3]) := all_of(as.character(years[3])),
+           !!paste0("totals_", years[3]) := ...10) |>
+    select(location, tidyselect::matches("^grilse_|^adults_|^totals_"))
 
-# these 3 are together
-spawner_14_1 <- tables_stream[[42]] # 2019 -2021 Note that it skips "Natural Spawner and Klamath Basin"
-spawner_14_2 <- tables_stream[[43]] # 2019 -2021
-spawner_14_3 <- tables_stream[[44]] # 2019 -2021 - total spawner escapent check this one since it is only one line of data
+  # clean second table ---
+  tbl2_clean <- tbl2 |>
+    select(1:4, 6:8, 10:12) |>
+    mutate(location = as.character(`Klamath River Basin`),
+           !!paste0("grilse_", years[1]) := as.character(...2),
+           !!paste0("adults_", years[1]) := as.character(...3),
+           !!paste0("totals_", years[1]) := as.character(...4),
+           !!paste0("grilse_", years[2]) := as.character(...6),
+           !!paste0("adults_", years[2]) := as.character(...7),
+           !!paste0("totals_", years[2]) := as.character(...8),
+           !!paste0("grilse_", years[3]) := as.character(...10),
+           !!paste0("adults_", years[3]) := as.character(...11),
+           !!paste0("totals_", years[3]) := as.character(...12)) |>
+    select(location, tidyselect::matches("^grilse_|^adults_|^totals_"))
+
+  # clean total line table ---
+  tbl3 <- as.data.frame(tbl3)
+  numbers <- str_extract_all(tbl3, "\\d{1,3}(?:,\\d{3})*")[[1]] |> parse_number()
+
+  tbl3_clean <- tibble(x1 = "Total Spawner Escapement",
+                       value = as.character(numbers)) |>
+    mutate(field = paste0("x", row_number() + 1)) |>
+    pivot_wider(names_from = field, values_from = value)
+
+  names(tbl3_clean) <- c("location", paste0(rep(c("grilse_", "adults_", "totals_"), each = 3),
+                                            rep(years, times = 3))[1:10])
+
+  # combine---
+  combined <- bind_rows(tbl1_clean, tbl2_clean, tbl3_clean)
+
+  # label subsections and section ---
+  combined <- combined |>
+    mutate(subsection = case_when(
+      str_detect(location, "Hatchery Spawners") ~ "Hatchery Spawners",
+      str_detect(location, "Salmon River") ~ "Natural Spawners",
+      TRUE ~ NA_character_)) |>
+    fill(subsection, .direction = "down") |>
+    filter(!location %in% c("Hatchery Spawners"), !is.na(location)) |>
+    mutate(section = "Spawning Escapement")
+
+  return(combined)
+}
+
+# For 2016–2018 (spawner_13)
+spawner_13 <- clean_spawner_group(spawner_13_1, spawner_13_2, spawner_13_3, start_year = 2016)
+
+# For 2019–2021 (spawner_14)
+spawner_14 <- clean_spawner_group(spawner_14_1, spawner_14_2, spawner_14_3, start_year = 2019)
+
+# For 2022–2024 (spawner_15)
+spawner_15 <- clean_spawner_group(spawner_15_1, spawner_15_2, spawner_15_3, start_year = 2022)
 
 
-harvest_14 <- tables_stream[[45]] # harvest 2019 - 2021
-harvest_14_1 <- tables_stream[[46]] # total river harvest 2019 - 2021
-run_size_14 <- tables_stream[[47]] # total run-size 2019 - 2021
-
-spawner_15 <- tables_stream[[48]] # 2022 - 2024 spawner
-spawner_15_1 <- tables_stream[[49]] # 2022 - 2024 Note that it skips "Natural Spawner and Klamath Basin"
-spawner_15_2 <- tables_stream[[50]] # 2022 - 2024 - total spawner escapent check this one since it is only one line of data
+# end of function test---
 
 
-harvest_15 <- tables_stream[[51]] # harvest 2022 - 2024
-harvest_15_2 <- tables_stream[[52]] # Total river harvest 2022 - 2024
-run_size_15 <- tables_stream[[53]] # total run-size 2022 - 2024
 
 
 # 1, 3 - 12
@@ -237,6 +298,19 @@ combined_spawner_1 <- bind_rows(spawner_cleaned) # 1, 3 - 12
 #TODO need to clean 2016-18, 2019-21, 2022-2024
 
 
+# In-river harvest and run-size estimates
+# need to read rest of tables and clean
+harvest_13 <- tables_stream[[39]] # harvest 2016 - 2018
+harvest_13_1 <- tables_stream[[40]] # total river harvest 2016 - 2018
+run_size_13 <- tables_stream[[41]] # total run-size 2016 - 2018
+
+harvest_14 <- tables_stream[[45]] # harvest 2019 - 2021
+harvest_14_1 <- tables_stream[[46]] # total river harvest 2019 - 2021
+run_size_14 <- tables_stream[[47]] # total run-size 2019 - 2021
+
+harvest_15 <- tables_stream[[51]] # harvest 2022 - 2024
+harvest_15_2 <- tables_stream[[52]] # Total river harvest 2022 - 2024
+run_size_15 <- tables_stream[[53]] # total run-size 2022 - 2024
 
 ### Alternative approach 1 ----
 
