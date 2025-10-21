@@ -242,9 +242,9 @@ run_size_9 <- tables_stream[[25]] # 2004 - 2006
 run_size_10 <- tables_stream[[28]] # 2007- 2009
 run_size_11 <- tables_stream[[31]] # 2010 - 2012
 run_size_12 <- tables_stream[[34]] # 2013- 2015
-run_size_13 <- tables_stream[[41]] # 2016 - 2018 These last 3 tables are slightly different
-run_size_14 <- tables_stream[[47]] # 2019 - 2021
-run_size_15 <- tables_stream[[53]] # 2022 - 2024
+run_size_13 <- tables_stream[[41]] |> slice(-1) # 2016 - 2018 These last 3 tables are slightly different
+run_size_14 <- tables_stream[[47]] |> slice(-1) # 2019 - 2021
+run_size_15 <- tables_stream[[53]] |> slice(-1) # 2022 - 2024
 
 
 clean_run_size_table <- function(run_size_tbl, start_year) {
@@ -272,7 +272,7 @@ clean_run_size_table <- function(run_size_tbl, start_year) {
 run_size_list <- list(
   run_size_1, run_size_2, run_size_3, run_size_4, run_size_5,
   run_size_6, run_size_7, run_size_8, run_size_9, run_size_10,
-  run_size_11, run_size_12) #not adding 13-15 because they look different
+  run_size_11, run_size_12, run_size_13, run_size_14, run_size_15) #not adding 13-15 because they look different
 
 run_years <- seq(1980, by = 3, length.out = length(run_size_list))
 run_size_cleaned <- purrr::map2(run_size_list, run_years, clean_run_size_table)
