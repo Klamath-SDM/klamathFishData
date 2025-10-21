@@ -229,10 +229,25 @@ spawner_escapement <- bind_rows(spawner_13, spawner_14, spawner_15, combined_spa
 
 
 # In-river harvest and run-size estimates ----
-#for some reason it is not reading the table the same way - River Harvest is too empty, that might be why
-
+# reaching tables
 run_size_1 <- tables_stream[[2]] # 1980 - 1982
 run_size_2 <- tables_stream[[4]] # 1983 - 1985
+run_size_3 <- tables_stream[[7]] # 1986 - 1988
+run_size_4 <- tables_stream[[10]] # 1989 - 1991
+run_size_5 <- tables_stream[[13]] # 1992 - 1994
+run_size_6 <- tables_stream[[16]] # 1995 - 1997
+run_size_7 <- tables_stream[[19]] # 1998 - 2000
+run_size_8 <- tables_stream[[22]] # 2001 - 2003
+run_size_9 <- tables_stream[[25]] # 2004 - 2006
+run_size_10 <- tables_stream[[28]] # 2007- 2009
+run_size_11 <- tables_stream[[31]] # 2010 - 2012
+run_size_12 <- tables_stream[[34]] # 2013- 2015
+run_size_13 <- tables_stream[[41]] # 2016 - 2018 These last 3 tables are slightly different
+run_size_14 <- tables_stream[[47]] # 2019 - 2021
+run_size_15 <- tables_stream[[53]] # 2022 - 2024
+
+
+
 # need to read rest of tables and clean
 harvest_13 <- tables_stream[[39]] # harvest 2016 - 2018
 harvest_13_1 <- tables_stream[[40]] # total river harvest 2016 - 2018
