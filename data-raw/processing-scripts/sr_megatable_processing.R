@@ -228,7 +228,7 @@ spawner_escapement <- bind_rows(spawner_13, spawner_14, spawner_15, combined_spa
 
 
 
-# In-river harvest and run-size estimates ----
+# Run-size estimates ----
 # reaching tables
 run_size_1 <- tables_stream[[2]] # 1980 - 1982
 run_size_2 <- tables_stream[[4]] # 1983 - 1985
@@ -247,15 +247,60 @@ run_size_14 <- tables_stream[[47]] # 2019 - 2021
 run_size_15 <- tables_stream[[53]] # 2022 - 2024
 
 
+clean_run_size_table <- function(run_size_tbl, start_year) {
+  years <- start_year:(start_year + 2)
+  # standardize col names
+  names(run_size_tbl) <- janitor::make_clean_names(names(run_size_tbl))
+  rename_map <- setNames(
+    c("x1", names(run_size_tbl)[2:10]),
+    c("location", paste0(rep(c("grilse_", "adults_", "totals_"), times = 3), rep(years, each = 3))[1:9])
+    )
 
-# need to read rest of tables and clean
+  # rename and select cols to keep
+  run_size_tbl_clean <- run_size_tbl |>
+    rename(!!!rename_map) |>
+    select(any_of(names(rename_map))) |>
+    mutate(
+      subsection = "Total Run Size Estimates",
+      section = "Run Size Estimate"
+    )
+
+  return(run_size_tbl_clean)
+}
+
+# Put all run_size tables into one list - except three of them
+run_size_list <- list(
+  run_size_1, run_size_2, run_size_3, run_size_4, run_size_5,
+  run_size_6, run_size_7, run_size_8, run_size_9, run_size_10,
+  run_size_11, run_size_12) #not adding 13-15 because they look different
+
+run_years <- seq(1980, by = 3, length.out = length(run_size_list))
+run_size_cleaned <- purrr::map2(run_size_list, run_years, clean_run_size_table)
+combined_run_size <- dplyr::bind_rows(run_size_cleaned)
+
+run_size <- combined_run_size |>
+  select(where(~ !all(is.na(.)))) |>  # unify column types
+  mutate(across(matches("^(grilse|adults|totals)_"), as.character)) |>
+  pivot_longer(cols = matches("^(grilse|adults|totals)_"), # pivot to long
+                      names_to = c("category", "year"),
+                      names_sep = "_",
+                      values_to = "value") |>
+  mutate(year = as.integer(year),
+         category = str_to_title(category),
+         value = value |>
+           str_remove("\\s*[a-zA-Z/]+$") |>  # remove things like n/, p/, hh/
+           readr::parse_number()) |>
+  filter(!is.na(value)) |>  # remove rows with no data
+  select(location, subsection, section, category, year, value)
+
+
+# In-river harvest ----
+# TODO need to read figure out why river harvest table is not showing except for the years below
 harvest_13 <- tables_stream[[39]] # harvest 2016 - 2018
 harvest_13_1 <- tables_stream[[40]] # total river harvest 2016 - 2018
-run_size_13 <- tables_stream[[41]] # total run-size 2016 - 2018
-
 harvest_14 <- tables_stream[[45]] # harvest 2019 - 2021
 harvest_14_1 <- tables_stream[[46]] # total river harvest 2019 - 2021
-run_size_14 <- tables_stream[[47]] # total run-size 2019 - 2021
+
 
 harvest_15 <- tables_stream[[51]] # harvest 2022 - 2024
 harvest_15_2 <- tables_stream[[52]] # Total river harvest 2022 - 2024
