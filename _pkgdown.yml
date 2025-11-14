@@ -1,0 +1,31 @@
+title: klamathFishData
+url: https://Klamath-SDM.github.io/klamathFishData/
+template:
+  bootswatch: flatly
+
+
+home:
+  links:
+    - text: Klamath Basin Science Collaborative Website
+      href: https://klamath-basin-sdm.gitbook.io/doc
+
+reference:
+
+navbar:
+  structure:
+    left:  [home, reference, articles]
+    right: [github]
+  type: default
+  left:
+  - text: 'Reference'
+    href: reference/index.html
+  - text: 'Articles'
+    menu:
+
+  - text: 'News'
+    href: news/index.html
+
+repo:
+ url:
+  home: https://github.com/Klamath-SDM/klamathFishData
+  issue: https://github.com/Klamath-SDM/klamathFishData/issues/
