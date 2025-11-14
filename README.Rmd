@@ -35,28 +35,27 @@ The data in this package comes from a variety of public sources, including:
   - California Department of Fish and Wildlife (CDFW)
   - US Geological Survey (USGS)
   - Literature-based habitat models
-  - more...
-  
 
 ## Example
 
-This is a basic example which shows you how to solve a common problem:
+If you are interested in spawner abundance of fall run Chinook salmon:
 
 ```{r example}
 library(klamathFishData)
-## basic example code
+library(tidyverse)
+
+fisheries_model_estimates |> 
+  filter(estimate_type == "abundance", species == "fall chinook", lifestage == "spawner")
 ```
 
 ## What's Included
 
 The package contains cleaned, documented data objects including:
 
-- `rst_sites` —   rotary screw traps
-- `hatcheries` — hatchery locations and metadata  
-- `habitat_data` — modeled habitat availability by stream and species  
-- `model_output` — prespawn mortality and abundance estimates from modeling  
-- `klamath_cdfw_population_processed` — CDFW salmonid population estimates  
-- And more...
+- `fisheries_model_estimates` — abundance and survival estimates from fisheries models (USE ME)
+- `data_location_lookup` - latitude and longitude for fisheries data
+- `megatable` - Digital version of [CDFW's Megatable](https://wildlife.ca.gov/Conservation/Fishes/Chinook-Salmon/Anadromous-Assessment)
+- And more in development...
  
 Use `data(package = "klamathFishData")` to view all datasets included.
 

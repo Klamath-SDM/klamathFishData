@@ -66,48 +66,22 @@ redd_carcass_surveys <- read_csv(here::here('data-raw', 'redd_carcass_survey_dat
   # find_nearest_river_miles() |>
   glimpse()
 
-fisheries_location_lookup <- bind_rows(rst_sites, hatcheries, redd_carcass_surveys)
+# Habitat data ------------------------------------------------------------
+habitat_raw <- read_csv(here::here('data-raw','tables_with_data', 'habitat_data.csv'))
 
-# escapement modeled data ----
-klamath_project_board <- pins::board_s3(bucket = "klamath-sdm", region = "us-east-1")
-
-klamath_mainstem_fall_chinook_escapement <-  klamath_project_board |>
-  pin_read("klamath_mainstem_fall_chinook_escapement") |> glimpse()
-
-#TODO - filter so that it matches megatable
-
-# modeled population data ----
-cdfw_population_raw <- read_xlsx(here::here("data-raw", "tables_with_data", "modeled", "Salmonid_Population_Monitoring_Data_CMPv2023.xlsx"), sheet = "Population Data")
-
-klamath_cdfw_population_raw <- cdfw_population_raw |>
-  filter(Watershed %in% c("Trinity River", "Scott River", "Shasta River", "Lower Klamath","Klamath River"))
-
-fisheries_model_estimates <- klamath_cdfw_population_raw |>
+habitat <- habitat_raw |>
   janitor::clean_names() |>
-  rename(stream = population,
-         lifestage = life_stage) |>
-  mutate(species = ifelse(!is.na(run_designation), tolower(paste0(run_designation, " ", species)), tolower(species)),
-         julian_year = as.numeric(ifelse(!is.na(brood_year), brood_year, survey_season)),
-         stream = tolower(stream),
-         lifestage = tolower(lifestage),
-         estimate_type = tolower(metric),
-         estimation_method = tolower(estimation_method),
-         sex = NA,
-         estimate = value,
-         confidence_interval = 95,
-         lower_bounds_estimate = x95_lower_ci,
-         upper_bounds_estimate = x95_upper_ci,
-         is_complete_estimate = ifelse(full_population_estimate == "N", F, T)) |>
-  filter(origin == "Mixed") |>
-  select(julian_year, stream, species, lifestage, sex, estimate_type, estimate, confidence_interval,
-         lower_bounds_estimate, upper_bounds_estimate, estimation_method, is_complete_estimate) |>
-  glimpse()
+  rename(stream = river,
+         site_name = location_name,
+         longitude = longtidue) |>
+  select(stream, site_name, latitude, longitude, link) |>
+  assign_sub_basin(sub_basin) |>
+  mutate(data_type = "habitat")
 
+
+# Combine -----------------------------------------------------------------
+
+data_location_lookup <- bind_rows(rst_sites, hatcheries, redd_carcass_surveys, habitat)
 
 # save rda files
-usethis::use_data(fisheries_location_lookup, overwrite = TRUE)
-usethis::use_data(fisheries_model_estimates, overwrite = TRUE)
-# usethis::use_data(rst_sites, overwrite = TRUE)
-# usethis::use_data(hatcheries, overwrite = TRUE)
-# usethis::use_data(redd_carcass_data, overwrite = TRUE)
-# usethis::use_data(redd_carcass_location, overwrite = TRUE)
+usethis::use_data(data_location_lookup, overwrite = TRUE)
