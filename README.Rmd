@@ -35,27 +35,27 @@ The data in this package comes from a variety of public sources, including:
   - California Department of Fish and Wildlife (CDFW)
   - US Geological Survey (USGS)
   - Literature-based habitat models
-  - more...
-  
 
 ## Example
 
-This is a basic example which shows you how to solve a common problem:
+If you are interested in spawner abundance of fall run Chinook salmon:
 
 ```{r example}
 library(klamathFishData)
-## basic example code
+library(tidyverse)
+
+fisheries_model_estimates |> 
+  filter(estimate_type == "abundance", species == "fall chinook", lifestage == "spawner")
 ```
 
 ## What's Included
 
 The package contains cleaned, documented data objects including:
 
-- `fisheries_location_lookup` - This dataset compiles location data relevant to fisheries data collection efforts from across the Klamath Basin. (rotary screw traps, hatchery, redd/carcass survey data)
-- `fisheries_model_estimates` - Modeled estimates and credible intervals from fisheries models such as abundance and survival estimates.
-- `predation_estimates_avian_pit_tag`, `predation_estimates_wild` and `predation_estimates_hatchery` - Predation Estimates on SARP, Chinook and wild Suckers, and Avian Predation PIT-tag Recoveries
- 
-- And more...
+- `fisheries_model_estimates` — abundance and survival estimates from fisheries models (USE ME)
+- `data_location_lookup` - latitude and longitude for fisheries data
+- `megatable` - Digital version of [CDFW's Megatable](https://wildlife.ca.gov/Conservation/Fishes/Chinook-Salmon/Anadromous-Assessment)
+- And more in development...
  
 Use `data(package = "klamathFishData")` to view all datasets included.
 

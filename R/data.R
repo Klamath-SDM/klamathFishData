@@ -2,10 +2,10 @@
 #' @name fisheries_model_estimates
 #' @description This dataset compiles modeled estimates and credible intervals
 #' from fisheries models such as abundance and survival estimates. This dataset
-#' is not species or location specific.
+#' is not species or location specific. This is a key dataset!
 #' Data exploration was done in R Markdowns which also contain information on data source.
 #' {Modeled Fisheries Data R Markdown}{https://github.com/Klamath-SDM/KlamathEDA/blob/main/data-raw/fisheries/modeled/modeled-fisheries-data.md}
-#' @format A tibble with 1034 rows and 14 columns
+#' @format A tibble with 1051 rows and 14 columns
 #' \itemize{
 #'   \item \code{julian_year}: julian year. Min/max years vary by location, species, type of estimate. Adult escapement is reported for a brood year which is the same as the julian year. Juvenile abundance typically spans multiple years (e.g. Oct 2020 - May 2021) and would be assigned a julian year for the latter part of this period.
 #'   \item \code{stream}: stream ("bogus creek", "iron gate hatchery  (igh)", "klamath river", "lower klamath river", "other tributaries", "salmon river", "scott river", "shasta river", "trinity river", "trinity river hatchery (trh)", "upper klamath lake", "yurok and hoopa reservation tribs")
@@ -25,9 +25,11 @@
 #'   }
 'fisheries_model_estimates'
 
-#' @title Fisheries Location Lookup
-#' @name fisheries_location_lookup
-#' @description This dataset compiles location data relevant to fisheries data collection efforts from across the Klamath Basin.
+#' @title Data Location Lookup
+#' @name data_location_lookup
+#' @description This dataset compiles location data relevant to fisheries data
+#' collection efforts from across the Klamath Basin. This dataset is used to map
+#' data collection locations.
 #' @format A tibble with 35 rows and 10 columns
 #' \itemize{
 #'   \item \code{stream}: stream
@@ -41,7 +43,23 @@
 #'   \item \code{downstream_longitude}: Longitude of the downstream end of the feature's extent, applicable for survey extents
 #'   \item \code{link}: web link containing more information about fisheries locations
 #'   }
-'fisheries_location_lookup'
+'data_location_lookup'
+
+#' @title Megatable - IN DEVELOPMNENT
+#' @name megatable
+#' @description Digital version of [CDFW's Megatable](https://wildlife.ca.gov/Conservation/Fishes/Chinook-Salmon/Anadromous-Assessment)
+#' @format A tibble with 4077 rows and 7 columns
+#' \itemize{
+#'   \item \code{location}:
+#'   \item \code{subsection}:
+#'   \item \code{section}:
+#'   \item \code{species}:
+#'   \item \code{lifestage}:
+#'   \item \code{year}:
+#'   \item \code{value}:
+#'   }
+'megatable'
+
 
 
 #' @title Avian Predation PIT-tag Recoveries

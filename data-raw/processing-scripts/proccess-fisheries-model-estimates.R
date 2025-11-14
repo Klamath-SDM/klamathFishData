@@ -65,14 +65,14 @@ klamath_mainstem_fall_chinook_escapement <- escapement_raw |>
 
 sucker_survival_model <- read_csv(here::here("data-raw", "tables_with_data", "sucker_survival.csv"))
 
-sucker_data <- sucker_survival_raw |>
+sucker_data <- sucker_survival_model |>
   select(sex, year, population, apparent_survival_CI, apparent_survival_estimate) |>
   filter(!apparent_survival_estimate %in% c("B","C")) |> # remove the B and C because they seem like estimates that have issues
   separate(apparent_survival_CI, into = c("lower_bounds_estimate", "upper_bounds_estimate"), sep = "-") |>
   mutate(estimate_type = "apparent survival",
          apparent_survival_estimate = as.numeric(apparent_survival_estimate)) |>
   rename(estimate = apparent_survival_estimate) |>
-  bind_rows(sucker_survival_raw |>
+  bind_rows(sucker_survival_model |>
               select(sex, year, population, seniority_probability_estimate, seniority_probability_CI) |>
               filter(!seniority_probability_estimate %in% c("B","C")) |> # remove the B and C because they seem like estimates that have issues
               separate(seniority_probability_CI, into = c("lower_bounds_estimate", "upper_bounds_estimate"), sep = "-") |>
@@ -80,7 +80,7 @@ sucker_data <- sucker_survival_raw |>
                      seniority_probability_estimate = as.numeric(seniority_probability_estimate)) |>
               rename(estimate = seniority_probability_estimate)
   ) |>
-  bind_rows(sucker_survival_raw |>
+  bind_rows(sucker_survival_model |>
               select(sex, year, population, annual_population_rate_of_change_estimate, annual_population_rate_of_change_CI) |>
               filter(!annual_population_rate_of_change_estimate %in% c("B","C")) |> # remove the B and C because they seem like estimates that have issues
               separate(annual_population_rate_of_change_CI, into = c("lower_bounds_estimate", "upper_bounds_estimate"), sep = "-") |>
@@ -154,14 +154,15 @@ fisheries_model_estimates <- bind_rows(population_data, sucker_data,
                                                                    stream == "klamath" & julian_year %in% 2001:2017 ~ "remove",
                                                                    stream == "trinity" & julian_year %in% 2002:2022 ~ "remove")) |>
                                          filter(is.na(remove))) |>
-  mutate(species = ifelse(species == "fall chinook", "fall chinook salmon", species))
+  mutate(species = ifelse(species == "fall chinook", "fall chinook salmon", species)) |>
+  select(-remove)
 
 #fisheries_model_estimates |> group_by(julian_year, stream, species, origin, lifestage, sex, estimate_type) |> tally() |> filter(n>1)
 
 # save data ---------------------------------------------------------------
 
 # save locally
-save(fisheries_model_estimates, file = "data/fisheries_model_estimates.rda")
+usethis::use_data(fisheries_model_estimates, overwrite = TRUE)
 
 # # save to s3 storage
 # klamath_project_board |> pins::pin_write(fisheries_model_estimates,
