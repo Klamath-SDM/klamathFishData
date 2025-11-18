@@ -104,7 +104,8 @@ predation_estimates_avian_pit_tag <- avian_predation_pit_tag |>
   ),
   sarp_program = case_when(
     str_detect(fish_group, "SARP") ~ TRUE,
-    TRUE ~ FALSE)) |>
+    TRUE ~ FALSE),
+  location = tolower(location)) |>
   select(-fish_group) |>
   relocate(species, life_stage, origin, release_season, sarp_program, .after = location) |> glimpse()
   # life_stage = if_else(str_detect(fish_group_2, "Adult"), "Adult", "Juvenile"),
@@ -213,7 +214,8 @@ predation_estimates_wild <- predation_estimates_wild_clean |>
     str_detect(fish_group, "Juvenile") ~ "sucker",
     TRUE ~ NA_character_),
   origin = "wild",
-  life_stage = if_else(str_detect(fish_group, "Adult"), "adult", "juvenile")) |>
+  life_stage = if_else(str_detect(fish_group, "Adult"), "adult", "juvenile"),
+  location = tolower(location)) |>
   select(-fish_group) |>
   relocate(species, life_stage, origin, .after = location) |> glimpse()
 
@@ -316,7 +318,8 @@ predation_estimates_hatchery <- estimate_predation_sarp |>
    ),
    sarp_program = case_when(
      str_detect(fish_group, "SARP") ~ TRUE,
-     TRUE ~ FALSE)) |>
+     TRUE ~ FALSE),
+   location = tolower(location)) |>
    select(-fish_group) |>
    relocate(species, life_stage, origin, release_season, sarp_program, .after = location) |> glimpse()
 

@@ -100,7 +100,7 @@
 #' Values are adjusted for PIT-tag detection and deposition probabilities.
 #' @format A tibble with 21 rows and 8 columns
 #' \itemize{
-#'   \item{location}: Waterbody (Upper Klamath Lake, Clear Lake Reservoir)
+#'   \item{location}: Waterbody (upper klamath lake, clear lake reservoir)
 #'   \item{species}: Fish species (e.g., lost river sucker, shortnose and klamath largescale suckers, sucker juveniles,
 #'   sucker, klamath largescale sucker, shortnose sucker)
 #'   \item{life_stage}: Fish life stage (e.g. adult, juvenile)
@@ -127,7 +127,7 @@
 #' and fall/winter (Fall/Win).
 #' @format A tibble with 18 rows and 10 columns
 #' \itemize{
-#'   \item{location}: Waterbody (Upper Klamath Lake, Clear Lake Reservoir, Sheepy Lake)
+#'   \item{location}: Waterbody (upper klamath lake, clear lake reservoir, sheepy lake)
 #'   \item{species}: Fish species (e.g. sucker, chinook salmon)
 #'   \item{life_stage}: Fish life stage (e.g. juvenile)
 #'   \item{origin}: Origin of realeased fish (e.g. hatchery)
