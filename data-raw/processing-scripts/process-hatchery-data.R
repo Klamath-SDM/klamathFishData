@@ -15,7 +15,7 @@ table_11_raw <- tables_raw[[13]] |>
   mutate(stock_date = tolower(stock_date)) |>
   glimpse()
 
-hatchery_release <- table_11_raw |>
+hatchery_release_KFNFH <- table_11_raw |>
   mutate(stock_date = as.character(stock_date),
          stock_date = na_if(stock_date, ""),
          date_anchor = if_else(!is.na(stock_date), stock_date, NA_character_))|>
@@ -28,7 +28,7 @@ hatchery_release <- table_11_raw |>
   glimpse()
 
 # save data
-# usethis::use_data(hatchery_release_KFNFH, overwrite = TRUE)
+usethis::use_data(hatchery_release_KFNFH, overwrite = TRUE)
 
 ## Historical Collections and Releases Summary
 table_1_raw <- tables_raw[[2]] |>
@@ -64,4 +64,4 @@ historical_collections_releases <- table_1 |>
   glimpse()
 
 # save data
-# usethis::use_data(historical_collections_releases, overwrite = TRUE)
+usethis::use_data(historical_collections_releases, overwrite = TRUE)
