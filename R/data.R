@@ -142,3 +142,44 @@
 #' @source Bird Research Northwest (2023)
 #' [Avian Predation on UKB Suckers 2021–2023 Summary Report](https://www.birdresearchnw.org/Avian%20Predation%20on%20UKB%20Suckers_Summary%20Report%202021-2023.pdf)
 "predation_estimates_hatchery"
+
+#' @title Historical Hatchery Collection Releases
+#' @name historical_collections_releases
+#' @description
+#' @format A tibble with 9 rows and 12 columns
+#' \itemize{
+#'   \item \code{hathcery_name}:
+#'   \item \code{fiscal_year}: fiscal year
+#'   \item \code{larvae_collected}: number of wild larval suckers collected
+#'   \item \code{sarp_release}: number of fish released or transferred that were raised in the Sucker Assisted Rearing Program (SARP)
+#'   \item \code{sarp_tl_mm}: average total length (TL) of the SARP release fish, measured in millimeters (mm)
+#'   \item \code{fingerling_release}: number of fingerlings released or transferred
+#'   \item \code{fingerling_tl_mm}: average total length (TL) of the fingerling release fish, measured in millimeters (mm)
+#'   \item \code{fry_release}: number of fry released or transferred. This includes fry produced from experimental, wild-spawning activities that were transferred to other facilities (e.g., the Klamath Tribes Hatchery in FY24)
+#'   \item \code{fry_tl_mm }: average total length (TL) of the  fry release fish, measured in millimeters (mm)
+#'   \item \code{salvage_release}:  number of suckers salvaged throughout the year
+#'   \item \code{salvage_sl_mm}: average length of release fish, measured in millimeters (mm)
+#'   \item \code{salvage_tl_mm}: standard lengths (SL) of salvage fish are averages from measurements for each year
+#'   }
+'historical_collections_releases'
+
+
+#' @title Historical Hatchery Collection Releases
+#' @name hatchery_release_KFNFH
+#' @description Summary of all fish distributions for repatriation or transfer from the Klamath Falls National Fish Hatchery during the fiscal year of 2024. A "distribution" is considered a stocking or repatriation event, while a "transfer" involves moving fish for temporary holding
+#' @format A tibble with 34 rows and 12 columns
+#' \itemize{
+#'   \item \code{hathcery_name}:
+#'   \item \code{stock_date}: date the fish distribution or transfer event occurred
+#'   \item \code{species}: species of sucker being distributed (e.g. LRS, SNS, ESS LSR)
+#'   \item \code{lot}:
+#'   \item \code{number_fish}: number of fish in that specific grouping (lot) that were distributed or transferred
+#'   \item \code{weight_lb}: total weight of the fish lot being distributed, measured in pounds (lb)
+#'   \item \code{actual_tl_mm}: actual total length (TL) of the fish, measured in millimeters (mm)
+#'   \item \code{number_lb}: number of fish per pound for the specific lot being distributed
+#'   \item \code{projected_tl_inches}: projected total length (TL) of the fish, measured in inches
+#'   \item \code{projected_tl_mm}: projected total length (TL) of the fish, measured in millimeters (mm)
+#'   \item \code{from_ponds}: source location within the hatchery facility from which the fish were harvested just prior to distribution or transfer
+#'   \item \code{stocking_location}: ultimate destination where the fish were distributed or transferred
+#'   }
+'hatchery_release_KFNFH'
