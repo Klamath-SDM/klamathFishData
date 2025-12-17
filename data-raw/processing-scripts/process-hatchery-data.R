@@ -18,13 +18,17 @@ table_11_raw <- tables_raw[[13]] |>
 hatchery_release_KFNFH <- table_11_raw |>
   mutate(stock_date = as.character(stock_date),
          stock_date = na_if(stock_date, ""),
-         date_anchor = if_else(!is.na(stock_date), stock_date, NA_character_))|>
+         date_anchor = if_else(!is.na(stock_date), stock_date, NA_character_),
+         number_fish = number)|>
   fill(date_anchor, .direction = "down") |>
   mutate(stock_date = if_else(is.na(stock_date), date_anchor, stock_date)) |>
   select(-date_anchor) |>
   slice(1:18, 25, 27:28, 30:35, 41, 43:48) |>
   mutate(stock_date = as.Date(stock_date, format = "%m/%d/%Y"),
          hatchery_name = "KFNFH") |>
+  select(-number) |>
+  relocate(number_fish, .after = lot) |>
+  relocate(hatchery_name, .before = stock_date) |>
   glimpse()
 
 # save data
@@ -59,8 +63,9 @@ historical_collections_releases <- table_1 |>
          salvage_sl_mm = case_when(salvage_tl_mm == 129 ~ NA,
                                    salvage_tl_mm == 126 ~ NA,
                                    TRUE ~ salvage_sl_mm))|>
-  select(-c(sarp_tl_mm, fingerling_tl_mm, fry_tl_mm, salvage_sl_mm, salvage_tl_mm)) |>
+  # select(-c(sarp_tl_mm, fingerling_tl_mm, fry_tl_mm, salvage_sl_mm, salvage_tl_mm)) |>
   mutate(hatchery_name = "KFNFH") |>
+  relocate(hatchery_name, .before = fiscal_year) |>
   glimpse()
 
 # save data
