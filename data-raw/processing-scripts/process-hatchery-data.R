@@ -50,7 +50,7 @@ table_1 <- table_1_raw |>
       mutate(across(-1, ~parse_number(.x)))
   })()
 
-historical_collections_releases <- table_1 |>
+historical_hatchery_collections_releases <- table_1 |>
   rename(sarp_tl_mm = tl_4_mm,
          fingerling_tl_mm = tl_6_mm,
          fry_tl_mm = tl_8_mm,
@@ -69,4 +69,4 @@ historical_collections_releases <- table_1 |>
   glimpse()
 
 # save data
-usethis::use_data(historical_collections_releases, overwrite = TRUE)
+usethis::use_data(historical_hatchery_collections_releases, overwrite = TRUE)

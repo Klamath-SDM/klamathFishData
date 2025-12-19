@@ -144,11 +144,11 @@
 "predation_estimates_hatchery"
 
 #' @title Historical Hatchery Collection Releases
-#' @name historical_collections_releases
-#' @description
+#' @name historical_hatchery_collections_releases
+#' @description Collections and releases from the Klamath Falls National Fish Hatchery since its inception in 2016. Data summarizes the annual inputs and outputs of the hatchery program by federal fiscal year
 #' @format A tibble with 9 rows and 12 columns
 #' \itemize{
-#'   \item \code{hathcery_name}:
+#'   \item \code{hathcery_name}: name of hatchery (KFNFH)
 #'   \item \code{fiscal_year}: fiscal year
 #'   \item \code{larvae_collected}: number of wild larval suckers collected
 #'   \item \code{sarp_release}: number of fish released or transferred that were raised in the Sucker Assisted Rearing Program (SARP)
@@ -161,18 +161,20 @@
 #'   \item \code{salvage_sl_mm}: average length of release fish, measured in millimeters (mm)
 #'   \item \code{salvage_tl_mm}: standard lengths (SL) of salvage fish are averages from measurements for each year
 #'   }
-'historical_collections_releases'
+#'
+#' @source Klamath Falls National Fish Hatchery Annual Report for Fiscal Year 2024
+"historical_hatchery_collections_releases"
 
 
-#' @title Historical Hatchery Collection Releases
+#' @title Historical Hatchery Collection Releases KFNFH
 #' @name hatchery_release_KFNFH
 #' @description Summary of all fish distributions for repatriation or transfer from the Klamath Falls National Fish Hatchery during the fiscal year of 2024. A "distribution" is considered a stocking or repatriation event, while a "transfer" involves moving fish for temporary holding
 #' @format A tibble with 34 rows and 12 columns
 #' \itemize{
-#'   \item \code{hathcery_name}:
+#'   \item \code{hathcery_name}: name of hatchery (KFNFH)
 #'   \item \code{stock_date}: date the fish distribution or transfer event occurred
 #'   \item \code{species}: species of sucker being distributed (e.g. LRS, SNS, ESS LSR)
-#'   \item \code{lot}:
+#'   \item \code{lot}: grouping or cohort of fish categorized primarily by their collection year (CY) or their operational origin
 #'   \item \code{number_fish}: number of fish in that specific grouping (lot) that were distributed or transferred
 #'   \item \code{weight_lb}: total weight of the fish lot being distributed, measured in pounds (lb)
 #'   \item \code{actual_tl_mm}: actual total length (TL) of the fish, measured in millimeters (mm)
@@ -182,4 +184,6 @@
 #'   \item \code{from_ponds}: source location within the hatchery facility from which the fish were harvested just prior to distribution or transfer
 #'   \item \code{stocking_location}: ultimate destination where the fish were distributed or transferred
 #'   }
-'hatchery_release_KFNFH'
+#'
+#' @source Klamath Falls National Fish Hatchery Annual Report for Fiscal Year 2024
+"hatchery_release_KFNFH"

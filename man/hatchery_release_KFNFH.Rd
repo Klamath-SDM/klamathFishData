@@ -3,14 +3,14 @@
 \docType{data}
 \name{hatchery_release_KFNFH}
 \alias{hatchery_release_KFNFH}
-\title{Historical Hatchery Collection Releases}
+\title{Historical Hatchery Collection Releases KFNFH}
 \format{
 A tibble with 34 rows and 12 columns
 \itemize{
-  \item \code{hathcery_name}:
+  \item \code{hathcery_name}: name of hatchery (KFNFH)
   \item \code{stock_date}: date the fish distribution or transfer event occurred
   \item \code{species}: species of sucker being distributed (e.g. LRS, SNS, ESS LSR)
-  \item \code{lot}:
+  \item \code{lot}: grouping or cohort of fish categorized primarily by their collection year (CY) or their operational origin
   \item \code{number_fish}: number of fish in that specific grouping (lot) that were distributed or transferred
   \item \code{weight_lb}: total weight of the fish lot being distributed, measured in pounds (lb)
   \item \code{actual_tl_mm}: actual total length (TL) of the fish, measured in millimeters (mm)
@@ -20,6 +20,9 @@ A tibble with 34 rows and 12 columns
   \item \code{from_ponds}: source location within the hatchery facility from which the fish were harvested just prior to distribution or transfer
   \item \code{stocking_location}: ultimate destination where the fish were distributed or transferred
   }
+}
+\source{
+Klamath Falls National Fish Hatchery Annual Report for Fiscal Year 2024
 }
 \usage{
 hatchery_release_KFNFH
