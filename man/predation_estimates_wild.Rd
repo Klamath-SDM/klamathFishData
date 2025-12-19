@@ -7,7 +7,7 @@
 \format{
 A tibble with 21 rows and 8 columns
 \itemize{
-  \item{location}: Waterbody (Upper Klamath Lake, Clear Lake Reservoir)
+  \item{location}: Waterbody (upper klamath lake, clear lake reservoir)
   \item{species}: Fish species (e.g., lost river sucker, shortnose and klamath largescale suckers, sucker juveniles,
   sucker, klamath largescale sucker, shortnose sucker)
   \item{life_stage}: Fish life stage (e.g. adult, juvenile)
