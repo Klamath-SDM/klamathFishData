@@ -45,20 +45,19 @@
 #'   }
 'data_location_lookup'
 
-#' @title Megatable - IN DEVELOPMNENT
+#' @title Spawner Escapement - IN DEVELOPMNENT
 #' @name megatable
-#' @description Digital version of [CDFW's Megatable](https://wildlife.ca.gov/Conservation/Fishes/Chinook-Salmon/Anadromous-Assessment)
+#' @description Digital version of [CDFW's Spawner Escapement Megatable](https://wildlife.ca.gov/Conservation/Fishes/Chinook-Salmon/Anadromous-Assessment)
 #' @format A tibble with 4077 rows and 7 columns
 #' \itemize{
 #'   \item \code{location}:
-#'   \item \code{subsection}:
-#'   \item \code{section}:
-#'   \item \code{species}:
-#'   \item \code{lifestage}:
 #'   \item \code{year}:
+#'   \item \code{species}:
+#'   \item \code{origin}:
+#'   \item \code{lifestage}:
 #'   \item \code{value}:
 #'   }
-'megatable'
+'spawner_escapement'
 
 
 
