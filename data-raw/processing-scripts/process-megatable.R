@@ -486,7 +486,7 @@ megatable <- bind_rows(in_river_run, in_river_harvest, spawner_escapement) |>
 
 
 # Additional cleaning to data structure -----------------------------------
-spawner_escapement <- filter(megatable, section == "Spawning Escapement") |>
+fall_spawner_escapement <- filter(megatable, section == "Spawning Escapement") |>
   filter(!location %in% c("Subtotals", "Hatchery Spawner Subtotals:",
                           "Total Spawner Escapement","Natural Spawner Subtotals",
                           "Angler Harvest","Angler Harvest Subtotals:","Indian Net Harvest  e/",
@@ -526,6 +526,242 @@ spawner_escapement <- filter(megatable, section == "Spawning Escapement") |>
   mutate(location = tolower(location),
          lifestage = tolower(lifestage))
 
+
+## Spring run spawner escapement ----
+
+pdf_path <- "data-raw/2023.Spring.Chinook.Megatable.v.28-Mar-2024.pdf"
+tables_stream <- extract_tables(pdf_path, method = "stream", output = "tibble")
+
+spawner_1 <- tables_stream[[3]] # 1980 - 1982
+spawner_2 <- tables_stream[[6]] # 1983 - 1985
+spawner_3 <- tables_stream[[9]] # 1986 - 1988
+spawner_4 <- tables_stream[[11]] # 1989 - 1991
+spawner_5 <- tables_stream[[14]] # 1992 - 1994
+spawner_6 <- tables_stream[[17]] # 1995 - 1997
+spawner_7 <- tables_stream[[20]] # 1998 -2000
+spawner_8 <- tables_stream[[23]] # 2001 - 2003
+spawner_9 <- tables_stream[[26]] # 2004 - 2006
+spawner_10 <- tables_stream[[29]] # 2007 - 2009
+spawner_11 <- tables_stream[[32]] # 2010 - 2012
+spawner_12 <- tables_stream[[35]] # 2013 - 2015
+# tables 13 - 15 are read a bit differently, so they will have a different cleaning approach
+spawner_13_1 <- tables_stream[[36]] # the following 3 tables have data for spawner 2016 - 2018
+spawner_13_2 <- tables_stream[[37]] #
+spawner_13_3 <- tables_stream[[38]] # check this one since it is only one line of data
+
+spawner_14_1 <- tables_stream[[42]] # 2019 -2021 Note that it skips "Natural Spawner and Klamath Basin"
+spawner_14_2 <- tables_stream[[43]] # 2019 -2021
+spawner_14_3 <- tables_stream[[44]] # 2019 -2021 - total spawner escapent check this one since it is only one line of data
+
+spawner_15_1 <- tables_stream[[48]] # 2022 - 2024 spawner
+spawner_15_2 <- tables_stream[[49]] # 2022 - 2024 Note that it skips "Natural Spawner and Klamath Basin"
+spawner_15_3 <- tables_stream[[50]] # 2022 - 2024 - total spawner escapent check this one since it is only one line of data
+
+
+# 1, 3 - 12
+spawner_pt_1 <- bind_rows(spawner_1, spawner_3, spawner_4, spawner_5, spawner_6, spawner_7,
+                          spawner_8, spawner_9, spawner_10, spawner_11, spawner_12)
+
+# function from fall spawner escapement - testing
+# automating spawning 1, 2, 4, 5
+clean_spawner_table <- function(tbl, start_year) {
+  # Dynamically create the years for 3-year windows
+  years <- start_year:(start_year + 2)
+  # Standardize and clean names
+  tbl_clean <- tbl |>
+    filter(if_any(everything(), ~ . != "")) |>
+    janitor::clean_names()
+
+  # Find the column that contains the values to split (likely always 6th)
+  split_col <- names(tbl_clean)[3]
+
+  # Extract the "totals_Y1 grilse_Y2" column into two
+  tbl_clean <- tbl_clean |>
+    extract(
+      {{split_col}},
+      into = c(
+        paste0("adults_", years[1]),
+        paste0("totals_", years[1]),
+        paste0("grilse_", years[2])
+      ),
+      regex = "^([\\d,]+|--)[ ]*[a-zA-Z/]*\\s+([\\d,]+|--)[ ]*[a-zA-Z/]*\\s+([\\d,]+|--)[ ]*[a-zA-Z/]*$",
+      remove = TRUE
+    )
+
+  # Rename known columns (same x# structure as original example)
+  tbl_renamed <- tbl_clean |>
+    rename(
+      location = x1,
+      !!paste0("grilse_", years[1]) := x2,
+      !!paste0("adults_", years[2]) := x4,
+      !!paste0("totals_", years[2]) := x5,
+      !!paste0("grilse_", years[3]) := x7,
+      !!paste0("adults_", years[3]) := x8,
+      !!paste0("totals_", years[3]) := x9)
+
+  # Keep only the columns we just renamed
+  value_cols <- c("location",
+                  paste0("grilse_", years),
+                  paste0("adults_", years),
+                  paste0("totals_", years))
+  spawning_df <- tbl_renamed |>
+    select(any_of(value_cols))
+
+  # Fix location continuations and assign subsections
+  spawning_df_clean <- spawning_df |>
+    mutate(is_continuation = str_starts(location, "\\("),
+           location = if_else(is_continuation, paste0(lag(location), " ", location), location)) |>
+    filter(!(lead(is_continuation, default = FALSE))) |>
+    select(-is_continuation) |>
+    mutate(subsection = case_when(
+      str_detect(location, "Hatchery Spawners") ~ "Hatchery Spawners",
+      str_detect(location, "Natural Spawners") ~ "Natural Spawners",
+      TRUE ~ NA_character_
+    )) |>
+    fill(subsection, .direction = "down") |>
+    filter(!location %in% c("Hatchery Spawners", "Natural Spawners"),
+           !is.na(location)) |>
+    mutate(section = "Spawning Escapement")
+
+  # Pivot longer for tidy structure
+  spawning_long <- spawning_df_clean |>
+    mutate(across(-location, as.character)) |>
+    pivot_longer(
+      cols = -c(location, subsection, section),
+      names_to = c("category", "year"),
+      names_sep = "_",
+      values_to = "value") |>
+    mutate(
+      year = as.integer(year),
+      category = str_to_title(category),
+      value = readr::parse_number(value))
+
+  return(spawning_long)
+}
+
+spawner_indices_1 <- c(3, 6, 9, 11, 14, 17, 20, 23, 26, 29, 32, 35)
+# 1, 3 - 12
+spawner_years_1 <- c(1980, 1983, 1986, 1989, 1992, 1995, 1998, 2001, 2004, 2007, 2010, 2013)
+
+spawner_cleaned <- purrr::map2(
+  .x = tables_stream[spawner_indices_1],
+  .y = spawner_years_1,
+  .f = clean_spawner_table
+)
+
+# first part of cleaning spawner tables
+combined_spawner_1 <- bind_rows(spawner_cleaned) # 1, 3 - 12
+
+# second part of cleaning
+#automating tables 13-15
+clean_spawner_group <- function(tbl1, tbl2, tbl3, start_year) {
+  years <- start_year:(start_year + 2)
+
+  # clean table ---
+  tbl1_clean <- tbl1 |>
+    rename(location = ...1,
+           !!paste0("grilse_", years[1]) := ...2,
+           !!paste0("adults_", years[1]) := all_of(as.character(years[1])),
+           !!paste0("totals_", years[1]) := ...4,
+           !!paste0("grilse_", years[2]) := ...5,
+           !!paste0("adults_", years[2]) := all_of(as.character(years[2])),
+           !!paste0("totals_", years[2]) := ...7,
+           !!paste0("grilse_", years[3]) := ...8,
+           !!paste0("adults_", years[3]) := all_of(as.character(years[3])),
+           !!paste0("totals_", years[3]) := ...10) |>
+    select(location, tidyselect::matches("^grilse_|^adults_|^totals_"))
+
+  # clean second table ---
+  tbl2_clean <- tbl2 |>
+    select(1:4, 6:8, 10:12) |>
+    mutate(location = as.character(`Klamath River Basin`),
+           !!paste0("grilse_", years[1]) := as.character(...2),
+           !!paste0("adults_", years[1]) := as.character(...3),
+           !!paste0("totals_", years[1]) := as.character(...4),
+           !!paste0("grilse_", years[2]) := as.character(...6),
+           !!paste0("adults_", years[2]) := as.character(...7),
+           !!paste0("totals_", years[2]) := as.character(...8),
+           !!paste0("grilse_", years[3]) := as.character(...10),
+           !!paste0("adults_", years[3]) := as.character(...11),
+           !!paste0("totals_", years[3]) := as.character(...12)) |>
+    select(location, tidyselect::matches("^grilse_|^adults_|^totals_"))
+
+  # clean total line table ---
+  tbl3 <- as.data.frame(tbl3)
+  numbers <- str_extract_all(tbl3, "\\d{1,3}(?:,\\d{3})*")[[1]] |> parse_number()
+
+  tbl3_clean <- tibble(x1 = "Total Spawner Escapement",
+                       value = as.character(numbers)) |>
+    mutate(field = paste0("x", row_number() + 1)) |>
+    pivot_wider(names_from = field, values_from = value)
+
+  names(tbl3_clean) <- c("location", paste0(rep(c("grilse_", "adults_", "totals_"), each = 3),
+                                            rep(years, times = 3))[1:10])
+
+  # combine---
+  combined <- bind_rows(tbl1_clean, tbl2_clean, tbl3_clean)
+
+  # label subsections and section ---
+  combined <- combined |>
+    mutate(subsection = case_when(
+      str_detect(location, "Hatchery Spawners") ~ "Hatchery Spawners",
+      str_detect(location, "Salmon River") ~ "Natural Spawners",
+      TRUE ~ NA_character_)) |>
+    fill(subsection, .direction = "down") |>
+    filter(!location %in% c("Hatchery Spawners"), !is.na(location)) |>
+    mutate(section = "Spawning Escapement")
+  # Pivot longer for tidy structure
+  combined <- combined |>
+    mutate(across(-location, as.character)) |>
+    pivot_longer(
+      cols = -c(location, subsection, section),
+      names_to = c("category", "year"),
+      names_sep = "_",
+      values_to = "value") |>
+    mutate(
+      year = as.integer(year),
+      category = str_to_title(category),
+      value = readr::parse_number(value))
+
+  return(combined)
+}
+# For 2016–2018 (spawner_13)
+spawner_13 <- clean_spawner_group(spawner_13_1, spawner_13_2, spawner_13_3, start_year = 2016)
+# For 2019–2021 (spawner_14)
+spawner_14 <- clean_spawner_group(spawner_14_1, spawner_14_2, spawner_14_3, start_year = 2019)
+# For 2022–2024 (spawner_15)
+spawner_15 <- clean_spawner_group(spawner_15_1, spawner_15_2, spawner_15_3, start_year = 2022)
+
+spring_run_spawner_escapement <- bind_rows(spawner_13, spawner_14, spawner_15, combined_spawner_1)
+
+# Additional Cleaning ----
+sr_spawner_escapement <- spring_run_spawner_escapement |>
+  rename(lifestage = category) |>
+  mutate(species = "spring chinook salmon") |>
+  filter(!location %in% c("Trinity River Basin","Klamath River Basin", "Subtotals")) |>
+  mutate(origin = case_when(subsection == "Hatchery Spawners" ~ "hatchery",
+                            T ~ "wild"),
+         location = case_when(location == "Trinity River Hatchery (TRH) b/" ~ "Trinity River Hatchery",
+                              location == "South Fork e/" ~ "South Fork Trinity River",
+                              location == "Above JCW, excluding TRH b/" ~ "Trinity River",
+                              location == "Misc. Tribs. f/" ~ "Other Trinity Tributaries",
+                              T ~ location)) |>
+  select(-c(section, subsection)) |>
+  pivot_wider(id_cols = c(location, year, species, origin), names_from = lifestage, values_from = value, values_fill = 0) |>
+  # fix missing Grilse values
+  mutate(Grilse = ifelse(is.na(Grilse), Totals - Adults, Grilse)) |>
+  pivot_longer(cols = c(Grilse, Adults, Totals), names_to = "lifestage", values_to = "value") |>
+  filter(lifestage != "Totals") |>
+  mutate(location = tolower(location),
+         lifestage = tolower(lifestage))
+# TODO add sr script to this repo, rename scripts to something like "read sr_megatable_pdf" and "read fall_megatable_pdf"
+# then source them and create process_megatable_spawner, process_megatable_harvest, etc
+
+## Combine spring and fall run - TODO
+# spawner_escapement <- bind_rows(fall_spawner_escapement, sr_spawner_escapement)
+
+
 # save clean data
-usethis::use_data(spawner_escapement, overwrite = TRUE)
+# usethis::use_data(spawner_escapement, overwrite = TRUE)
+
 
