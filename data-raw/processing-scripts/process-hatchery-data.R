@@ -173,7 +173,9 @@ KFNFH_adfluvial_pond_growout <-
             "FY2024 Table 7" = table_7_raw,
             "FY2024 Table 8" = table_8_raw,
             .id="inventory_source") |>
-  mutate(stocked_date = as.Date(stocked_date, format = "%m/%d/%Y"),
+  transmute(pond, lot, inventory_source,
+         life_history = if_else(str_detect(lot, "ESS"), "ESS", "adfluvial"),
+         stocked_date = as.Date(stocked_date, format = "%m/%d/%Y"),
          harvest_date = as.Date(harvest_date, format = "%m/%d/%Y"),
          start_number = as.numeric(start_number),
          start_g_fish = as.numeric(g_fish),

@@ -296,6 +296,7 @@
 #'   \item \code{hatchery_name}: hatchery name (KFNFH)
 #'   \item \code{fiscal_year}: fiscal year (2024)
 #'   \item \code{inventory_source}: source table in the report (e.g., "FY2024 Table 6")
+#'   \item \code{life_history}: ESS (east spring spawner) or adfluvial
 #'   \item \code{pond}: pond or rearing unit identifier
 #'   \item \code{lot}: cohort or production lot identifier
 #'   \item \code{stocked_date}: date fish were stocked into the unit

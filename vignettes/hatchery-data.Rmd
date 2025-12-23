@@ -1,0 +1,255 @@
+---
+title: "Hatchery Data Exploration"
+author: "Skyler Lewis"
+date: "`r Sys.Date()`"
+output:
+  rmarkdown::html_vignette:
+    fig_caption: yes
+vignette: >
+  %\VignetteIndexEntry{Hatchery Data Exploration}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+library(tidyverse)
+library(ggalluvial)
+library(klamathFishData)
+
+theme_set(theme_minimal())
+```
+
+```{r}
+historical_release_pivot <- 
+  KFNFH_historical_collection_release |>
+  select(hatchery_name, fiscal_year, larvae_collected, ends_with("_release")) |>
+  pivot_longer(c(ends_with("_release")), names_to = "release_type", values_to = "count") |>
+  mutate(release_type = str_replace(release_type, "_release", ""),
+         count = coalesce(count, 0))
+
+bind_rows(KFNFH_historical_collection_release |>
+  transmute(
+    fiscal_year = as_factor(fiscal_year),
+    bar_group   = "Larvae Collected",
+    fill_group  = "Larvae Collected",
+    y           = larvae_collected
+  )
+, historical_release_pivot |>
+  transmute(
+    fiscal_year = as_factor(fiscal_year),
+    bar_group   = "Releases",
+    fill_group  = paste("Releases:", release_type),
+    y           = count
+  )
+) |>
+  ggplot(aes(x = fiscal_year, y = y, fill = fill_group)) +
+  geom_col(aes(group = bar_group), position = "dodge") +
+  scale_y_continuous(
+    breaks = scales::breaks_width(2e4),
+    labels = scales::label_comma(),
+    expand = expansion(add = c(0, 1e4))
+  ) +
+  labs(
+    x = "Fiscal Year",
+    y = "Number of Larvae / Fish",
+    title = "Adfluvial LRS and SNS Larvae Collected vs Releases"
+  ) +
+  theme(
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor = element_blank()
+  ) 
+```
+
+## Adfluvial populations
+
+```{r}
+KFNFH_historical_collection_release |>
+  ggplot(aes(x = as_factor(fiscal_year), y = larvae_collected)) + 
+  geom_col(aes(fill = (fiscal_year == 2024))) + 
+  geom_text(aes(label = scales::label_comma()(larvae_collected)), vjust = -0.5) +
+  scale_y_continuous(breaks = scales::breaks_width(2E4),
+                     labels = scales::label_comma(), 
+                     expand = expansion(add = c(0, 1E4))) +
+  theme(legend.position = "none",
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank()) +
+  labs(x = "Fiscal Year", 
+       y = "Larvae Collected",
+       title = "Adfluvial LRS and SNS larvae collected in tributaries") 
+```
+
+```{r}
+early_rearing_pivot <- KFNFH_adfluvial_early_rearing_2024 |>
+  transmute(cohort = paste(culture_unit, date) |> 
+              as_factor(), 
+            stocked, 
+            observed_mortality = mortality, 
+            unobserved_mortality = pmax(collected - (stocked + observed_mortality), 0)) |>
+  pivot_longer(c(stocked, observed_mortality, unobserved_mortality), names_to = "outcome", values_to = "count") |>
+  mutate(outcome = factor(outcome, 
+                       levels = c("stocked", "observed_mortality", "unobserved_mortality"),
+                       labels = c("Survived", "Observed Mortality", "Unobserved Mortality"))) 
+
+adfluvial_early_rearing_total <- 
+  early_rearing_pivot |> 
+  group_by(outcome) |> 
+  summarize(count=sum(count)) |>
+  deframe()
+
+adfluvial_early_rearing_percent <-
+  adfluvial_early_rearing_total / sum(adfluvial_early_rearing_total)
+
+message(str_glue("{adfluvial_early_rearing_total[['Survived']]} survived to next stage"))
+
+early_rearing_pivot|>
+  ggplot(aes(y = fct_rev(cohort))) +
+  geom_col(aes(x = count, fill = fct_rev(outcome))) +
+  scale_fill_manual(name = "", values = c("Survived" = "darkcyan",
+                                          "Unobserved Mortality" = "goldenrod",
+                                          "Observed Mortality" = "darkred")) +
+  labs(x = "Number of Fish", 
+       y = "",
+       title = "Adfluvial larvae->fry survival in early rearing stage") 
+```
+
+```{r}
+KFNFH_adfluvial_pond_growout |>
+  group_by(inventory_source, life_history, pond, lot, stocked_date, harvest_date) |>
+  summarize(across(c(start_number, end_number), \(x) sum(x, na.rm=T))) |>
+  group_by(inventory_source, life_history) |>
+  summarize(start_number = sum(start_number))
+
+pond_growout_pivot <- KFNFH_adfluvial_pond_growout |>
+  drop_na(harvest_date) |>
+  transmute(pond, life_history, lot, stocked_date, harvest_date, start_number,
+            cohort = paste(pond, lot, stocked_date),
+            harvested = end_number, 
+            harvest_mortality = if_else(!is.na(harvest_date), coalesce(harvest_mortality_number, 0), harvest_mortality_number),
+            unobserved_mortality = pmax(start_number - (harvested + harvest_mortality), 0)) |>
+  pivot_longer(c(harvested, harvest_mortality, unobserved_mortality), names_to = "outcome", values_to = "count") |>
+  mutate(outcome = factor(outcome, 
+                       levels = c("harvested", "harvest_mortality", "unobserved_mortality"),
+                       labels = c("Survived", "Observed Mortality", "Unobserved Mortality"))) 
+
+adfluvial_pond_growout_total <- pond_growout_pivot |>
+  filter(life_history == "adfluvial") |>
+  group_by(outcome) |>
+  summarize(count = sum(count)) |>
+  deframe()
+
+adfluvial_pond_growout_percent <-
+  adfluvial_pond_growout_total / sum(adfluvial_pond_growout_total)
+
+pond_growout_pivot |>
+  filter(life_history == "adfluvial") |>
+  ggplot(aes(y = fct_rev(cohort))) +
+  geom_col(aes(x = count, fill = fct_rev(outcome))) +
+  scale_fill_manual(name = "", values = c("Survived" = "darkcyan",
+                                          "Unobserved Mortality" = "goldenrod",
+                                          "Observed Mortality" = "darkred")) +
+  labs(x = "Number of Fish", 
+       y = "",
+       title = "Adfluvial fry->juvenile/subadult survival in pond growout stage") 
+```
+```{r}
+KFNFH_hatchery_release_2024 |>
+  filter(!str_detect(species, "ESS")) |>
+  arrange(stock_date) |>
+  ggplot(aes(y = paste(lot, "->", stocking_location, stock_date))) +
+  geom_col(aes(x = number_fish, fill = species)) +
+  labs(x = "Number of Fish", 
+       y = "",
+       title = "Adfluvial releases") +
+  theme(legend.position="bottom")
+```
+
+## East spring spawning population
+
+```{r}
+KFNFH_LRS_ESS_incubation_hatch_2024 |>
+  group_by(female, spawning_date, hatch_date) |>
+  summarize(across(c(total_eggs, total_fry), sum)) |>
+  mutate(non_hatching = pmax(total_eggs - total_fry, 0)) |>
+  pivot_longer(c(total_fry, non_hatching), names_to = "outcome", values_to = "count") |>
+  mutate(outcome = outcome |> factor(levels = c("total_fry", "non_hatching"),
+                                     labels = c("Hatched", "Not Hatched"))) |>
+  ggplot(aes(y = paste(female, spawning_date))) +
+  geom_col(aes(x = count, fill = fct_rev(outcome))) +
+  scale_fill_manual(name = "", values = c("Hatched" = "darkcyan",
+                                          "Not Hatched" = "darkred")) +
+  labs(x = "Number of Eggs or Fish", 
+       y = "",
+       title = "ESS population incubation success") +
+  theme(legend.position="bottom")
+```
+
+```{r}
+pond_growout_pivot |>
+  filter(life_history == "ESS") |>
+  ggplot(aes(y = fct_rev(cohort))) +
+  geom_col(aes(x = count, fill = fct_rev(outcome))) +
+  scale_fill_manual(name = "", values = c("Survived" = "darkcyan",
+                                          "Unobserved Mortality" = "goldenrod",
+                                          "Observed Mortality" = "darkred")) +
+  labs(x = "Number of Fish", 
+       y = "",
+       title = "ESS fry->juvenile/subadult survival in pond growout stage") 
+```
+
+```{r}
+KFNFH_hatchery_release_2024 |>
+  filter(str_detect(species, "ESS")) |>
+  arrange(stock_date) |>
+  ggplot(aes(y = paste(lot, "->", stocking_location, stock_date))) +
+  geom_col(aes(x = number_fish, fill = species)) +
+  labs(x = "Number of Fish", 
+       y = "",
+       title = "ESS releases") +
+  theme(legend.position="bottom")
+```
+
+test
+
+```{r}
+pond_to_stock <- KFNFH_hatchery_release_2024 |>
+  select(from_ponds, stocking_location, species, number_fish) |>
+  mutate(from_ponds = str_split(from_ponds, ",\\s*")) |>
+  unnest(from_ponds) |>
+  group_by(stocking_location, from_ponds, species) |>
+  summarise(
+    n_fish = sum(number_fish) / n(),  # split evenly if multiple ponds
+    .groups = "drop"
+  )
+
+pond_to_stock |>
+  ggplot(aes(axis1 = factor(from_ponds), 
+             axis2 = factor(stocking_location), 
+             y = n_fish)) +
+  geom_alluvium(aes(fill = species), width = 1/12) +
+  geom_stratum(width = 1/12) +
+  geom_text(
+    stat = "stratum",
+    aes(label = after_stat(stratum)),
+    size = 3
+  ) +
+  scale_y_continuous(labels = scales::comma) +
+  scale_x_discrete(
+    limits = c("Pond", "Stocking Location"),
+    expand = c(0.1, 0.05)
+  ) +
+  labs(
+    title = "Distribution of Hatchery Fish from Ponds to Stocking Locations (2024)",
+    y = "Number of Fish",
+    x = NULL,
+    fill = "Source Pond"
+  ) +
+  theme(legend.position="bottom")
+
+```
+
+
+
