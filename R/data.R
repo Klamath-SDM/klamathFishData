@@ -144,11 +144,12 @@
 "predation_estimates_hatchery"
 
 #' @title Historical Hatchery Collection Releases
-#' @name historical_hatchery_collections_releases
+#' @name KFNFH_historical_collection_release
 #' @description Collections and releases from the Klamath Falls National Fish Hatchery since its inception in 2016. Data summarizes the annual inputs and outputs of the hatchery program by federal fiscal year
+#' Corresponds to **Table 1** and **Table 4** in the FY2024 KFNFH Annual Report.
 #' @format A tibble with 9 rows and 12 columns
 #' \itemize{
-#'   \item \code{hathcery_name}: name of hatchery (KFNFH)
+#'   \item \code{hatchery_name}: name of hatchery (KFNFH)
 #'   \item \code{fiscal_year}: fiscal year
 #'   \item \code{larvae_collected}: number of wild larval suckers collected
 #'   \item \code{sarp_release}: number of fish released or transferred that were raised in the Sucker Assisted Rearing Program (SARP)
@@ -160,18 +161,20 @@
 #'   \item \code{salvage_release}:  number of suckers salvaged throughout the year
 #'   \item \code{salvage_sl_mm}: average length of release fish, measured in millimeters (mm)
 #'   \item \code{salvage_tl_mm}: standard lengths (SL) of salvage fish are averages from measurements for each year
+#'   \item \code{primary_collection_method}: drift net, dip net, or both
 #'   }
 #'
 #' @source Klamath Falls National Fish Hatchery Annual Report for Fiscal Year 2024
-"historical_hatchery_collections_releases"
+"KFNFH_historical_collection_release"
 
-
-#' @title Historical Hatchery Collection Releases KFNFH
-#' @name hatchery_release_KFNFH
+#' @title Hatchery Distributions and Transfers, KFNFH FY2024
+#' @name KFNFH_hatchery_release_2024
 #' @description Summary of all fish distributions for repatriation or transfer from the Klamath Falls National Fish Hatchery during the fiscal year of 2024. A "distribution" is considered a stocking or repatriation event, while a "transfer" involves moving fish for temporary holding
+#' Corresponds to **Table 11** in the FY2024 KFNFH Annual Report.
 #' @format A tibble with 34 rows and 12 columns
 #' \itemize{
-#'   \item \code{hathcery_name}: name of hatchery (KFNFH)
+#'   \item \code{hatchery_name}: name of hatchery (KFNFH)
+#'   \item \code{fiscal_year}: fiscal year (2024)
 #'   \item \code{stock_date}: date the fish distribution or transfer event occurred
 #'   \item \code{species}: species of sucker being distributed (e.g. LRS, SNS, ESS LSR)
 #'   \item \code{lot}: grouping or cohort of fish categorized primarily by their collection year (CY) or their operational origin
@@ -186,4 +189,186 @@
 #'   }
 #'
 #' @source Klamath Falls National Fish Hatchery Annual Report for Fiscal Year 2024
-"hatchery_release_KFNFH"
+"KFNFH_hatchery_release_2024"
+
+#' @title Wild LRS Adult Collections – East Side Springs (ESS), FY2024
+#' @name KFNFH_LRS_ESS_adult_collection_2024
+#' @description
+#' Records of wild adult Lost River suckers collected at East Side Springs
+#' for assisted spawning at the Klamath Falls National Fish Hatchery (KFNFH)
+#' during fiscal year 2024. Adults were captured, spawned, and returned
+#' to the lake to support genetic representation of the ESS population.
+#'
+#' Corresponds to **Table 2** in the FY2024 KFNFH Annual Report.
+#'
+#' @format A tibble with columns describing collection timing and fish attributes.
+#' \itemize{
+#'   \item \code{hatchery_name}: hatchery name (KFNFH)
+#'   \item \code{fiscal_year}: fiscal year (2024)
+#'   \item \code{date}: date adults were collected
+#'   \item \code{fin_clip_id_number}
+#'   \item \code{pit_tag_suffix}
+#'   \item \code{sex}: sex of the adult fish
+#'   \item \code{gamete_use}
+#'   \item \code{tl_mm}: total length (mm)
+#'   \item \code{weight_g}: weight (grams)
+#'   \item \code{condition}: observed condition notes
+#' }
+#'
+#' @source Klamath Falls National Fish Hatchery Annual Report for Fiscal Year 2024
+"KFNFH_LRS_ESS_adult_collection_2024"
+
+
+#' @title LRS ESS Incubation and Hatch Results, FY2024
+#' @name KFNFH_LRS_ESS_incubation_hatch_2024
+#' @description
+#' Egg incubation and hatch outcomes for Lost River suckers spawned from
+#' East Side Springs (ESS) adults at the Klamath Falls National Fish Hatchery
+#' during fiscal year 2024.
+#'
+#' Corresponds to **Table 3** in the FY2024 KFNFH Annual Report.
+#'
+#' @format A tibble with one row per spawning female
+#' \itemize{
+#'   \item \code{spawning_date}: date eggs were spawned
+#'   \item \code{female}: female parent PIT tag suffix
+#'   \item \code{male_1}: first male parent PIT tag suffix
+#'   \item \code{male_2}: second male parent PIT tag suffix
+#'   \item \code{male_3}: third male parent PIT tag suffix
+#'   \item \code{male_4}: fourth male parent PIT tag suffix
+#'   \item \code{incubator}: incubation system (e.g., jars, aquaria)
+#'   \item \code{egg_volume_mL}: volume of eggs incubated (mL)
+#'   \item \code{eggs_per_mL}: egg density (eggs per mL)
+#'   \item \code{total_eggs}: total number of eggs incubated
+#'   \item \code{total_fry}: total fry produced
+#'   \item \code{hatch_percent}: percent hatch success
+#'   \item \code{hatch_date}: date fry hatched
+#' }
+#'
+#' @source Klamath Falls National Fish Hatchery Annual Report for Fiscal Year 2024
+"KFNFH_LRS_ESS_incubation_hatch_2024"
+
+
+#' @title Adfluvial Early Rearing Performance, FY2024
+#' @name KFNFH_adfluvial_early_rearing_2024
+#' @description
+#' Early rearing performance of adfluvial (river-origin) sucker larvae
+#' at the Klamath Falls National Fish Hatchery (KFNFH) during fiscal year 2024.
+#' Data summarize larval collection, stocking, mortality, and survival
+#' prior to transfer to outdoor pond grow-out.
+#'
+#' Corresponds to **Table 5** in the FY2024 KFNFH Annual Report.
+#'
+#' @format A tibble with one row per stocking of an individual culture unit
+#' \itemize{
+#'   \item \code{hatchery_name}: hatchery name (KFNFH)
+#'   \item \code{fiscal_year}: federal fiscal year (2024)
+#'   \item \code{date}: collection, transfer, or observation date
+#'   \item \code{culture_unit}: indoor rearing unit or tank identifier
+#'   \item \code{collected}: number of larvae collected or introduced
+#'   \item \code{mortality}: observed larval mortalities
+#'   \item \code{stocked}: number of larvae successfully stocked or transferred
+#'   \item \code{survival_percent}: percent survival relative to collected larvae
+#'   \item \code{observed_mortality_percent}: percent observed mortality
+#'   \item \code{unobserved_mortality_percent}: percent unobserved or inferred loss
+#' }
+#'
+#' @source Klamath Falls National Fish Hatchery Annual Report for Fiscal Year 2024
+"KFNFH_adfluvial_early_rearing_2024"
+
+
+#' @title Adfluvial Pond Grow-out Performance, FY2024
+#' @name KFNFH_adfluvial_pond_growout
+#' @description
+#' Grow-out performance of adfluvial suckers reared at the Klamath Falls
+#' National Fish Hatchery (KFNFH) during fiscal year 2024. The dataset
+#' includes fertilized pond rearing, extended holding, and inventory
+#' transitions, with each row representing a discrete grow-out unit
+#' and time interval.
+#'
+#' Data are distinguished by originating report table using
+#' \code{inventory_source}.
+#'
+#' Combines **Tables 6–8** from the FY2024 KFNFH Annual Report.
+#'
+#' @format A tibble with rows for each pond for each inventory season.
+#' \itemize{
+#'   \item \code{hatchery_name}: hatchery name (KFNFH)
+#'   \item \code{fiscal_year}: fiscal year (2024)
+#'   \item \code{inventory_source}: source table in the report (e.g., "FY2024 Table 6")
+#'   \item \code{pond}: pond or rearing unit identifier
+#'   \item \code{lot}: cohort or production lot identifier
+#'   \item \code{stocked_date}: date fish were stocked into the unit
+#'   \item \code{start_number}: number of fish at the start of the interval
+#'   \item \code{start_g_fish}: mean fish weight at stocking (g)
+#'   \item \code{start_wt_g}: total biomass at stocking (g)
+#'   \item \code{start_wt_lb}: total biomass at stocking (lb)
+#'   \item \code{start_tl_mm}: mean total length at stocking (mm)
+#'   \item \code{harvest_date}: date fish were harvested or transferred
+#'   \item \code{end_number}: number of fish at harvest or transfer
+#'   \item \code{end_g_fish}: mean fish weight at harvest (g)
+#'   \item \code{end_wt_g}: total biomass at harvest (g)
+#'   \item \code{end_gt_lb}: total biomass at harvest (lb)
+#'   \item \code{end_tl_mm}: mean total length at harvest (mm)
+#'   \item \code{days}: duration of the grow-out interval (days)
+#'   \item \code{months}: duration of the grow-out interval (months)
+#'   \item \code{growth_mm_day}: mean daily growth rate (mm/day)
+#'   \item \code{weight_gain_lb}: total biomass gain during interval (lb)
+#'   \item \code{harvest_mortality_number}: mortalities recorded at harvest
+#'   \item \code{survival_percent}: percent survival during the interval
+#' }
+#'
+#' @source Klamath Falls National Fish Hatchery Annual Report for Fiscal Year 2024
+"KFNFH_adfluvial_pond_growout"
+
+
+#' @title Net Pen Survival of Adfluvial Suckers
+#' @name KFNFH_pen_survival
+#' @description
+#' Survival and growth outcomes for adfluvial suckers reared in net pens
+#' (including Upper Klamath Lake and Gerber Reservoir) as part of the
+#' Sucker Assisted Rearing Program.
+#'
+#' Derived from **Tables 9 and 10** in the FY2024 KFNFH Annual Report.
+#'
+#' @format A tibble with rows corresponding to pen by year.
+#' \itemize{
+#'   \item \code{hatchery_name}: hatchery name (KFNFH)
+#'   \item \code{pen_type}: type of pen (e.g., Net Pen)
+#'   \item \code{operation_year}: year of net pen operation
+#'   \item \code{captured_year}: year fish were originally collected
+#'   \item \code{pen_id}: pen identifier
+#'   \item \code{stock_tl_mm}: mean total length at stocking (mm)
+#'   \item \code{number_stocked}: number of fish stocked
+#'   \item \code{harvest_tl_mm}: mean total length at harvest (mm)
+#'   \item \code{number_harvested}: number of fish harvested
+#'   \item \code{survival_percentage}: percent survival
+#' }
+#'
+#' @source Klamath Falls National Fish Hatchery Annual Report for Fiscal Year 2024
+"KFNFH_pen_survival"
+
+
+#' @title Sucker PIT-tag Detections, FY2024
+#' @name sucker_pit_tag_detection_2024
+#' @description
+#' Summary of PIT-tag detections from stationary monitoring locations
+#' used to assess post-release survival and persistence of hatchery
+#' and salvaged suckers in Upper Klamath Lake during fiscal year 2024.
+#'
+#' Corresponds to **Table 12** in the FY2024 KFNFH Annual Report.
+#'
+#' @format A tibble with monitoring deployment summaries.
+#' \itemize{
+#'   \item \code{monitor_location}: PIT tag monitoring site
+#'   \item \code{date_deployed}: deployment date
+#'   \item \code{date_retrieved}: retrieval date
+#'   \item \code{tags_total_unique}: total unique PIT tags detected
+#'   \item \code{tags_sarp}: tags from SARP-reared fish
+#'   \item \code{tags_salvage}: tags from salvaged fish
+#'   \item \code{tags_unknown}: tags of unknown origin
+#' }
+#'
+#' @source Klamath Falls National Fish Hatchery Annual Report for Fiscal Year 2024
+"sucker_pit_tag_detection_2024"
+
