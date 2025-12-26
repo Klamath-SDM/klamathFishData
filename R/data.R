@@ -45,17 +45,17 @@
 #'   }
 'data_location_lookup'
 
-#' @title Spawner Escapement - IN DEVELOPMNENT
-#' @name megatable
-#' @description Digital version of [CDFW's Spawner Escapement Megatable](https://wildlife.ca.gov/Conservation/Fishes/Chinook-Salmon/Anadromous-Assessment)
-#' @format A tibble with 4077 rows and 7 columns
+#' @title Spawner Escapement
+#' @name spawner_escapement
+#' @description Digital version of [CDFW's Spring Chinook Salmon Megatable](https://wildlife.ca.gov/Conservation/Fishes/Chinook-Salmon/Anadromous-Assessment) and [CDFW's Spring Chinook Salmon Megatable](https://casalmon.org/wp-content/uploads/2024/08/FINAL-2023-Spring-Chinook-Megatable-v.28-Mar-2024.pdf) Spawner Escapement sections
+#' @format A tibble with 1,722 rows and 6 columns
 #' \itemize{
-#'   \item \code{location}:
-#'   \item \code{year}:
-#'   \item \code{species}:
-#'   \item \code{origin}:
-#'   \item \code{lifestage}:
-#'   \item \code{value}:
+#'   \item \code{location}: River, hatchery, or basin where escapement is reported
+#'   \item \code{year}: Return year of the escapement estimate/count
+#'   \item \code{species}: Species name (e.g., spring chinook salmon, fall chinook salmon)
+#'   \item \code{origin}: Fish origin category (e.g., "hatchery", "wild")
+#'   \item \code{lifestage}: Life stage reported (e.g., "adults", "grilse")
+#'   \item \code{value}: Escapement count
 #'   }
 'spawner_escapement'
 
