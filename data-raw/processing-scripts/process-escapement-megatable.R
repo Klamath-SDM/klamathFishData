@@ -77,12 +77,13 @@ spring_spawner_escapement_clean <- spring_spawner_escapement |>
   pivot_longer(cols = c(Grilse, Adults, Totals), names_to = "lifestage", values_to = "value") |>
   filter(lifestage != "Totals") |>
   mutate(location = tolower(location),
-         lifestage = tolower(lifestage))
+         lifestage = tolower(lifestage)) |>
+  replace_na(list(value = 0))
 
 ## Combine spring and fall run - TODO do some checks before saving
 spawner_escapement <- bind_rows(spring_spawner_escapement_clean, fall_spawner_escapement_clean)
 
 
 # save clean data
-# usethis::use_data(spawner_escapement, overwrite = TRUE)
+usethis::use_data(spawner_escapement, overwrite = TRUE)
 
