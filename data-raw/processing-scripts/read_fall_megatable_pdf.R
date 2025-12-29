@@ -10,7 +10,7 @@ library(tabulapdf)
 library(tidyverse)
 library(purrr)
 
-
+# This script reads and cleans fall run megatable
 ##  ---- SPAWNER ----
 pdf_path <- "data-raw/2022_Klamath_Basin_Megatable_20230216.pdf"
 tables_stream <- extract_tables(pdf_path, method = "stream", output = "tibble")
@@ -347,7 +347,7 @@ clean_harvest_table <- function(tbl, start_year, tribal_label = "Indian Net Harv
              str_remove("\\s*[a-zA-Z]+/?$") |>
              na_if("--") |>
              readr::parse_number()
-           )
+    )
 
   return(harvest_long)
 }
@@ -467,8 +467,8 @@ clean_in_river_run_table <- function(tbl_totals, start_year) {
 }
 
 inriver_run_cleaned_list <- list(run_1, run_2, run_3, run_4, run_5,
-                             run_6, run_7, run_8, run_9, run_10,
-                             run_11, run_12, run_13, run_14, run_15)
+                                 run_6, run_7, run_8, run_9, run_10,
+                                 run_11, run_12, run_13, run_14, run_15)
 
 all_years <- seq(1978, by = 3, length.out = 15)
 
@@ -480,10 +480,7 @@ in_river_run <- bind_rows(inriver_run_cleaned)
 
 ## Combining all sections of the megatable  ----
 
-megatable <- bind_rows(in_river_run, in_river_harvest, spawner_escapement) |>
+fall_megatable <- bind_rows(in_river_run, in_river_harvest, spawner_escapement) |>
   rename(lifestage = category) |>
   mutate(species = "fall chinook salmon")
-
-# save clean data
-usethis::use_data(megatable, overwrite = TRUE)
 

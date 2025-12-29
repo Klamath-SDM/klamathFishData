@@ -110,6 +110,16 @@ predation_estimates_avian_pit_tag <- avian_predation_pit_tag |>
   relocate(species, life_stage, origin, release_season, sarp_program, .after = location) |> glimpse()
   # life_stage = if_else(str_detect(fish_group_2, "Adult"), "Adult", "Juvenile"),
 
+## Harmonize dataset ----
+pit_long <- predation_estimates_avian_pit_tag |>
+  mutate(metric_type = "count",
+         value = NA_character_,
+         lower_ci_pct = NA_real_,
+         upper_ci_pct = NA_real_,
+         sarp_program = as.character(sarp_program)) |>
+  select(location, species, life_stage, origin, release_season, sarp_program, year, metric_type,
+         value, lower_ci_pct, upper_ci_pct, available, recovered)
+
 
 # save clean data - how many tagged suckers were available and how many were recovered on bird colonies
 usethis::use_data(predation_estimates_avian_pit_tag, overwrite = TRUE)
@@ -219,6 +229,17 @@ predation_estimates_wild <- predation_estimates_wild_clean |>
   select(-fish_group) |>
   relocate(species, life_stage, origin, .after = location) |> glimpse()
 
+## Harmonize dataset ----
+wild_long<- predation_estimates_wild |>
+  mutate(metric_type = "rate",
+         release_season = NA_character_,
+         sarp_program = "Natural",
+         available = NA_integer_,
+         recovered = NA_integer_,
+         value = estimate_pct) |>
+  select(location, species, life_stage, origin, release_season, sarp_program, year, metric_type,
+         value, lower_ci_pct, upper_ci_pct, available, recovered)
+
 
 # save clean data -  Estimates of predation rates (95% credible intervals) on PIT-tagged Lost River suckers (LRS),
 # Shortnose suckers (SNS), Klamath Largescale suckers (KLS), Shortnose/Klamath Largescale suckers (SNS-KLS), and wild juvenile suckers by piscivorous colonial waterbirds nesting at colonies in Upper Klamath
@@ -323,6 +344,16 @@ predation_estimates_hatchery <- estimate_predation_sarp |>
    select(-fish_group) |>
    relocate(species, life_stage, origin, release_season, sarp_program, .after = location) |> glimpse()
 
+
+hatchery_long <- predation_estimates_hatchery |>
+  mutate(metric_type = "rate",
+         available = NA_integer_,
+         recovered = NA_integer_,
+         value = estimate_pct,
+         sarp_program = as.character(sarp_program)) |>
+  select(location, species, life_stage, origin, release_season, sarp_program, year, metric_type,
+         value, lower_ci_pct, upper_ci_pct, available, recovered)
+
 # save clean data -   Estimates of predation rates (95% credible intervals) on PIT-tagged Sucker Assisted Rearing
 # Program (SARP) juvenile suckers and juvenile Chinook Salmon (Chinook) by piscivorous colonial
 # waterbirds nesting at colonies in Upper Klamath Lake, Clear Lake Reservoir, and Sheepy Lake combined
@@ -330,3 +361,7 @@ predation_estimates_hatchery <- estimate_predation_sarp |>
 
 usethis::use_data(predation_estimates_hatchery, overwrite = TRUE)
 
+
+### Combine ----
+
+predation_all <- bind_rows(hatchery_long, wild_long, pit_long) #TODO confirm that this schema makes sense
