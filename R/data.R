@@ -167,10 +167,10 @@
 #' @source Klamath Falls National Fish Hatchery Annual Report for Fiscal Year 2024
 "KFNFH_historical_collection_release"
 
-#' @title Hatchery Distributions and Transfers, KFNFH FY2024
-#' @name KFNFH_hatchery_release_2024
+#' @title Hatchery Distributions and Transfers, KFNFH
+#' @name KFNFH_hatchery_release
 #' @description Summary of all fish distributions for repatriation or transfer from the Klamath Falls National Fish Hatchery during the fiscal year of 2024. A "distribution" is considered a stocking or repatriation event, while a "transfer" involves moving fish for temporary holding
-#' Corresponds to **Table 11** in the FY2024 KFNFH Annual Report.
+#' Corresponds to **Table 11** in the FY2024 KFNFH Annual Report and **Table 10** in the FY2023 report.
 #' @format A tibble with 34 rows and 12 columns
 #' \itemize{
 #'   \item \code{hatchery_name}: name of hatchery (KFNFH)
@@ -188,18 +188,18 @@
 #'   \item \code{stocking_location}: ultimate destination where the fish were distributed or transferred
 #'   }
 #'
-#' @source Klamath Falls National Fish Hatchery Annual Report for Fiscal Year 2024
-"KFNFH_hatchery_release_2024"
+#' @source Klamath Falls National Fish Hatchery Annual Report for Fiscal Year 2024 and 2023
+"KFNFH_hatchery_release"
 
-#' @title Wild LRS Adult Collections – East Side Springs (ESS), FY2024
-#' @name KFNFH_LRS_ESS_adult_collection_2024
+#' @title Wild LRS Adult Collections – East Side Springs (ESS)
+#' @name KFNFH_LRS_ESS_adult_collection
 #' @description
 #' Records of wild adult Lost River suckers collected at East Side Springs
 #' for assisted spawning at the Klamath Falls National Fish Hatchery (KFNFH)
 #' during fiscal year 2024. Adults were captured, spawned, and returned
 #' to the lake to support genetic representation of the ESS population.
 #'
-#' Corresponds to **Table 2** in the FY2024 KFNFH Annual Report.
+#' Corresponds to **Table 2** in the FY2024 KFNFH Annual Report and **Table 2** in the 2023 report.
 #'
 #' @format A tibble with columns describing collection timing and fish attributes.
 #' \itemize{
@@ -215,8 +215,8 @@
 #'   \item \code{condition}: observed condition notes
 #' }
 #'
-#' @source Klamath Falls National Fish Hatchery Annual Report for Fiscal Year 2024
-"KFNFH_LRS_ESS_adult_collection_2024"
+#' @source Klamath Falls National Fish Hatchery Annual Report for Fiscal Year 2024 and 2023
+"KFNFH_LRS_ESS_adult_collection"
 
 
 #' @title LRS ESS Incubation and Hatch Results, FY2024

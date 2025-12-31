@@ -6,19 +6,71 @@ library(janitor)
 library(dplyr)
 library(tidyr)
 
+## PARSE PDF FILES #############################################################
+
 # USFWS Klamath Falls National Fish Hatchery Report - 2024
 pdf_path <- here::here("data-raw/20250619_FY2024 KFNFH Annual Report_Final Draft.pdf")
-
 filename <- here::here("data-raw", "pdf-tables", "kfnfh_2024_tables_raw.Rds")
 if(!file.exists(filename)) {
-  tables_raw <- extract_tables(pdf_path, method = "stream", output = "tibble")
-  tables_raw |> saveRDS(filename)
+  tables_raw_2024 <- extract_tables(pdf_path, method = "stream", output = "tibble")
+  tables_raw_2024 |> saveRDS(filename)
 } else {
-  tables_raw <- readRDS(filename)
+  tables_raw_2024 <- readRDS(filename)
 }
 
-## Release totals
-table_11_raw <- tables_raw[[13]] |>
+# USFWS Klamath Falls National Fish Hatchery Report - 2023
+pdf_path <- here::here("data-raw/20240801_FY2023 KFNFH Annual Report_Final.pdf")
+filename <- here::here("data-raw", "pdf-tables", "kfnfh_2023_tables_raw.Rds")
+if(!file.exists(filename)) {
+  tables_raw_2023 <- extract_tables(pdf_path, method = "stream", output = "tibble")
+  tables_raw_2023 |> saveRDS(filename)
+} else {
+  tables_raw_2023 <- readRDS(filename)
+}
+
+# duplicative of 2024 tables, no need to import:
+# - 2023 table 1
+# - 2023 table 4
+# - 2023 tables 8 and 9 - survival in pens
+# - 2023 table 11 - partial year
+
+# versions to import
+# - 2023 table 2 = wild ESS LRS handled (equiv. of 2024 table 3)
+# - 2023 table 3 = collection and stocking by culture unit (equiv. of 2024 table 5)
+# - 2023 table 5-7 = concatenated pond tables (equiv. of 2024 6-8)
+# - 2023 table 10 = fish distribution/transfer (equiv of 2024 11)
+
+# USFWS Klamath Falls National Fish Hatchery Report - 2022
+pdf_path <- here::here("data-raw/20240830_FY2022 KFNFH Annual Report_Final.pdf")
+filename <- here::here("data-raw", "pdf-tables", "kfnfh_2022_tables_raw.Rds")
+if(!file.exists(filename)) {
+  tables_raw_2022 <- extract_tables(pdf_path, method = "stream", output = "tibble")
+  tables_raw_2022 |> saveRDS(filename)
+} else {
+  tables_raw_2022 <- readRDS(filename)
+}
+
+# USFWS Klamath Falls National Fish Hatchery Report - 2021
+pdf_path <- here::here("data-raw/20240912_FY2021_KFNFH_Annual_Report_Final.pdf")
+filename <- here::here("data-raw", "pdf-tables", "kfnfh_2021_tables_raw.Rds")
+if(!file.exists(filename)) {
+  tables_raw_2021 <- extract_tables(pdf_path, method = "stream", output = "tibble")
+  tables_raw_2021 |> saveRDS(filename)
+} else {
+  tables_raw_2021 <- readRDS(filename)
+}
+
+## PROCESS TABLES ##############################################################
+
+### KFNFH Hatchery Release Totals ==============================================
+
+# Summary of all fish distributions for repatriation or transfer from the
+# Klamath Falls National Fish Hatchery. Reported by fiscal year in individual
+# reports. Collect the tables for individual reports and concatenate.
+
+#### 2024 (Table 11) -----------------------------------------------------------
+
+table_11_raw <- tables_raw_2024[[13]] |>
   clean_names() |>
   mutate(stock_date = tolower(stock_date)) |>
   glimpse()
@@ -31,8 +83,7 @@ KFNFH_hatchery_release_2024 <- table_11_raw |>
   fill(date_anchor, .direction = "down") |>
   mutate(stock_date = if_else(is.na(stock_date), date_anchor, stock_date)) |>
   select(-date_anchor) |>
-  # slice(1:18, 25, 27:28, 30:35, 41, 43:48) |> # remove totals
-  drop_na(stocking_location) |> # equivalent way to remove totals
+  drop_na(stocking_location) |>
   mutate(stock_date = as.Date(stock_date, format = "%m/%d/%Y"),
          hatchery_name = "KFNFH",
          fiscal_year = 2024) |>
@@ -41,11 +92,48 @@ KFNFH_hatchery_release_2024 <- table_11_raw |>
   relocate(hatchery_name, fiscal_year, .before = stock_date) |>
   glimpse()
 
-# save data
-KFNFH_hatchery_release_2024 |> usethis::use_data(overwrite = T)
+#### 2023 (Table 10) -----------------------------------------------------------
 
-## Historical Collections and Releases Summary
-table_1_raw <- tables_raw[[2]] |>
+table_10_2023 <- tables_raw_2023[[11]] |>
+  clean_names()
+
+KFNFH_hatchery_release_2023 <- table_10_2023 |>
+  rename(stock_date = date) |>
+  mutate(stock_date = as.character(stock_date),
+         stock_date = na_if(stock_date, ""),
+         date_anchor = if_else(!is.na(stock_date), stock_date, NA_character_),
+         number_fish = number)|>
+  fill(date_anchor, .direction = "down") |>
+  mutate(stock_date = if_else(is.na(stock_date), date_anchor, stock_date)) |>
+  select(-date_anchor) |>
+  drop_na(stocking_location) |>
+  mutate(stock_date = as.Date(stock_date, format = "%m/%d/%Y"),
+         hatchery_name = "KFNFH",
+         fiscal_year = 2023) |>
+  select(-number) |>
+  relocate(number_fish, .after = lot) |>
+  relocate(hatchery_name, fiscal_year, .before = stock_date) |>
+  glimpse()
+
+#### Concatenate ---------------------------------------------------------------
+
+KFNFH_hatchery_release <- bind_rows(
+  KFNFH_hatchery_release_2024,
+  KFNFH_hatchery_release_2023
+)
+
+KFNFH_hatchery_release |> usethis::use_data(overwrite = T)
+
+### Historical Collections and Releases Summary ================================
+
+# Collections and releases from the Klamath Falls National Fish Hatchery since
+# its inception in2016, by federal fiscal years. This table is reproduced in
+# each year's report with updated numbers, so only the most recent report needs
+# to be imported.
+
+#### 2024 Historical Collection and Release (Table 1) --------------------------
+
+table_1_raw <- tables_raw_2024[[2]] |>
   clean_names() |>
   glimpse()
 
@@ -60,9 +148,9 @@ table_1 <- table_1_raw |>
       mutate(across(-1, ~parse_number(.x)))
   })()
 
-# Larval Catch
-# TODO: Join to other table
-table_4_raw <- tables_raw[[5]] |>
+#### 2024 Larval Catch (Table 4) -----------------------------------------------
+
+table_4_raw <- tables_raw_2024[[5]] |>
   glimpse()
 
 table_4 <- table_4_raw |>
@@ -72,6 +160,8 @@ table_4 <- table_4_raw |>
          larvae_collected = readr::parse_number(number_collected),
          primary_collection_method) |>
   glimpse()
+
+#### Join Tables ---------------------------------------------------------------
 
 KFNFH_historical_collection_release <- table_1 |>
   rename(sarp_tl_mm = tl_4_mm,
@@ -86,7 +176,6 @@ KFNFH_historical_collection_release <- table_1 |>
          salvage_sl_mm = case_when(salvage_tl_mm == 129 ~ NA,
                                    salvage_tl_mm == 126 ~ NA,
                                    TRUE ~ salvage_sl_mm))|>
-  # select(-c(sarp_tl_mm, fingerling_tl_mm, fry_tl_mm, salvage_sl_mm, salvage_tl_mm)) |>
   mutate(hatchery_name = "KFNFH") |>
   relocate(hatchery_name, .before = fiscal_year) |>
   left_join(table_4, by = join_by(fiscal_year, larvae_collected)) |>
@@ -95,9 +184,11 @@ KFNFH_historical_collection_release <- table_1 |>
 # save data
 KFNFH_historical_collection_release |> usethis::use_data(overwrite = T)
 
-## Wild LRS Adults
+### Wild LRS Adults ============================================================
 
-table_2_raw <- tables_raw[[3]]
+#### 2024 (Table 2) ------------------------------------------------------------
+
+table_2_raw <- tables_raw_2024[[3]]
 
 KFNFH_LRS_ESS_adult_collection_2024 <- table_2_raw |>
   clean_names() |>
@@ -111,13 +202,63 @@ KFNFH_LRS_ESS_adult_collection_2024 <- table_2_raw |>
   rename(tl_mm = total_length,
          fl_mm = fork_length) |>
   relocate(hatchery_name, fiscal_year, .before = date) |>
+  mutate(pit_tag_last_5 = str_sub(pit_tag_suffix, -5, -1)) |>
+  relocate(pit_tag_last_5, .after = pit_tag_suffix) |>
   glimpse()
 
 KFNFH_LRS_ESS_adult_collection_2024 |> usethis::use_data(overwrite = T)
 
-## Inclubation and Hatch Results
+#### 2023 (Table 2) ------------------------------------------------------------
 
-table_3_raw <- tables_raw[[4]]
+table_2_raw_2023 <- tables_raw_2023[[3]] |>
+  clean_names()
+
+KFNFH_LRS_ESS_adult_collection_2023 <-
+  table_2_raw_2023 |>
+  clean_names() |>
+  separate_wider_delim(date_spring_name,
+                       delim = " ",
+                       names = c("date", "spring_name")) |>
+  mutate(date = as.Date(date, format = "%m/%d/%Y"))  |>
+  mutate(pit_tag_last_5_sex_fork_length_atfc_genetic_id =
+           if_else(is.na(spawned_not_spawned), NA,
+                   pit_tag_last_5_sex_fork_length_atfc_genetic_id)) |>
+  separate_wider_delim(pit_tag_last_5_sex_fork_length_atfc_genetic_id,
+                       delim = " ",
+                       names = c("pit_tag_last_5",
+                                 "sex",
+                                 "fork_length",
+                                 "atfc_genetic_id"),
+                       too_many = "drop") |>
+  rename(spring_location = spring_name,
+         fl_mm = fork_length,
+         gamete_use = spawned_not_spawned) |>
+  mutate(sex = str_to_title(sex),
+         gamete_use = str_to_title(gamete_use),
+         fry_collected_for_aftc = (fry_collected_for_aftc == "Y"),
+         fl_mm = as.numeric(fl_mm),
+         fl_in = fl_mm / 25.4) |>
+  mutate(hatchery_name = "KFNFH",
+         fiscal_year = 2023) |>
+  relocate(hatchery_name, fiscal_year, .before = date) |>
+  relocate(fl_in, .after = fl_mm) |>
+  select(-matches("^x.$")) |>
+  glimpse()
+
+#### Combined ------------------------------------------------------------------
+
+KFNFH_LRS_ESS_adult_collection <- bind_rows(
+  KFNFH_LRS_ESS_adult_collection_2024,
+  KFNFH_LRS_ESS_adult_collection_2023
+)
+
+KFNFH_LRS_ESS_adult_collection |> usethis::use_data(overwrite = T)
+
+### Incubation and Hatch Results ===============================================
+
+#### 2024 (Table 3) ------------------------------------------------------------
+
+table_3_raw <- tables_raw_2024[[4]]
 
 KFNFH_LRS_ESS_incubation_hatch_2024 <- table_3_raw |>
   clean_names() |>
@@ -132,12 +273,15 @@ KFNFH_LRS_ESS_incubation_hatch_2024 <- table_3_raw |>
   separate_wider_delim(male_male, delim = " ", names = c("male_3", "male_4")) |>
   glimpse()
 
+#### Concatenate ---------------------------------------------------------------
+
 KFNFH_LRS_ESS_incubation_hatch_2024 |> usethis::use_data(overwrite = T)
 
+### Rearing Performance ========================================================
 
-## Rearing Performance
+#### 2024 (Table 5) ------------------------------------------------------------
 
-table_5_raw <- tables_raw[[6]] |>
+table_5_raw <- tables_raw_2024[[6]] |>
   clean_names() |>
   glimpse()
 
@@ -151,24 +295,26 @@ KFNFH_adfluvial_early_rearing_2024 <- table_5_raw |>
 
 KFNFH_adfluvial_early_rearing_2024 |> usethis::use_data(overwrite = T)
 
-## Pond monitoring
+### Pond Monitoring ============================================================
 
-table_6_raw <- tables_raw[[8]] |>
+#### 2024 (Tables 6-8) ---------------------------------------------------------
+
+table_6_raw <- tables_raw_2024[[8]] |>
   row_to_names(row_number = 1) |>
   clean_names() |>
   drop_na(pond)
 
-table_7_raw <- tables_raw[[9]] |>
+table_7_raw <- tables_raw_2024[[9]] |>
   row_to_names(row_number = 1) |>
   clean_names() |>
   drop_na(pond)
 
-table_8_raw <- tables_raw[[10]] |>
+table_8_raw <- tables_raw_2024[[10]] |>
   row_to_names(row_number = 1) |>
   clean_names() |>
   drop_na(pond)
 
-KFNFH_adfluvial_pond_growout <-
+KFNFH_adfluvial_pond_growout_2024 <-
   bind_rows("FY2024 Table 6" = table_6_raw,
             "FY2024 Table 7" = table_7_raw,
             "FY2024 Table 8" = table_8_raw,
@@ -197,11 +343,122 @@ KFNFH_adfluvial_pond_growout <-
          fiscal_year = 2024) |>
   relocate(hatchery_name, fiscal_year, .before = inventory_source)
 
+#### 2023 (Tables 5-7) ---------------------------------------------------------
+
+combine_first_row_into_column_names <- function(.) {
+  {
+    units <- as.character(unlist(.[1, ])) |> coalesce("")
+
+    rename_with(
+      .,
+      ~ make.names(paste(.x, units, sep = "_"), unique = TRUE),
+      everything()
+    )
+  }
+}
+table_5_raw_2023 <- tables_raw_2023[[6]] |>
+  combine_first_row_into_column_names() |>
+  slice(-1) |>
+  clean_names() |>
+  drop_na(pond) |>
+  mutate(across(c(everything(), -c(stocked, harvested, pond, lot)), as.numeric)) |>
+  mutate(across(c(stocked, harvested), mdy)) |>
+  transmute(pond, lot, stocked_date = stocked,
+            harvest_date = harvested,
+            start_number = total_4,
+            start_g_fish = average_5_g_fish,
+            start_wt_g = weight_6_g,
+            start_wt_lb = weight_7_lbs,
+            start_tl_mm = tl_8_mm,
+            end_number = total_10,
+            end_g_fish = average_11_g_fish,
+            end_wt_g = weight_12_g,
+            end_wt_lb = weight_13_lbs,
+            end_tl_mm = tl_14_mm,
+            days, months,
+            growth_mm_day = growth_17_mm_day,
+            weight_gain_g = growth_18_g_fish_mon,
+            weigth_gain_lb = weight_gain_lbs,
+            harvest_mortality_number = harvest_morts,
+            survival_percent = survival)
+
+
+table_6_raw_2023 <- tables_raw_2023[[7]] |>
+  combine_first_row_into_column_names() |>
+  slice(-1) |>
+  clean_names() |>
+  drop_na(pond) |>
+  mutate(across(c(everything(), -c(stocked, harvested, pond, lot)), as.numeric)) |>
+  mutate(across(c(stocked, harvested), mdy)) |>
+  transmute(pond, lot, stocked_date = stocked,
+            harvest_date = harvested,
+            start_number = total_4,
+            start_g_fish = average_5_g_fish,
+            start_wt_g = weight_6_g,
+            start_wt_lb = weight_7_lbs,
+            start_tl_mm = start_tl_8_mm,
+            end_number = total_10,
+            end_g_fish = average_11_g_fish,
+            end_wt_g = weight_12_g,
+            end_wt_lb = weight_13_lbs,
+            end_tl_mm = start_tl_14_mm,
+            days, months,
+            growth_mm_day = growth_17_mm_day,
+            weight_gain_g = growth_18_g_fish_mon,
+            weigth_gain_lb = weight_gain_lbs,
+            harvest_mortality_number = harvest_morts,
+            survival_percent = survival)
+
+table_7_raw_2023 <- tables_raw_2023[[8]] |>
+  combine_first_row_into_column_names() |>
+  slice(-1) |>
+  clean_names() |>
+  drop_na(pond) |>
+  mutate(across(c(everything(), -c(stocked, harvested, pond, lot)), as.numeric)) |>
+  mutate(across(c(stocked, harvested), mdy)) |>
+  transmute(pond, lot, stocked_date = stocked,
+            harvest_date = harvested,
+            start_number = total_4,
+            start_g_fish = average_5_g_fish,
+            start_wt_g = weight_6_g,
+            start_wt_lb = weight_7_lbs,
+            start_tl_mm = tl_8_mm,
+            end_number = total_10,
+            end_g_fish = average_11_g_fish,
+            end_wt_g = weight_12_g,
+            end_wt_lb = weight_13_lbs,
+            end_tl_mm = tl_14_mm,
+            days = total_15_days,
+            months = total_16_months,
+            growth_mm_day = growth_17_mm_day,
+            weight_gain_g = growth_18_g_fish_mon,
+            weigth_gain_lb = weight_gain_lbs,
+            harvest_mortality_number = harvest_morts,
+            survival_percent = survival)
+
+KFNFH_adfluvial_pond_growout_2023 <-
+  bind_rows("FY2023 Table 5" = table_5_raw_2023,
+            "FY2023 Table 6" = table_6_raw_2023,
+            "FY2023 Table 7" = table_7_raw_2023,
+            .id="inventory_source") |>
+  mutate(hatchery_name = "KFNFH",
+         fiscal_year = 2023,
+         life_history = if_else(str_detect(lot, "ESS"), "ESS", "adfluvial")) |>
+  relocate(hatchery_name, fiscal_year, inventory_source, life_history, .before = pond)
+
+#### Concatenate ---------------------------------------------------------------
+
+KFNFH_adfluvial_pond_growout <- bind_rows(
+  KFNFH_adfluvial_pond_growout_2024,
+  KFNFH_adfluvial_pond_growout_2023)
+
 KFNFH_adfluvial_pond_growout |> usethis::use_data(overwrite = T)
 
-## Sucker Pen Survival
+### Sucker Pen Survival ========================================================
 
-table_9_raw <- tables_raw[[11]] |>
+#### 2024 (Tables 9-10) --------------------------------------------------------
+
+table_9_raw <- tables_raw_2024[[11]] |>
   clean_names() |>
   (\(x) {
     new_names <- paste(names(x), x[1, ], sep = "_") |>
@@ -211,7 +468,7 @@ table_9_raw <- tables_raw[[11]] |>
       setNames(new_names)
   })()
 
-table_10_raw <- tables_raw[[12]] |>
+table_10_raw <- tables_raw_2024[[12]] |>
   clean_names() |>
   (\(x) {
     new_names <- paste(names(x), x[1, ], sep = "_") |>
@@ -259,10 +516,12 @@ KFNFH_pen_survival <-
 
 KFNFH_pen_survival |> usethis::use_data(overwrite = T)
 
-## Sucker PIT tag detection 2024
+### Sucker PIT tag detection ===================================================
+
+#### 2024 (Table 12) -----------------------------------------------------------
 
 table_12_raw <-
-  tables_raw[[14]] |>
+  tables_raw_2024[[14]] |>
   clean_names()
 
 sucker_pit_tag_detection_2024 <- table_12_raw |>
@@ -276,3 +535,4 @@ sucker_pit_tag_detection_2024 <- table_12_raw |>
   slice(-n())
 
 sucker_pit_tag_detection_2024 |> usethis::use_data(overwrite = T)
+
