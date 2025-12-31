@@ -50,6 +50,16 @@ if(!file.exists(filename)) {
   tables_raw_2022 <- readRDS(filename)
 }
 
+# duplicative of 2024 tables, no need to import:
+# - 2022 table 1
+
+# versions to import
+# - 2022 tables 2-4: concatenated pond tables (equi. of 2024 6-8)
+# - 2022 table 5: fish distribution/transfer (equiv of 2024 11)
+
+# TODO: different tables (import?)
+# - 2022 table 6: historical PIT tag detections
+
 # USFWS Klamath Falls National Fish Hatchery Report - 2021
 pdf_path <- here::here("data-raw/20240912_FY2021_KFNFH_Annual_Report_Final.pdf")
 filename <- here::here("data-raw", "pdf-tables", "kfnfh_2021_tables_raw.Rds")
@@ -59,6 +69,15 @@ if(!file.exists(filename)) {
 } else {
   tables_raw_2021 <- readRDS(filename)
 }
+
+# versions to import
+# - 2021 table 2: fish distribution/transfer (equiv of 2024 11)
+# - 2021 tables 3-4: concatenated pond tables (equi. of 2024 6-8)
+
+# TODO: different tables (import?)
+# - 2021 tables 5-7: pond study pit tag results
+# - 2021 table 8: net pen survival results
+
 
 ## PROCESS TABLES ##############################################################
 
@@ -115,11 +134,64 @@ KFNFH_hatchery_release_2023 <- table_10_2023 |>
   relocate(hatchery_name, fiscal_year, .before = stock_date) |>
   glimpse()
 
+#### 2022 (Table 5) ------------------------------------------------------------
+
+table_5_2022 <- tables_raw_2022[[4]] |>
+  clean_names()
+
+KFNFH_hatchery_release_2022 <- table_5_2022 |>
+  rename(stock_date = date) |>
+  mutate(stock_date = as.character(stock_date),
+         stock_date = na_if(stock_date, ""),
+         date_anchor = if_else(!is.na(stock_date), stock_date, NA_character_),
+         number_fish = number)|>
+  fill(date_anchor, .direction = "down") |>
+  mutate(stock_date = if_else(is.na(stock_date), date_anchor, stock_date)) |>
+  select(-date_anchor) |>
+  drop_na(stocking_location) |>
+  mutate(stock_date = as.Date(stock_date, format = "%m/%d/%Y"),
+         hatchery_name = "KFNFH",
+         fiscal_year = 2022) |>
+  select(-number) |>
+  relocate(number_fish, .after = lot) |>
+  relocate(hatchery_name, fiscal_year, .before = stock_date) |>
+  mutate(lot = as.character(lot)) |>
+  glimpse()
+
+#### 2021 (Table 2) ------------------------------------------------------------
+
+table_2_2021 <- tables_raw_2021[[2]] |>
+  clean_names() |>
+  drop_na(from_ponds) #|>
+#  tidyr::fill(date, .direction = "down")
+
+KFNFH_hatchery_release_2021 <- table_2_2021 |>
+  rename(stock_date = date) |>
+  mutate(stock_date = as.character(stock_date),
+         stock_date = na_if(stock_date, ""),
+         date_anchor = if_else(!is.na(stock_date), stock_date, NA_character_),
+         number_fish = number)|>
+  fill(date_anchor, .direction = "down") |>
+  mutate(stock_date = if_else(is.na(stock_date), date_anchor, stock_date)) |>
+  select(-date_anchor) |>
+  drop_na(stocking_location) |>
+  mutate(stock_date = as.Date(stock_date, format = "%m/%d/%Y"),
+         hatchery_name = "KFNFH",
+         fiscal_year = 2021) |>
+  select(-number) |>
+  relocate(number_fish, .after = lot) |>
+  relocate(hatchery_name, fiscal_year, .before = stock_date) |>
+  mutate(lot = as.character(lot)) |>
+  glimpse()
+
+
 #### Concatenate ---------------------------------------------------------------
 
 KFNFH_hatchery_release <- bind_rows(
   KFNFH_hatchery_release_2024,
-  KFNFH_hatchery_release_2023
+  KFNFH_hatchery_release_2023,
+  KFNFH_hatchery_release_2022,
+  KFNFH_hatchery_release_2021
 )
 
 KFNFH_hatchery_release |> usethis::use_data(overwrite = T)
@@ -356,6 +428,7 @@ combine_first_row_into_column_names <- function(.) {
     )
   }
 }
+
 table_5_raw_2023 <- tables_raw_2023[[6]] |>
   combine_first_row_into_column_names() |>
   slice(-1) |>
@@ -446,11 +519,156 @@ KFNFH_adfluvial_pond_growout_2023 <-
          life_history = if_else(str_detect(lot, "ESS"), "ESS", "adfluvial")) |>
   relocate(hatchery_name, fiscal_year, inventory_source, life_history, .before = pond)
 
+#### 2022 (Tables 2-4) ---------------------------------------------------------
+
+table_2_raw_2022 <- tables_raw_2022[[3]] |>
+  clean_names() |>
+  drop_na(pond) |>
+  separate_wider_delim(growth_mm_day_total_growth_mm,
+                       delim = " ",
+                       names = c("growth_mm_day", "total_growth_mm")) |>
+  transmute(inventory_source = "FY2022 Table 2",
+            pond, lot,
+            stocked_date = mdy(stocked_to_pond),
+            start_number,
+            start_tl_mm,
+            harvest_date = mdy(harvest_date),
+            end_number,
+            end_tl_mm,
+            days = total_days,
+            growth_mm_day = as.numeric(growth_mm_day),
+            # total_growth_mm,
+            harvest_mortality_number = harvest_morts,
+            survival_percent = overall_survival_percent
+            )
+
+# tables 3 and 4 were embedded as images. Converted to tabular data:
+
+table_3_4_raw_2022 <-
+  bind_rows(
+    "FY2022 Table 3" = read_csv(here::here("data-raw", "pdf-tables",
+                                           "kfnfh_2022_ocr_table3.csv")) |>
+      mutate(Lot = as.character(Lot)),
+    "FY2022 Table 4" = read_csv(here::here("data-raw", "pdf-tables",
+                                           "kfnfh_2022_ocr_table4.csv")),
+    .id = "inventory_source") |>
+  clean_names() |>
+  drop_na(lot) |>
+  transmute(pond,
+            lot = as.character(lot),
+            stocked_date = mdy(stocked_to_pond),
+            start_number = start_ft,
+            start_tl_mm,
+            harvest_date = mdy(harvest_date),
+            end_number = end_ft,
+            end_tl_mm,
+            days = total_days,
+            growth_mm_day = as.numeric(growth_mm_day),
+            # total_growth_mm,
+            harvest_mortality_number = harvest_morts,
+            survival_percent = overall_survival_percent
+  )
+
+KFNFH_adfluvial_pond_growout_2022 <-
+  bind_rows(table_2_raw_2022, table_3_4_raw_2022) |>
+  mutate(hatchery_name = "KFNFH",
+         fiscal_year = 2022,
+         life_history = if_else(str_detect(lot, "ESS"), "ESS", "adfluvial")) |>
+  relocate(hatchery_name, fiscal_year, inventory_source, life_history, .before = pond)
+
+#### 2021 (Tables 3-4) ---------------------------------------------------------
+
+# TODO
+
+table_3_2021 <- tables_raw_2021[[3]] |>
+  clean_names() |>
+  separate_wider_delim(harvest_date_pond,
+                       delim = " ",
+                       names = c("harvest_date", "pond"),
+                       too_many = "merge") |>
+  separate_wider_delim(number_stocked_percent_stocked,
+                       delim = " ",
+                       names = c("number_stocked", "percent_stocked")) |>
+  transmute(pond,
+            lot = as.character(lot),
+            #stocked_date = NA,
+            start_number = paper_number,
+            start_tl_mm = tl_mm_7,
+            harvest_date = mdy(harvest_date),
+            harvest_mortality_number = actual_number - paper_number,
+            end_number = actual_number,
+            end_tl_mm = NA, # TODO: could calculate as weighted avg
+            survival_percent = survival,
+            # additional metrics not included in post-2021 version of the table
+            # using term disposition for downstream stocking (after end)
+            # to avoid ambiguity with stocking of the hatchery ponds (start)
+            dispo_to = disposition,
+            dispo_tl_mm = as.numeric(tl_mm_9),
+            dispo_number = as.numeric(number_stocked),
+            dispo_percent = as.numeric(percent_stocked),
+            short_number = as.numeric(number_short),
+            short_percent = as.numeric(percent_short),
+            short_tl_mm = as.numeric(tl_mm_12),
+            brood_number = as.numeric(number_brood),
+            brood_percent = 100 - (coalesce(dispo_percent, 0) + coalesce(short_percent, 0)),
+            ) |>
+  drop_na(harvest_date)
+
+table_4_2021 <- tables_raw_2021[[4]]|>
+  clean_names() |>
+  separate_wider_delim(harvest_date_pond,
+                       delim = " ",
+                       names = c("harvest_date", "pond"),
+                       too_many = "merge") |>
+  separate_wider_delim(number_stocked_percent_stocked,
+                       delim = " ",
+                       names = c("number_stocked", "percent_stocked"),
+                       too_few = "align_start") |>
+  separate_wider_delim(number_short_percent_short,
+                       delim = " ",
+                       names = c("number_short", "percent_short"),
+                       too_few = "align_start") |>
+  transmute(pond,
+            lot = as.character(lot),
+            #stocked_date = NA,
+            start_number = paper_number,
+            start_tl_mm = tl_mm_8,
+            harvest_date = mdy(harvest_date),
+            harvest_mortality_number = actual_number - paper_number,
+            end_number = actual_number,
+            end_tl_mm = NA, # TODO: could calculate as weighted avg
+            survival_percent = survival,
+            # additional metrics not included in post-2021 version of the table
+            # using term disposition for downstream stocking (after end)
+            # to avoid ambiguity with stocking of the hatchery ponds (start)
+            dispo_to = disposition_stocked_to,
+            dispo_tl_mm = as.numeric(tl_mm_10),
+            dispo_number = as.numeric(number_stocked),
+            dispo_percent = as.numeric(percent_stocked),
+            short_number = as.numeric(number_short),
+            short_percent = as.numeric(percent_short),
+            short_tl_mm = as.numeric(tl_mm_13),
+            brood_number = as.numeric(number_brood),
+            brood_percent = 100 - (coalesce(dispo_percent, 0) + coalesce(short_percent, 0)),
+            ) |>
+  drop_na(harvest_date)
+
+KFNFH_adfluvial_pond_growout_2021 <-
+  bind_rows("FY2021 Table 3" = table_3_2021,
+            "FY2021 Table 4" = table_4_2021,
+            .id="inventory_source") |>
+  mutate(hatchery_name = "KFNFH",
+         fiscal_year = 2021,
+         life_history = if_else(str_detect(lot, "ESS"), "ESS", "adfluvial")) |>
+  relocate(hatchery_name, fiscal_year, inventory_source, life_history, .before = pond)
+
 #### Concatenate ---------------------------------------------------------------
 
 KFNFH_adfluvial_pond_growout <- bind_rows(
   KFNFH_adfluvial_pond_growout_2024,
-  KFNFH_adfluvial_pond_growout_2023)
+  KFNFH_adfluvial_pond_growout_2023,
+  KFNFH_adfluvial_pond_growout_2022,
+  KFNFH_adfluvial_pond_growout_2021)
 
 KFNFH_adfluvial_pond_growout |> usethis::use_data(overwrite = T)
 
