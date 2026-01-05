@@ -135,7 +135,6 @@ spawner_escapement <- bind_rows(klamath_cdfw_population_processed,
          lifestage = case_when(lifestage == "adults" ~ "adult",
                                T ~ lifestage))
 
-spawner_escapement |> distinct(estimation_method) |> view()
 # save clean data
 usethis::use_data(spawner_escapement, overwrite = TRUE)
 
