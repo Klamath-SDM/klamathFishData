@@ -45,7 +45,7 @@
 #'   }
 'data_location_lookup'
 
-#' @title Spawner Escapement
+#' @title Salmon Spawner Escapement
 #' @name spawner_escapement
 #' @description Digital version of [CDFW's Spring Chinook Salmon Megatable](https://wildlife.ca.gov/Conservation/Fishes/Chinook-Salmon/Anadromous-Assessment) and [CDFW's Spring Chinook Salmon Megatable](https://casalmon.org/wp-content/uploads/2024/08/FINAL-2023-Spring-Chinook-Megatable-v.28-Mar-2024.pdf) Spawner Escapement sections as well as other data sources for Coho and Steelhead not included in the Megatable.
 #' @format A tibble with 1,722 rows and 6 columns
@@ -65,7 +65,7 @@
 #'   estimate is not complete, otherwise it is assumed that estimate is complete.
 #'   \item \code{source}: describes where data were sourced from. Currently there are 2 sources: (1) California Department of Fish and Wildlife (CDFW) document library (https://www.nrm.dfg.ca.gov/documents/ContextDocs.aspx?cat=Fisheries--AnadromousSalmonidPopulationMonitoring), (2) CDFW Spring and Fall Megatables
 #'   }
-'spawner_escapement'
+'salmon_spawner_escapement'
 
 #' @title Predation Estimates on SARP and Chinook
 #' @name avian_predation_estimates

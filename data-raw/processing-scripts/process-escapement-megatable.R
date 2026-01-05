@@ -127,7 +127,7 @@ klamath_cdfw_population_processed <- klamath_cdfw_population_raw |>
 
 
 ## Combine spring and fall run - TODO do some checks before saving
-spawner_escapement <- bind_rows(klamath_cdfw_population_processed,
+salmon_spawner_escapement <- bind_rows(klamath_cdfw_population_processed,
                                 spring_spawner_escapement_clean,
                                 fall_spawner_escapement_clean) |>
   mutate(origin = case_when(origin == "natural" ~ "wild",
@@ -136,5 +136,5 @@ spawner_escapement <- bind_rows(klamath_cdfw_population_processed,
                                T ~ lifestage))
 
 # save clean data
-usethis::use_data(spawner_escapement, overwrite = TRUE)
+usethis::use_data(salmon_spawner_escapement, overwrite = TRUE)
 
