@@ -175,17 +175,17 @@
 #' \itemize{
 #'   \item \code{hatchery_name}: name of hatchery (KFNFH)
 #'   \item \code{fiscal_year}: fiscal year (2024)
-#'   \item \code{stock_date}: date the fish distribution or transfer event occurred
+#'   \item \code{dispo_date}: date the fish distribution or transfer event occurred
 #'   \item \code{species}: species of sucker being distributed (e.g. LRS, SNS, ESS LSR)
 #'   \item \code{lot}: grouping or cohort of fish categorized primarily by their collection year (CY) or their operational origin
 #'   \item \code{number_fish}: number of fish in that specific grouping (lot) that were distributed or transferred
 #'   \item \code{weight_lb}: total weight of the fish lot being distributed, measured in pounds (lb)
 #'   \item \code{actual_tl_mm}: actual total length (TL) of the fish, measured in millimeters (mm)
-#'   \item \code{number_lb}: number of fish per pound for the specific lot being distributed
+#'   \item \code{number_per_lb}: number of fish per pound for the specific lot being distributed
 #'   \item \code{projected_tl_inches}: projected total length (TL) of the fish, measured in inches
 #'   \item \code{projected_tl_mm}: projected total length (TL) of the fish, measured in millimeters (mm)
 #'   \item \code{from_ponds}: source location within the hatchery facility from which the fish were harvested just prior to distribution or transfer
-#'   \item \code{stocking_location}: ultimate destination where the fish were distributed or transferred
+#'   \item \code{dispo_location}: ultimate destination where the fish were distributed or transferred
 #'   }
 #'
 #' @source Klamath Falls National Fish Hatchery Annual Report for Fiscal Year 2024 and 2023
@@ -278,7 +278,7 @@
 
 
 #' @title Adfluvial Pond Grow-out Performance, FY2024
-#' @name KFNFH_adfluvial_pond_growout
+#' @name KFNFH_pond_growout
 #' @description
 #' Grow-out performance of adfluvial suckers reared at the Klamath Falls
 #' National Fish Hatchery (KFNFH) during fiscal year 2024. The dataset
@@ -299,7 +299,7 @@
 #'   \item \code{life_history}: ESS (east spring spawner) or adfluvial
 #'   \item \code{pond}: pond or rearing unit identifier
 #'   \item \code{lot}: cohort or production lot identifier
-#'   \item \code{stocked_date}: date fish were stocked into the unit
+#'   \item \code{pond_stocked_date}: date fish were stocked into the unit
 #'   \item \code{start_number}: number of fish at the start of the interval
 #'   \item \code{start_g_fish}: mean fish weight at stocking (g)
 #'   \item \code{start_wt_g}: total biomass at stocking (g)
@@ -320,7 +320,7 @@
 #' }
 #'
 #' @source Klamath Falls National Fish Hatchery Annual Report for Fiscal Year 2024
-"KFNFH_adfluvial_pond_growout"
+"KFNFH_pond_growout"
 
 
 #' @title Net Pen Survival of Adfluvial Suckers

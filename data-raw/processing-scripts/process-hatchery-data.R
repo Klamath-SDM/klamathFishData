@@ -91,24 +91,26 @@ if(!file.exists(filename)) {
 
 table_11_raw <- tables_raw_2024[[13]] |>
   clean_names() |>
-  mutate(stock_date = tolower(stock_date)) |>
+  mutate(dispo_date = tolower(stock_date), .keep = "unused") |>
   glimpse()
 
 KFNFH_hatchery_release_2024 <- table_11_raw |>
-  mutate(stock_date = as.character(stock_date),
-         stock_date = na_if(stock_date, ""),
-         date_anchor = if_else(!is.na(stock_date), stock_date, NA_character_),
+  rename(dispo_location = stocking_location,
+         number_per_lb = number_lb) |>
+  mutate(dispo_date = as.character(dispo_date),
+         dispo_date = na_if(dispo_date, ""),
+         date_anchor = if_else(!is.na(dispo_date), dispo_date, NA_character_),
          number_fish = number)|>
   fill(date_anchor, .direction = "down") |>
-  mutate(stock_date = if_else(is.na(stock_date), date_anchor, stock_date)) |>
+  mutate(dispo_date = if_else(is.na(dispo_date), date_anchor, dispo_date)) |>
   select(-date_anchor) |>
-  drop_na(stocking_location) |>
-  mutate(stock_date = as.Date(stock_date, format = "%m/%d/%Y"),
+  drop_na(dispo_location) |>
+  mutate(dispo_date = as.Date(dispo_date, format = "%m/%d/%Y"),
          hatchery_name = "KFNFH",
          fiscal_year = 2024) |>
   select(-number) |>
   relocate(number_fish, .after = lot) |>
-  relocate(hatchery_name, fiscal_year, .before = stock_date) |>
+  relocate(hatchery_name, fiscal_year, .before = dispo_date) |>
   glimpse()
 
 #### 2023 (Table 10) -----------------------------------------------------------
@@ -117,21 +119,23 @@ table_10_2023 <- tables_raw_2023[[11]] |>
   clean_names()
 
 KFNFH_hatchery_release_2023 <- table_10_2023 |>
-  rename(stock_date = date) |>
-  mutate(stock_date = as.character(stock_date),
-         stock_date = na_if(stock_date, ""),
-         date_anchor = if_else(!is.na(stock_date), stock_date, NA_character_),
+  rename(dispo_date = date,
+         dispo_location = stocking_location,
+         number_per_lb = number_lb) |>
+  mutate(dispo_date = as.character(dispo_date),
+         dispo_date = na_if(dispo_date, ""),
+         date_anchor = if_else(!is.na(dispo_date), dispo_date, NA_character_),
          number_fish = number)|>
   fill(date_anchor, .direction = "down") |>
-  mutate(stock_date = if_else(is.na(stock_date), date_anchor, stock_date)) |>
+  mutate(dispo_date = if_else(is.na(dispo_date), date_anchor, dispo_date)) |>
   select(-date_anchor) |>
-  drop_na(stocking_location) |>
-  mutate(stock_date = as.Date(stock_date, format = "%m/%d/%Y"),
+  drop_na(dispo_location) |>
+  mutate(dispo_date = as.Date(dispo_date, format = "%m/%d/%Y"),
          hatchery_name = "KFNFH",
          fiscal_year = 2023) |>
   select(-number) |>
   relocate(number_fish, .after = lot) |>
-  relocate(hatchery_name, fiscal_year, .before = stock_date) |>
+  relocate(hatchery_name, fiscal_year, .before = dispo_date) |>
   glimpse()
 
 #### 2022 (Table 5) ------------------------------------------------------------
@@ -140,21 +144,23 @@ table_5_2022 <- tables_raw_2022[[4]] |>
   clean_names()
 
 KFNFH_hatchery_release_2022 <- table_5_2022 |>
-  rename(stock_date = date) |>
-  mutate(stock_date = as.character(stock_date),
-         stock_date = na_if(stock_date, ""),
-         date_anchor = if_else(!is.na(stock_date), stock_date, NA_character_),
+  rename(dispo_date = date,
+         dispo_location = stocking_location,
+         number_per_lb = number_lb) |>
+  mutate(dispo_date = as.character(dispo_date),
+         dispo_date = na_if(dispo_date, ""),
+         date_anchor = if_else(!is.na(dispo_date), dispo_date, NA_character_),
          number_fish = number)|>
   fill(date_anchor, .direction = "down") |>
-  mutate(stock_date = if_else(is.na(stock_date), date_anchor, stock_date)) |>
+  mutate(dispo_date = if_else(is.na(dispo_date), date_anchor, dispo_date)) |>
   select(-date_anchor) |>
-  drop_na(stocking_location) |>
-  mutate(stock_date = as.Date(stock_date, format = "%m/%d/%Y"),
+  drop_na(dispo_location) |>
+  mutate(dispo_date = as.Date(dispo_date, format = "%m/%d/%Y"),
          hatchery_name = "KFNFH",
          fiscal_year = 2022) |>
   select(-number) |>
   relocate(number_fish, .after = lot) |>
-  relocate(hatchery_name, fiscal_year, .before = stock_date) |>
+  relocate(hatchery_name, fiscal_year, .before = dispo_date) |>
   mutate(lot = as.character(lot)) |>
   glimpse()
 
@@ -166,21 +172,23 @@ table_2_2021 <- tables_raw_2021[[2]] |>
 #  tidyr::fill(date, .direction = "down")
 
 KFNFH_hatchery_release_2021 <- table_2_2021 |>
-  rename(stock_date = date) |>
-  mutate(stock_date = as.character(stock_date),
-         stock_date = na_if(stock_date, ""),
-         date_anchor = if_else(!is.na(stock_date), stock_date, NA_character_),
+  rename(dispo_date = date,
+         dispo_location = stocking_location,
+         number_per_lb = number_lb) |>
+  mutate(dispo_date = as.character(dispo_date),
+         dispo_date = na_if(dispo_date, ""),
+         date_anchor = if_else(!is.na(dispo_date), dispo_date, NA_character_),
          number_fish = number)|>
   fill(date_anchor, .direction = "down") |>
-  mutate(stock_date = if_else(is.na(stock_date), date_anchor, stock_date)) |>
+  mutate(dispo_date = if_else(is.na(dispo_date), date_anchor, dispo_date)) |>
   select(-date_anchor) |>
-  drop_na(stocking_location) |>
-  mutate(stock_date = as.Date(stock_date, format = "%m/%d/%Y"),
+  drop_na(dispo_location) |>
+  mutate(dispo_date = as.Date(dispo_date, format = "%m/%d/%Y"),
          hatchery_name = "KFNFH",
          fiscal_year = 2021) |>
   select(-number) |>
   relocate(number_fish, .after = lot) |>
-  relocate(hatchery_name, fiscal_year, .before = stock_date) |>
+  relocate(hatchery_name, fiscal_year, .before = dispo_date) |>
   mutate(lot = as.character(lot)) |>
   glimpse()
 
@@ -386,14 +394,14 @@ table_8_raw <- tables_raw_2024[[10]] |>
   clean_names() |>
   drop_na(pond)
 
-KFNFH_adfluvial_pond_growout_2024 <-
+KFNFH_pond_growout_2024 <-
   bind_rows("FY2024 Table 6" = table_6_raw,
             "FY2024 Table 7" = table_7_raw,
             "FY2024 Table 8" = table_8_raw,
             .id="inventory_source") |>
   transmute(pond, lot, inventory_source,
          life_history = if_else(str_detect(lot, "ESS"), "ESS", "adfluvial"),
-         stocked_date = as.Date(stocked_date, format = "%m/%d/%Y"),
+         pond_stock_date = as.Date(stocked_date, format = "%m/%d/%Y"),
          harvest_date = as.Date(harvest_date, format = "%m/%d/%Y"),
          start_number = as.numeric(start_number),
          start_g_fish = as.numeric(g_fish),
@@ -436,7 +444,7 @@ table_5_raw_2023 <- tables_raw_2023[[6]] |>
   drop_na(pond) |>
   mutate(across(c(everything(), -c(stocked, harvested, pond, lot)), as.numeric)) |>
   mutate(across(c(stocked, harvested), mdy)) |>
-  transmute(pond, lot, stocked_date = stocked,
+  transmute(pond, lot, pond_stock_date = stocked,
             harvest_date = harvested,
             start_number = total_4,
             start_g_fish = average_5_g_fish,
@@ -463,7 +471,7 @@ table_6_raw_2023 <- tables_raw_2023[[7]] |>
   drop_na(pond) |>
   mutate(across(c(everything(), -c(stocked, harvested, pond, lot)), as.numeric)) |>
   mutate(across(c(stocked, harvested), mdy)) |>
-  transmute(pond, lot, stocked_date = stocked,
+  transmute(pond, lot, pond_stock_date = stocked,
             harvest_date = harvested,
             start_number = total_4,
             start_g_fish = average_5_g_fish,
@@ -489,7 +497,7 @@ table_7_raw_2023 <- tables_raw_2023[[8]] |>
   drop_na(pond) |>
   mutate(across(c(everything(), -c(stocked, harvested, pond, lot)), as.numeric)) |>
   mutate(across(c(stocked, harvested), mdy)) |>
-  transmute(pond, lot, stocked_date = stocked,
+  transmute(pond, lot, pond_stock_date = stocked,
             harvest_date = harvested,
             start_number = total_4,
             start_g_fish = average_5_g_fish,
@@ -509,7 +517,7 @@ table_7_raw_2023 <- tables_raw_2023[[8]] |>
             harvest_mortality_number = harvest_morts,
             survival_percent = survival)
 
-KFNFH_adfluvial_pond_growout_2023 <-
+KFNFH_pond_growout_2023 <-
   bind_rows("FY2023 Table 5" = table_5_raw_2023,
             "FY2023 Table 6" = table_6_raw_2023,
             "FY2023 Table 7" = table_7_raw_2023,
@@ -529,7 +537,7 @@ table_2_raw_2022 <- tables_raw_2022[[3]] |>
                        names = c("growth_mm_day", "total_growth_mm")) |>
   transmute(inventory_source = "FY2022 Table 2",
             pond, lot,
-            stocked_date = mdy(stocked_to_pond),
+            pond_stock_date = mdy(stocked_to_pond),
             start_number,
             start_tl_mm,
             harvest_date = mdy(harvest_date),
@@ -556,7 +564,7 @@ table_3_4_raw_2022 <-
   drop_na(lot) |>
   transmute(pond,
             lot = as.character(lot),
-            stocked_date = mdy(stocked_to_pond),
+            pond_stock_date = mdy(stocked_to_pond),
             start_number = start_ft,
             start_tl_mm,
             harvest_date = mdy(harvest_date),
@@ -569,7 +577,7 @@ table_3_4_raw_2022 <-
             survival_percent = overall_survival_percent
   )
 
-KFNFH_adfluvial_pond_growout_2022 <-
+KFNFH_pond_growout_2022 <-
   bind_rows(table_2_raw_2022, table_3_4_raw_2022) |>
   mutate(hatchery_name = "KFNFH",
          fiscal_year = 2022,
@@ -591,7 +599,7 @@ table_3_2021 <- tables_raw_2021[[3]] |>
                        names = c("number_stocked", "percent_stocked")) |>
   transmute(pond,
             lot = as.character(lot),
-            #stocked_date = NA,
+            #pond_stock_date = NA,
             start_number = paper_number,
             start_tl_mm = tl_mm_7,
             harvest_date = mdy(harvest_date),
@@ -630,7 +638,7 @@ table_4_2021 <- tables_raw_2021[[4]]|>
                        too_few = "align_start") |>
   transmute(pond,
             lot = as.character(lot),
-            #stocked_date = NA,
+            #pond_stock_date = NA,
             start_number = paper_number,
             start_tl_mm = tl_mm_8,
             harvest_date = mdy(harvest_date),
@@ -653,7 +661,7 @@ table_4_2021 <- tables_raw_2021[[4]]|>
             ) |>
   drop_na(harvest_date)
 
-KFNFH_adfluvial_pond_growout_2021 <-
+KFNFH_pond_growout_2021 <-
   bind_rows("FY2021 Table 3" = table_3_2021,
             "FY2021 Table 4" = table_4_2021,
             .id="inventory_source") |>
@@ -664,13 +672,13 @@ KFNFH_adfluvial_pond_growout_2021 <-
 
 #### Concatenate ---------------------------------------------------------------
 
-KFNFH_adfluvial_pond_growout <- bind_rows(
-  KFNFH_adfluvial_pond_growout_2024,
-  KFNFH_adfluvial_pond_growout_2023,
-  KFNFH_adfluvial_pond_growout_2022,
-  KFNFH_adfluvial_pond_growout_2021)
+KFNFH_pond_growout <- bind_rows(
+  KFNFH_pond_growout_2024,
+  KFNFH_pond_growout_2023,
+  KFNFH_pond_growout_2022,
+  KFNFH_pond_growout_2021)
 
-KFNFH_adfluvial_pond_growout |> usethis::use_data(overwrite = T)
+KFNFH_pond_growout |> usethis::use_data(overwrite = T)
 
 ### Sucker Pen Survival ========================================================
 
