@@ -1,29 +1,55 @@
-#' @title Modeled Fisheries Data
-#' @name fisheries_model_estimates
+#' @title Salmon Juvenile Abundance
+#' @name salmon_juvenile_abundance
 #' @description This dataset compiles modeled estimates and credible intervals
 #' from fisheries models such as abundance and survival estimates. This dataset
 #' is not species or location specific. This is a key dataset!
 #' In the future, this dataset may be broken down into separate tables like what
 #' was done for spawner escapement.
-#' @format A tibble with 390 rows and 14 columns
+#' @format A tibble with 122 rows and 14 columns
 #' \itemize{
-#'   \item \code{julian_year}: julian year (1999-2022). Min/max years vary by location, species, type of estimate. Juvenile abundance typically spans multiple years (e.g. Oct 2020 - May 2021) and would be assigned a julian year for the latter part of this period.
-#'   \item \code{stream}: stream ("scott river", "shasta river", "upper klamath lake")
-#'   \item \code{species}: species (coho salmon, winter steelhead, steelhead, fall chinook salmon, spring chinook salmon, lost river sucker lakeshore spawning, lost river sucker river spawning, shortnose sucker)
-#'   \item \code{origin}: origin (wild, NA)
-#'   \item \code{lifestage}: lifestage category (yoy, age 1+, age 2+, adult and subadult, smolt, adult)
+#'   \item \code{julian_year}: julian year (2001-2022). Min/max years vary by location, species, type of estimate. Juvenile abundance typically spans multiple years (e.g. Oct 2020 - May 2021) and would be assigned a julian year for the latter part of this period.
+#'   \item \code{stream}: stream ("scott river", "shasta river")
+#'   \item \code{species}: species (coho salmon, steelhead, fall chinook salmon)
+#'   \item \code{origin}: origin (wild)
+#'   \item \code{lifestage}: lifestage category (yoy, age 1+, age 2+, smolt)
+#'   \item \code{sex}: sex, if applicable to model (NA)
+#'   \item \code{estimate_type}: type of model estimate (abundance, count)
+#'   \item \code{estimate}: value of estimate
+#'   \item \code{confidence_interval}: type of confidence or credible interval (e.g., 95)
+#'   \item \code{lower_bounds_estimate}: value of lower bounds estimate, if applicable
+#'   \item \code{upper_bounds_estimate}: value of upper bounds estimate, if applicable
+#'   \item \code{estimation_method}: type of model used (mark-recapture)
+#'   \item \code{is_complete_estimate}: data included in model are complete. In some cases, it is known that an
+#'   estimate is not complete, otherwise it is assumed that estimate is complete.
+#'   \item \code{source}: describes where data were sourced from. Currently there is one data source: (1) California Department of Fish and Wildlife (CDFW) document library (https://www.nrm.dfg.ca.gov/documents/ContextDocs.aspx?cat=Fisheries--AnadromousSalmonidPopulationMonitoring)
+#'   }
+'salmon_juvenile_abundance'
+
+#' @title Sucker Adult Estimates
+#' @name sucker_adult_estimates
+#' @description This dataset compiles modeled estimates and credible intervals
+#' from fisheries models such as abundance and survival estimates. This dataset
+#' is not species or location specific. This is a key dataset!
+#' In the future, this dataset may be broken down into separate tables like what
+#' was done for spawner escapement.
+#' @format A tibble with 265 rows and 13 columns
+#' \itemize{
+#'   \item \code{julian_year}: julian year (1999-2022). Min/max years vary by location, species, type of estimate.
+#'   \item \code{stream}: stream ("upper klamath lake")
+#'   \item \code{species}: species (lost river sucker lakeshore spawning, lost river sucker river spawning, shortnose sucker)
+#'   \item \code{lifestage}: lifestage category (adult)
 #'   \item \code{sex}: sex, if applicable to model (female, male, NA)
-#'   \item \code{estimate_type}: type of model estimate (abundance, count, apparent survival, seniority probability, annual population rate of change)
+#'   \item \code{estimate_type}: type of model estimate (apparent survival, seniority probability, annual population rate of change)
 #'   \item \code{estimate}: value of estimate
 #'   \item \code{confidence_interval}: type of confidence or credible interval (e.g., 80, 95)
 #'   \item \code{lower_bounds_estimate}: value of lower bounds estimate, if applicable
 #'   \item \code{upper_bounds_estimate}: value of upper bounds estimate, if applicable
-#'   \item \code{estimation_method}: type of model used (mark-recapture, Cormack-Jolly-Seber model)
+#'   \item \code{estimation_method}: type of model used (Cormack-Jolly-Seber model)
 #'   \item \code{is_complete_estimate}: data included in model are complete. In some cases, it is known that an
 #'   estimate is not complete, otherwise it is assumed that estimate is complete.
-#'   \item \code{source}: describes where data were sourced from. Currently there are 2 sources: (1) California Department of Fish and Wildlife (CDFW) document library (https://www.nrm.dfg.ca.gov/documents/ContextDocs.aspx?cat=Fisheries--AnadromousSalmonidPopulationMonitoring), (2) Hewitt, D.A., Janney, E.C., Hayes, B.S., and Harris, A.C., 2018, Status and trends of adult Lost River (Deltistes luxatus) and shortnose (Chasmistes brevirostris) sucker populations in Upper Klamath Lake, Oregon, 2017: U.S. Geological Survey Open-File Report 2018-1064, 31 p., https://doi.org/10.3133/ofr20181064. (https://pubs.usgs.gov/of/2018/1064/ofr20181064.pdf)
+#'   \item \code{source}: describes where data were sourced from. Currently there is one source: Hewitt, D.A., Janney, E.C., Hayes, B.S., and Harris, A.C., 2018, Status and trends of adult Lost River (Deltistes luxatus) and shortnose (Chasmistes brevirostris) sucker populations in Upper Klamath Lake, Oregon, 2017: U.S. Geological Survey Open-File Report 2018-1064, 31 p., https://doi.org/10.3133/ofr20181064. (https://pubs.usgs.gov/of/2018/1064/ofr20181064.pdf)
 #'   }
-'fisheries_model_estimates'
+'sucker_adult_estimates'
 
 #' @title Data Location Lookup
 #' @name data_location_lookup

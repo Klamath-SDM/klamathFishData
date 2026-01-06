@@ -114,6 +114,5 @@ fisheries_model_estimates <- bind_rows(klamath_cdfw_population_processed, sucker
 
 # save data ---------------------------------------------------------------
 
-# save locally
 usethis::use_data(fisheries_model_estimates, overwrite = TRUE)
 
