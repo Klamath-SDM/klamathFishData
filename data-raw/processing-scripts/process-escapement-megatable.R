@@ -9,6 +9,7 @@ library(janitor)
 library(tabulapdf)
 library(tidyverse)
 library(purrr)
+library(readxl)
 
 source("data-raw/processing-scripts/read_fall_megatable_pdf.R")
 source("data-raw/processing-scripts/read_spring_megatable_pdf.R")
@@ -67,7 +68,7 @@ fall_spawner_escapement_clean <- filter(fall_megatable, section == "Spawning Esc
 spring_spawner_escapement_clean <- spring_spawner_escapement |>
   rename(lifestage = category) |>
   mutate(species = "spring chinook salmon") |>
-  filter(!location %in% c("Trinity River Basin","Klamath River Basin", "Subtotals")) |>
+  filter(!location %in% c("Trinity River Basin","Klamath River Basin", "Subtotals", "Total Spawner Escapement")) |>
   mutate(origin = case_when(subsection == "Hatchery Spawners" ~ "hatchery",
                             T ~ "wild"),
          location = case_when(location == "Trinity River Hatchery (TRH) b/" ~ "Trinity River Hatchery",
@@ -93,7 +94,7 @@ spring_spawner_escapement_clean <- spring_spawner_escapement |>
 
 # Coho and steelhead are not included in the Megatable and are pulled from CDFW data table
 
-cdfw_population_raw <- read_xlsx(here::here("data-raw", "tables_with_data", "Salmonid_Population_Monitoring_Data_CMPv2023.xlsx"), sheet = "Population Data")
+cdfw_population_raw <- read_xlsx(here::here("data-raw", "tables_with_data", "modeled", "Salmonid_Population_Monitoring_Data_CMPv2023.xlsx"), sheet = "Population Data")
 
 klamath_cdfw_population_raw <- cdfw_population_raw |>
   filter(Watershed %in% c("Trinity River", "Scott River", "Shasta River", "Lower Klamath","Klamath River"))
