@@ -8,9 +8,14 @@ library(tabulapdf)
 library(tidyverse)
 library(purrr)
 
-
+## 2021-2023 DATA
 pdf_path <- "data-raw/Avian_Predation_on_UKB_Suckers_Summary_Report_2021_2023.pdf"
 tables <- extract_tables(pdf_path, method = "stream", output = "tibble")
+
+
+## 2024 DATA
+pdf_path_2024 <- "data-raw/Avian-Predation-Final-Summary-Report_2024.pdf"
+tables_2024 <- extract_tables(pdf_path_2024, method = "stream", output = "tibble")
 
 #### PIT-tagged LRS, SNS, KLS, SNS-KLS and SARP ----
 tag_data_raw <- tables[[2]] |> glimpse()
@@ -141,9 +146,50 @@ pred_raw_clean[8, c("CLR_Adult_SNS", "CLR_Adult_KLS", "CLR_Wild_Juv")] <- # migr
 names(pred_raw_clean)[2:5] <- c("UKL_Adult_LRS", "UKL_Adult_SNS", "UKL_Adult_KLS", "UKL_Juveniles")
 names(pred_raw_clean)[6:8] <- c("CLR_Adult_LRS", "CLR_Adult_SNS_KLS", "CLR_Juveniles")
 
+# ---- BINDING 2024 ----
+
+# using tabulizer::extract_areas() since original method is skipping this page - note that table needs to be selected
+area_table <- extract_areas(pdf_path_2024, pages = 12)
+
+estimate_predation_raw_2024 <- as.data.frame(area_table, stringsAsFactors = FALSE) |>
+  clean_names()
+
+est_predation_clean <- estimate_predation_raw_2024 |>
+  mutate(
+    upper_klamath_lake_1 = str_squish(upper_klamath_lake_1),
+    upper_klamath_lake_2 = str_squish(clear_lake_reservoir)) |>
+  separate(
+    col = upper_klamath_lake_1,
+    into = c("ukl_col2_part1", "ukl_col2_part2", "ukl_col2_part3"),
+    sep = "\\s{1,}",
+    fill = "right",
+    extra = "merge") |>
+  separate(
+    col = upper_klamath_lake_2,
+    into = c("cl_part1", "cl_part2", "cl_part3"),
+    sep = "\\s{1,}",
+    fill = "right",
+    extra = "merge")
+
+pred_raw_clean_2 <- est_predation_clean |>
+  select(1:4, 6:7) |>
+  slice(2:4) |>
+  rename(...1 = x1)
+
+names(pred_raw_clean_2)[2:4] <- c("UKL_Adult_LRS", "UKL_Adult_KLS", "UKL_Adult_SNS")
+names(est_predation_clean)[5:6] <- c("CLR_Adult_LRS", "CLR_Adult_SNS_KLS")
+
+
+pred_raw_clean_2 <- pred_raw_clean_2 |>
+  mutate(across(starts_with("UKL_Adult_") | starts_with("CLR_Adult_"), str_trim))
+
+# combine 2024
+est_predation_clean <- bind_rows(pred_raw_clean, pred_raw_clean_2)
+
+
 # Row indices where the years are listed
-year_map <- tibble(row_index = c(4, 6, 8, 9, 10, 12),
-                   year = c(2021, 2021, 2022, 2022, 2023, 2023))
+year_map <- tibble(row_index = c(4, 6, 8, 9, 10, 12, 13, 15),
+                   year = c(2021, 2021, 2022, 2022, 2023, 2023, 2024, 2024))
 
 # parse "estimate (lcl–ucl)"
 parse_pred <- function(x) {
@@ -177,7 +223,7 @@ parse_pred <- function(x) {
 
 # build table
 estimates_suckers_clean <- map2_dfr(year_map$row_index, year_map$year, function(i, yr){
-  row_vals <- pred_raw_clean[i, ]
+  row_vals <- est_predation_clean[i, ]
   # Each column corresponds to one group
   bind_rows(
     parse_pred(row_vals$UKL_Adult_LRS) %>% mutate(location_1="Upper Klamath Lake", fish_group_2="Adult LRS", year=yr),
@@ -357,3 +403,4 @@ avian_predation_estimates <- percent_estimates |>
                    "year")) |> glimpse()
 # save clean data
 # usethis::use_data(avian_predation_estimates, overwrite = TRUE)
+
