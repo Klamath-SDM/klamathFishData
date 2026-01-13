@@ -23,6 +23,19 @@ tag_data_raw <- tables[[2]] |> glimpse()
 tag_data_raw <- as.data.frame(tag_data_raw, stringsAsFactors = FALSE) %>%
   clean_names()
 
+tag_data_raw_2 <- tables_2024[[2]] |> glimpse()
+
+tag_data_raw_2_clean <- tag_data_raw_2 |>
+  separate(
+    col = no_recovered_on_bird_colonies,
+    into = c("recovered_CL", "recovered_SL", "recovered_KR"),
+    sep = "\\s{1,}",
+    fill = "right",
+    extra = "merge") |>
+  glimpse()
+
+#TODO continue clening here
+
 # The first number = the number of PIT-tagged fish available to avian predators that year in that location.
 # This is essentially how many tagged suckers (or salmon) were released or present in the waterbody.
 # The number in parentheses = the number of those tags recovered from avian predator nesting colonies in the same year.
@@ -147,7 +160,7 @@ names(pred_raw_clean)[2:5] <- c("UKL_Adult_LRS", "UKL_Adult_SNS", "UKL_Adult_KLS
 names(pred_raw_clean)[6:8] <- c("CLR_Adult_LRS", "CLR_Adult_SNS_KLS", "CLR_Juveniles")
 
 # ---- BINDING 2024 ----
-
+# =============== BINDING 2024 ======================= #
 # using tabulizer::extract_areas() since original method is skipping this page - note that table needs to be selected
 area_table <- extract_areas(pdf_path_2024, pages = 12)
 
@@ -186,6 +199,7 @@ pred_raw_clean_2 <- pred_raw_clean_2 |>
 # combine 2024
 est_predation_clean <- bind_rows(pred_raw_clean, pred_raw_clean_2)
 
+# ========================================================= #
 
 # Row indices where the years are listed
 year_map <- tibble(row_index = c(4, 6, 8, 9, 10, 12, 13, 15),
@@ -269,6 +283,16 @@ predation_estimates_wild <- predation_estimates_wild_clean |>
 
  estimate_predation_sarp_raw <- as.data.frame(estimate_predation_sarp_raw, stringsAsFactors = FALSE) |>
    clean_names()
+
+ #TODO
+# -- read 2024 --
+# area_table_estimate_sarp <- extract_areas(pdf_path_2024, pages = 16)
+#
+# estimate_predation_sarp_raw_2024 <- as.data.frame(area_table_estimate_sarp, stringsAsFactors = FALSE) |>
+#    clean_names()
+
+
+
 
  estimate_predation_sarp <- estimate_predation_sarp_raw |>
    separate(col = 'upper_klamath_lake', # split the mixed column into two
