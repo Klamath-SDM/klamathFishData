@@ -119,7 +119,7 @@
 
 #' @title Annual Summary of Hatchery
 #' @name KFNFH_annual_summary
-#' @description Collections and releases from the Klamath Falls National Fish Hatchery since its inception in 2016. Data summarizes the annual inputs and outputs of the hatchery program by federal fiscal year
+#' @description Summary of collections and releases from the Klamath Falls National Fish Hatchery since its inception in 2016. Data summarizes the annual inputs and outputs of the hatchery program by federal fiscal year
 #' Corresponds to **Table 1** and **Table 4** in the FY2024 KFNFH Annual Report.
 #' @format A tibble with 9 rows and 12 columns
 #' \itemize{

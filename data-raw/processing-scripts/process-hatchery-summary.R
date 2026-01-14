@@ -6,6 +6,9 @@ library(janitor)
 library(dplyr)
 library(tidyr)
 
+# this script pulls and summarizes data of Table 1 and Table 4 in the FY2024 KFNFH Annual Report
+# other tables from this report, and other hatchery reports are cleaned on data-raw/processing-scripts/process-hatchery-data.R in the add-hatchery-data branch
+# we have decided to pull only data below, as of January of 2026
 
 # USFWS Klamath Falls National Fish Hatchery Report - 2024
 pdf_path <- here::here("data-raw/20250619_FY2024 KFNFH Annual Report_Final Draft.pdf")
