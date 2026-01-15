@@ -23,7 +23,7 @@ A tibble with 39 rows and 16 columns
 }
 \source{
 Bird Research Northwest (2023)
-[Avian Predation on UKB Suckers 2021–2023 Summary Report](https://www.birdresearchnw.org/Avian%20Predation%20on%20UKB%20Suckers_Summary%20Report%202021-2023.pdf)
+[Avian Predation on UKB Suckers 2021–2023 Summary Report](https://birdresearchnw.org/brn-publications/avian-predation-on-ukb-suckers-summary-report-2021-2023/)
 }
 \usage{
 avian_predation_estimates
