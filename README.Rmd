@@ -18,7 +18,7 @@ knitr::opts_chunk$set(
 <!-- badges: start -->
 <!-- badges: end -->
 
-The **`klamathFishData`**  package is an R data package developed by FlowWest that provides curated environmental and biological datasets on fish in the Klamath River Basin. The package is intended to support research, modeling, and restoration planning by making commonly used fisheries datasets easily accessible in a consistent format. It is designed to support research, modeling, and restoration planning.
+The **`klamathFishData`**  package is an R data package developed by FlowWest that provides curated environmental and biological datasets on fish in the Klamath River Basin. The package is intended to support research, modeling, and restoration planning by making commonly used fisheries datasets easily accessible in a consistent format. 
 
 ## Installation
 
@@ -40,7 +40,7 @@ The data in this package comes from a variety of public sources, including:
 
 The example below demonstrates how to filter spawner escapement data for adult spring Chinook Salmon.
 
-```{r example}
+```{r, warning=FALSE, message=FALSE}
 library(klamathFishData)
 library(tidyverse)
 
@@ -53,7 +53,7 @@ salmon_spawner_escapement |>
 The package contains cleaned, documented data objects including:
 
 - `sucker_adult_estimates` — This dataset compiles sucker modeled estimates and credible intervals from fisheries models such as abundance and survival estimates
-- `salmon_juvenile_abundance` — This dataset compiles salmon modeled estimates and credible intervals from fisheries models such as abundance and survival estimates
+- `salmon_juvenile_abundance` — This dataset compiles salmon modeled estimates and credible intervals from fisheries abundance models
 - `data_location_lookup` - Latitude and longitude information for fisheries data collection locations, used to support spatial mapping of datasets such as `sucker_adult_estimates` and `salmon_juvenile_abundance.`
 - `salmon_spawner_escapement` - Data extracted from [CDFW's Fall-Run Megatable](https://wildlife.ca.gov/Conservation/Fishes/Chinook-Salmon/Anadromous-Assessment) and [CDFW's Spring-Run Megatable](https://nrm.dfg.ca.gov/FileHandler.ashx?DocumentID=100231&inline)
 - `avian_predation_estimates` - This dataset combines avian predation rate estimates and PIT-tag availability and recovery data for juvenile fishes in the Upper Klamath Basin.
