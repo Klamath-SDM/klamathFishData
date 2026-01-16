@@ -4,14 +4,14 @@
 # klamathFishData
 
 <!-- badges: start -->
+
 <!-- badges: end -->
 
 The **`klamathFishData`** package is an R data package developed by
 FlowWest that provides curated environmental and biological datasets on
 fish in the Klamath River Basin. The package is intended to support
 research, modeling, and restoration planning by making commonly used
-fisheries datasets easily accessible in a consistent format. It is
-designed to support research, modeling, and restoration planning.
+fisheries datasets easily accessible in a consistent format.
 
 ## Installation
 
@@ -40,17 +40,6 @@ adult spring Chinook Salmon.
 ``` r
 library(klamathFishData)
 library(tidyverse)
-#> Warning: package 'stringr' was built under R version 4.3.3
-#> ── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
-#> ✔ dplyr     1.1.4     ✔ readr     2.1.4
-#> ✔ forcats   1.0.0     ✔ stringr   1.5.1
-#> ✔ ggplot2   3.4.4     ✔ tibble    3.2.1
-#> ✔ lubridate 1.9.3     ✔ tidyr     1.3.0
-#> ✔ purrr     1.0.2     
-#> ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
-#> ✖ dplyr::filter() masks stats::filter()
-#> ✖ dplyr::lag()    masks stats::lag()
-#> ℹ Use the conflicted package (<http://conflicted.r-lib.org/>) to force all conflicts to become errors
 
 salmon_spawner_escapement |>
   filter(species == "spring chinook salmon" & lifestage == "adult")
@@ -81,8 +70,7 @@ The package contains cleaned, documented data objects including:
   estimates and credible intervals from fisheries models such as
   abundance and survival estimates
 - `salmon_juvenile_abundance` — This dataset compiles salmon modeled
-  estimates and credible intervals from fisheries models such as
-  abundance and survival estimates
+  estimates and credible intervals from fisheries abundance models
 - `data_location_lookup` - Latitude and longitude information for
   fisheries data collection locations, used to support spatial mapping
   of datasets such as `sucker_adult_estimates` and
