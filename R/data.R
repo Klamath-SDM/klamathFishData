@@ -96,21 +96,26 @@
 #' @title Predation Estimates on SARP and Chinook
 #' @name avian_predation_estimates
 #' @description This dataset combines avian predation rate estimates (with 95% credible intervals) and PIT-tag availability and recovery data for juvenile fishes in the Upper Klamath Basin. It includes PIT-tagged SARP suckers, hatchery-reared juvenile Chinook Salmon, and wild juvenile suckers released between 2021 and 2023.
-#' This dataset corresponds to **Table 2**, **Table 3**, **Table 4**  of the 2021–2023 summary report.
+#' This dataset corresponds to **Table 2**, **Table 3**, **Table 4**  of the *Avian Predation on Upper Klamath Basin Suckers: Summary Report 2021–2023*.
+#' This dataset compiles avian predation estimates alongside PIT‑tag availability and recovery information for juvenile
+#' fishes released in the Upper Klamath Basin between 2021 and 2023. It includes PIT‑tagged Sucker Assisted Rearing Program (SARP)
+#' juvenile suckers, wild juvenile suckers, and hatchery‑reared juvenile Chinook Salmon.
+#'
 #' @format A tibble with 39 rows and 16 columns
 #' \itemize{
-#'   \item{location}: Waterbody (upper klamath lake, clear lake reservoir, sheepy lake)
-#'   \item{species}: Fish species (e.g. sucker, chinook salmon)
-#'   \item{life_stage}: Fish life stage (e.g. juvenile)
+#'   \item{location}: Waterbody or colony area where piscivorous waterbirds nested and where PIT tags were recovered (upper klamath lake, clear lake reservoir, sheepy lake)
+#'   \item{species}: Fish species associated with each release group (e.g. sucker, chinook salmon)
+#'   \item{life_stage}: Fish life stage (e.g. juvenile, adult)
 #'   \item{origin}: Origin of realeased fish (e.g. hatchery, wild)
 #'   \item{release_season}: Season when fish were realeased (e.g. spring_summer, fall_winter)
 #'   \item{sarp_program}: Whether fish are part of the Sucker Assisted Rearing Program (SARP) (e.g. TRUE, FALSE)
 #'   \item{year}: Year (2021–2023)
-#'   \item{percent_estimate}: Estimated predation rate (% of available fish consumed)
-#'   \item{lower_ci_pct}: Lower 95% credible interval
-#'   \item{upper_ci_pct}: Upper 95% credible interval
-#'   \item{number_adults_tagged}: Number of PIT-tagged fish available to predators
-#'   \item{number_recovered_tags}: Number of PIT-tags recovered on piscivorous waterbird colonies during the 2021–2023 breeding seasons
+#'   \item{percent_estimate}: Estimated predation rate (% of available fish consumed). This is a statistically adjusted percentage that accounts for the probability of a bird depositing a tag on a colony and the probability of a
+#'   researcher successfully detecting that tag. Predation estimates are adjusted to account for PIT tag detection and deposition probabilities that were unique to each predator species, colony, and year
+#'   \item{lower_ci_pct}: Lower 95% credible interval. This interval provides the range in which the true predation rate is likely to fall. Predation rates are estimates derived from a hierarchical Bayesian model.
+#'   \item{upper_ci_pct}: Upper 95% credible interval. This interval provides the range in which the true predation rate is likely to fall. Predation rates are estimates derived from a hierarchical Bayesian model.
+#'   \item{number_adults_tagged}: Total number of PIT-tagged fish (both adults and juveniles) present in the study area and considered "available" to avian predators during the specified year
+#'   \item{number_recovered_tags}: Raw count of physical PIT-tags recovered on piscivorous waterbird colonies during the 2021–2023 breeding seasons.
 #' }
 #'
 #' @source Bird Research Northwest (2023)
