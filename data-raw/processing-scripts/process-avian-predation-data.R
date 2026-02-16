@@ -339,87 +339,104 @@ predation_estimates_wild <- predation_estimates_wild_clean |>
           ukl_sarp_spr_sum = x2) |>
    glimpse()
 
- #TODO
-# (2) read in 2024 report table 4
+
+# (2) read/clean in 2024 report table 4
 area_table_estimate_sarp <- extract_areas(pdf_path_2024, pages = 16)
 #
 estimate_predation_sarp_raw_2024 <- as.data.frame(area_table_estimate_sarp, stringsAsFactors = FALSE) |>
    clean_names()
 
- # TODO (3)
- # 2024 looks slightly different than 2021-2023
- # 2024 table needs to be cleaned and combined with 2021-2023
+estimate_predation_sarp_2024 <- estimate_predation_sarp_raw_2024 |>
+  separate(col = 'upper_klamath_lake_1', # split the mixed column into two
+         into = c("ukl_sarp_spr_sum", "ukl_sarp_fall_win"),
+         sep = "(?<=\\)|%)\\s+",
+         extra = "merge",
+         fill = "right") |>
+  rename(ukl_wild_juv = x2, #check this col name
+         ukl_chin_fall_win = x4,
+         cl_wild_juv = clear_lake_reservoir) |> #check this col name
+  glimpse()
 
+# (3) 2024 table cleaned and combined with 2021-2023
+estimate_pred_combined <- bind_rows(estimate_predation_sarp, estimate_predation_sarp_2024)
 
-# (4) functions to clean 2021-2023 table
- year_map_2 <- tibble(row_index = c(4, 6, 7, 9, 10, 12),
-                    year = c(2021, 2021, 2022, 2022, 2023, 2023))
+# year mapping stays the same
+year_map_2 <- tibble(
+  row_index = c(4, 6, 7, 9, 10, 12, 16, 18),
+  year      = c(2021, 2021, 2022, 2022, 2023, 2023, 2024, 2024)
+)
 
+# parse function (unchanged, but keep en-dash handling)
+parse_sarp <- function(x) {
+  if (is.na(x) || x %in% c("NA", "–")) {
+    return(tibble(estimate_pct = NA_character_, lower_ci_pct = NA_real_, upper_ci_pct = NA_real_))
+  }
 
- # parse "estimate (lcl–ucl)"
- parse_sarp <- function(x) {
-   if (is.na(x) || x %in% c("NA","–")) {
-     return(tibble(estimate_pct = NA_character_, lower_ci_pct = NA_real_, upper_ci_pct = NA_real_))
-   }
+  x_clean <- str_remove_all(x, "[()%]")
 
-   # keep "<"
-   x_clean <- str_remove_all(x, "[()%]")
+  if (str_detect(x_clean, "–")) {
+    rng <- str_split(x_clean, "–")[[1]] |> str_trim()
+    tibble(
+      estimate_pct = NA_character_,
+      lower_ci_pct = suppressWarnings(as.numeric(rng[1])),
+      upper_ci_pct = suppressWarnings(as.numeric(rng[2]))
+    )
+  } else if (str_detect(x_clean, "<")) {
+    tibble(estimate_pct = str_trim(x_clean), lower_ci_pct = NA_real_, upper_ci_pct = NA_real_)
+  } else {
+    tibble(estimate_pct = str_trim(x_clean), lower_ci_pct = NA_real_, upper_ci_pct = NA_real_)
+  }
+}
 
-   # range (CI)
-   if (str_detect(x_clean, "–")) {
-     rng <- str_split(x_clean, "–")[[1]] |>  str_trim()
-     tibble(estimate_pct = NA_character_,
-            lower_ci_pct = suppressWarnings(as.numeric(str_remove(rng[1], "%"))),
-            upper_ci_pct = suppressWarnings(as.numeric(str_remove(rng[2], "%"))))
+# combine tables
+estimate_pred_combined <- bind_rows(estimate_predation_sarp, estimate_predation_sarp_2024)
 
-     # explicit "<" value (e.g. "< 0.1%")
-   } else if (str_detect(x_clean, "<")) {
-     tibble(estimate_pct = str_trim(x_clean),  # keep as character, e.g. "<0.1%"
-            lower_ci_pct = NA_real_,
-            upper_ci_pct = NA_real_)
+# (4) functions to clean 2021-2023 and 2024 tables
 
-     # normal percentage
-   } else {
-     tibble(estimate_pct = str_trim(str_remove(x_clean, "%")),
-            lower_ci_pct = NA_real_,
-            upper_ci_pct = NA_real_)
-   }
- }
+add_group_if_present <- function(row_vals, col, location, fish_group, yr) {
+  if (!col %in% names(row_vals)) return(NULL)
+  parse_sarp(row_vals[[col]][[1]]) %>%
+    mutate(location_1 = location, fish_group_2 = fish_group, year = yr)
+}
 
- # build table
- estimate_predation_sarp_clean <- map2_dfr(year_map_2$row_index, year_map_2$year, function(i, yr){
-   row_vals <- estimate_predation_sarp[i, ]
-   # Each column corresponds to one group
-   bind_rows(
-     parse_sarp(row_vals$ukl_sarp_spr_sum) %>% mutate(location_1="Upper Klamath Lake", fish_group_2="SARP Spring/Summer", year=yr),
-     parse_sarp(row_vals$ukl_sarp_fall_win) %>% mutate(location_1="Upper Klamath Lake", fish_group_2="SARP Fall/Winter", year=yr),
-     parse_sarp(row_vals$ukl_chin_spr_sum) %>% mutate(location_1="Upper Klamath Lake", fish_group_2="Chinook Spring/Summer", year=yr),
-     parse_sarp(row_vals$ukl_chin_fall_win) %>% mutate(location_1="Upper Klamath Lake", fish_group_2="Chinook Fall/Winter", year=yr),
-     parse_sarp(row_vals$kr_chin_spr_sum) %>% mutate(location_1="Klamath River", fish_group_2="Chinook Spring/Summer", year=yr),
-     parse_sarp(row_vals$shpy_sarp_spr_sum) %>% mutate(location_1="Sheepy Lake", fish_group_2="SARP Spring/Summer", year=yr)
-   )
- })
+# build tidy output from combined table
+estimate_pred_long <- map2_dfr(year_map_2$row_index, year_map_2$year, function(i, yr) {
+  row_vals <- estimate_pred_combined[i, ]
 
+  groups <- list(
+    add_group_if_present(row_vals, "ukl_sarp_spr_sum", "Upper Klamath Lake", "SARP Spring/Summer", yr),
+    add_group_if_present(row_vals, "ukl_sarp_fall_win", "Upper Klamath Lake", "SARP Fall/Winter", yr),
+    add_group_if_present(row_vals, "ukl_chin_spr_sum", "Upper Klamath Lake", "Chinook Spring/Summer", yr),
+    add_group_if_present(row_vals, "ukl_chin_fall_win", "Upper Klamath Lake", "Chinook Fall/Winter", yr),
+    add_group_if_present(row_vals, "kr_chin_spr_sum", "Klamath River", "Chinook Spring/Summer", yr),
+    add_group_if_present(row_vals, "shpy_sarp_spr_sum", "Sheepy Lake", "SARP Spring/Summer", yr),
+    add_group_if_present(row_vals, "ukl_wild_juv", "Upper Klamath Lake", "Wild Juveniles", yr),
+    add_group_if_present(row_vals, "cl_wild_juv", "Clear Lake Reservoir","Wild Juveniles", yr))
+  bind_rows(groups)
+  })
 
- estimate_predation_sarp <- estimate_predation_sarp_clean |>
-   group_by(location_1, fish_group_2, year) |>
-   summarise(estimate_pct = suppressWarnings(max(estimate_pct, na.rm = TRUE)) %>% { ifelse(is.infinite(.), NA_real_, .) },
-             lower_ci_pct   = suppressWarnings(max(lower_ci_pct, na.rm = TRUE)) %>% { ifelse(is.infinite(.), NA_real_, .) },
-             upper_ci_pct   = suppressWarnings(max(upper_ci_pct, na.rm = TRUE)) %>% { ifelse(is.infinite(.), NA_real_, .) },
-             .groups = "drop") |>
-   rename(location = location_1,
-          fish_group = fish_group_2)
+estimate_predation_sarp <- estimate_pred_long |>
+  group_by(location_1, fish_group_2, year) |>
+  summarise(estimate_pct = suppressWarnings(max(estimate_pct, na.rm = TRUE)) %>% { ifelse(is.infinite(.), NA_real_, .) },
+            lower_ci_pct   = suppressWarnings(max(lower_ci_pct, na.rm = TRUE)) %>% { ifelse(is.infinite(.), NA_real_, .) },
+            upper_ci_pct   = suppressWarnings(max(upper_ci_pct, na.rm = TRUE)) %>% { ifelse(is.infinite(.), NA_real_, .) },
+            .groups = "drop") |>
+  rename(location = location_1,
+         fish_group = fish_group_2)
 
- # TODO
- # (5) Combine 2024 with 2021-2023 table and produce clean and combined predation_estimates_hatchery
+# (5) Produce clean and combined predation_estimates_hatchery
 predation_estimates_hatchery <- estimate_predation_sarp |>
   mutate(
    species = case_when(
      str_detect(fish_group, "SARP") ~ "sucker",
      str_detect(fish_group, "Chinook") ~ "chinook salmon",
+     str_detect(fish_group, "Wild Juveniles") ~ "sucker",
      TRUE ~ NA_character_),
    life_stage = "juvenile",
-   origin = "hatchery",
+   # origin = "hatchery", #note that on this table for 2024 there are also wild
+   origin = case_when(
+     fish_group == "Wild Juveniles" ~ "wild",
+     T ~"hatchery"),
    release_season = case_when(
      str_detect(fish_group, "Spring/Summer") ~ "spring_summer",
      str_detect(fish_group, "Fall/Win") ~ "fall_winter",
