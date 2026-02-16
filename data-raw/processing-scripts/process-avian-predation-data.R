@@ -7,6 +7,8 @@ library(janitor)
 library(tabulapdf)
 library(tidyverse)
 library(purrr)
+library(stringr)
+library(readr)
 
 ## 2021-2023 DATA
 pdf_path <- "data-raw/Avian_Predation_on_UKB_Suckers_Summary_Report_2021_2023.pdf"
@@ -37,6 +39,7 @@ tag_data_raw <- as.data.frame(tag_data_raw, stringsAsFactors = FALSE) %>%
 tag_data_raw_2 <- tables_2024[[2]] |> glimpse()
 
 tag_data_raw_2_clean <- tag_data_raw_2 |>
+  clean_names() |>
   separate(
     col = no_recovered_on_bird_colonies,
     into = c("recovered_CL", "recovered_SL", "recovered_KR"),
@@ -45,9 +48,29 @@ tag_data_raw_2_clean <- tag_data_raw_2 |>
     extra = "merge") |>
   glimpse()
 
-# TODO (3)
-# 2024 looks slightly different than 2021-2023 so combining and re-running code below won't work
-# 2024 table needs to be cleaned and combined with 2021-2023
+# (3) clean 2024
+to_num0 <- function(x) {
+  x <- ifelse(is.na(x), "0", x)
+  x <- str_trim(x)
+  x <- ifelse(x == "-" | x == "", "0", x)
+  readr::parse_number(x)
+}
+
+tag_data_clean_2024 <- tag_data_raw_2_clean |>
+  slice(-1) |>
+  mutate(
+    row_id = row_number(),
+    location = if_else(row_id <= 9, "Upper Klamath Lake", "Clear Lake Reservoir"),
+    fish_group = x2,
+    year = 2024L,
+    available = readr::parse_number(x3),
+    recovered = to_num0(x4) +
+      to_num0(recovered_CL) +
+      to_num0(recovered_SL) +
+      to_num0(recovered_KR) +
+      to_num0(x6)) |>
+  filter(!is.na(fish_group) & fish_group != "") |>
+  select(location, fish_group, year, available, recovered)
 
 # (4) functions to clean 2021-2023 table
 parse_avail <- function(x) {
@@ -77,7 +100,7 @@ tag_data_split <- tag_data_split |>
   select(-matches("^x20\\d{2}$"))
 
 
-tag_data_clean <- tag_data_split |>
+tag_data_2021_2023 <- tag_data_split |>
   mutate(location_1 = case_when(
     row_number() %in% 1:9  ~ "Upper Klamath Lake",
     row_number() %in% 10    ~ "Klamath River",
@@ -89,7 +112,8 @@ tag_data_clean <- tag_data_split |>
 # year columns
 year_cols <- grep("^x20\\d{2}_(available|recovered)$", names(tag_data_split), value = TRUE)
 
-avian_predation_pit_tag <- tag_data_clean |>
+# avian_predation_pit_tag <- tag_data_clean_2021_2023 |>
+tag_data_clean_2021_2023 <- tag_data_2021_2023 |>
   mutate(fish_group_2 = na_if(str_trim(fish_group_2), "")) |>
   filter(!(is.na(fish_group_2) & rowSums(!is.na(across(all_of(year_cols)))) == 0)) |>
   pivot_longer(cols = all_of(year_cols),
@@ -107,8 +131,10 @@ avian_predation_pit_tag <- tag_data_clean |>
   # mutate(recovered_rate = if_else(!is.na(available) & available > 0, recovered / available, NA_real_))
   glimpse()
 
-# TODO combine with 2024 once cleaned
-# (4) cleaned and NOT combined predation_estimates_avian_pit_tag
+# (4) combine 2021-2023 and 2024
+avian_predation_pit_tag <- bind_rows(tag_data_clean_2024, tag_data_clean_2021_2023)
+
+# final cleaning step
 predation_estimates_avian_pit_tag <- avian_predation_pit_tag |>
   mutate(species = case_when(str_detect(fish_group, "LRS") ~ "lost river sucker",
                              str_detect(fish_group, "SNS-KLS") ~ "shortnose and klamath largescale suckers",
@@ -315,10 +341,10 @@ predation_estimates_wild <- predation_estimates_wild_clean |>
 
  #TODO
 # (2) read in 2024 report table 4
-# area_table_estimate_sarp <- extract_areas(pdf_path_2024, pages = 16)
+area_table_estimate_sarp <- extract_areas(pdf_path_2024, pages = 16)
 #
-# estimate_predation_sarp_raw_2024 <- as.data.frame(area_table_estimate_sarp, stringsAsFactors = FALSE) |>
-#    clean_names()
+estimate_predation_sarp_raw_2024 <- as.data.frame(area_table_estimate_sarp, stringsAsFactors = FALSE) |>
+   clean_names()
 
  # TODO (3)
  # 2024 looks slightly different than 2021-2023
