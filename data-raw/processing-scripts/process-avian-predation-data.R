@@ -19,7 +19,6 @@ tables <- extract_tables(pdf_path, method = "stream", output = "tibble")
 pdf_path_2024 <- "data-raw/Avian-Predation-Final-Summary-Report_2024.pdf"
 tables_2024 <- extract_tables(pdf_path_2024, method = "stream", output = "tibble")
 
-
 #### ======= PIT-tagged LRS, SNS, KLS, SNS-KLS and SARP ===== ####
 # The first number = the number of PIT-tagged fish available to avian predators that year in that location.
 # This is essentially how many tagged suckers (or salmon) were released or present in the waterbody.
