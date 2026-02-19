@@ -59,7 +59,7 @@ tag_data_clean_2024 <- tag_data_raw_2_clean |>
   slice(-1) |>
   mutate(
     row_id = row_number(),
-    location = if_else(row_id <= 9, "Upper Klamath Lake", "Clear Lake Reservoir"),
+    location = if_else(row_id <= 8, "Upper Klamath Lake", "Clear Lake Reservoir"),
     fish_group = x2,
     year = 2024L,
     available = readr::parse_number(x3),
@@ -233,7 +233,9 @@ names(est_predation_clean)[5:6] <- c("CLR_Adult_LRS", "CLR_Adult_SNS_KLS")
 
 
 pred_raw_clean_2 <- pred_raw_clean_2 |>
-  mutate(across(starts_with("UKL_Adult_") | starts_with("CLR_Adult_"), str_trim))
+  mutate(across(starts_with("UKL_Adult_") | starts_with("CLR_Adult_"), str_trim)) |>
+  rename(CLR_Adult_LRS = cl_part1,
+         CLR_Adult_SNS_KLS = cl_part2)
 
 # (3) combine 2024 with 2021-2023 to continue cleaning
 est_predation_clean <- bind_rows(pred_raw_clean, pred_raw_clean_2)
@@ -455,6 +457,7 @@ predation_estimates_hatchery <- estimate_predation_sarp |>
 
 # harmonize hatchery
 hatchery_long <- predation_estimates_hatchery |>
+  filter(!(origin == "wild" & is.na(estimate_pct))) |> # 2024 included the wild juvenile suckers in the hatchery table but 2021-2023 included in other table so need to remove so don't get duplicates
   mutate(metric_type = "percent",
          available = NA_integer_,
          recovered = NA_integer_,
@@ -465,6 +468,7 @@ hatchery_long <- predation_estimates_hatchery |>
 
 # harmonize wild
 wild_long<- predation_estimates_wild |> # this table is ready to be combined with others
+  filter(!(year == 2024 & location == "clear lake reservoir" & life_stage == "juvenile")) |>  # remove 2024 because it is coming from hatchery table
   mutate(metric_type = "percent",
          release_season = NA_character_,
          # # origin = "Natural",
@@ -491,6 +495,12 @@ avian_predation_estimates <- percent_estimates |>
                    "release_season",
                    "sarp_program",
                    "year")) |> glimpse()
+
+# Check that there are no duplicates
+# avian_predation_estimates |>
+#   group_by(location, species, life_stage, origin, release_season, sarp_program, year) |>
+#   tally() |>
+#   filter(n > 1)
 # save clean data
-# usethis::use_data(avian_predation_estimates, overwrite = TRUE)
+usethis::use_data(avian_predation_estimates, overwrite = TRUE)
 
