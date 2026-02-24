@@ -11,8 +11,8 @@ library(tidyr)
 # we have decided to pull only data below, as of January of 2026
 
 # USFWS Klamath Falls National Fish Hatchery Report - 2024
-pdf_path <- here::here("data-raw/20250619_FY2024 KFNFH Annual Report_Final Draft.pdf")
-filename <- here::here("data-raw", "pdf-tables", "kfnfh_2024_tables_raw.Rds")
+pdf_path <- here::here("data-raw", "helper-data", "20250619_FY2024 KFNFH Annual Report_Final Draft.pdf")
+filename <- here::here("data-raw", "helper-data", "kfnfh_2024_tables_raw.Rds")
 if(!file.exists(filename)) {
   tables_raw_2024 <- extract_tables(pdf_path, method = "stream", output = "tibble")
   tables_raw_2024 |> saveRDS(filename)
