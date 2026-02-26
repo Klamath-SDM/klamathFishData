@@ -373,7 +373,7 @@ harvest_cleaned <- pmap(
   list(harvest_list_cleaned, harvest_years, tribal_labels),
   clean_harvest_table)
 
-in_river_harvest <- bind_rows(harvest_cleaned)
+fall_harvest_clean <- bind_rows(harvest_cleaned)
 
 ## IN-RIVER RUN ----
 
