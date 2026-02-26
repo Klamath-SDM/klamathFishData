@@ -295,67 +295,172 @@ run_size <- combined_run_size |>
 
 # In-river harvest ----
 # TODO need to read figure out why river harvest table is not showing except for the years below
-harvest_13 <- tables_stream[[39]] # harvest 2016 - 2018
-harvest_13_1 <- tables_stream[[40]] # total river harvest 2016 - 2018
-harvest_14 <- tables_stream[[45]] # harvest 2019 - 2021
-harvest_14_1 <- tables_stream[[46]] # total river harvest 2019 - 2021
 
+pdf_file <- "data-raw/2023.Spring.Chinook.Megatable.v.28-Mar-2024.pdf"
 
-harvest_15 <- tables_stream[[51]] # harvest 2022 - 2024
-harvest_15_2 <- tables_stream[[52]] # Total river harvest 2022 - 2024
-run_size_15 <- tables_stream[[53]] # total run-size 2022 - 2024
+# 9 column labels in left-to-right order (3 years × 3 measures)
+COL_LABELS <- c("yr1_grilse", "yr1_adults", "yr1_totals",
+                "yr2_grilse", "yr2_adults", "yr2_totals",
+                "yr3_grilse", "yr3_adults", "yr3_totals")
 
-### Alternative approach 1 ----
+# Row label order matches order in PDF
+ALL_LABELS <- c("yurok_tribal_harvest", "klamath_river_angler",
+                "hoopa_tribal_harvest", "trinity_river_angler",
+                "total_river_harvest")
 
-# Extract text from page 1
-page_text <- pdf_text(pdf_path)[1]
+clean_num <- function(x) {
+  x <- gsub("[a-pr-z]/$", "", x)   # footnote suffix like "b/", "h/", "j/"
+  x <- gsub(",", "", x)
+  x <- trimws(x)
+  suppressWarnings(as.integer(x))
+}
 
-# View raw text
-cat(page_text)
+extract_harvest_page <- function(words) {
 
-page_text <- str_split(page_text, "\n")[[1]] |>
-  trimws() |>
-  discard(~ .x == "")
+  # Locate the RIVER/IN-RIVER HARVEST section -----------------------
+  # Identify the uppercase "HARVEST" that has "RIVER" within 3 words before it
+  harvest_y <- NA_real_
+  runsize_y <- NA_real_
 
-start_idx <- which(str_detect(page_text, regex("River Harvest", ignore_case = TRUE))) + 1
-end_idx <- which(str_detect(page_text, regex("^Totals|^Total Run-size Estimates", ignore_case = TRUE))) - 1
+  for (i in seq_len(nrow(words))) {
+    if (words$text[i] == "HARVEST" && is.na(harvest_y)) {
+      lo    <- max(1L, i - 3L)
+      prevs <- words$text[lo:(i - 1L)]
+      if ("RIVER" %in% prevs || "IN-RIVER" %in% prevs) harvest_y <- words$y[i]
+    }
+    if (words$text[i] == "RUN-SIZE" && !is.na(harvest_y) && is.na(runsize_y))
+      runsize_y <- words$y[i]
+  }
+  if (is.na(harvest_y) || is.na(runsize_y)) return(NULL)
 
-# Extract just the lines from the In-River Run section
-run_lines <- page_text[start_idx:end_idx]
+  # ---- extract the three years -----------------------------------------
+  # Year labels sit ~15-19 px below the HARVEST line
+  years <- words |>
+    filter(abs(y - harvest_y) < 22,
+           grepl("^[0-9]{4}$", text),
+           as.integer(text) > 1970) |>
+    pull(text) |> as.integer() |> unique() |> sort()
+  years <- years[1:3]
+  if (length(years) < 3 || anyNA(years)) return(NULL)
 
-# Preview
-run_lines
+  # ---- find the "Grilse Adults Totals ..." column header row -----------
+  col_hdr_words <- words |>
+    filter(y > harvest_y, y < runsize_y,
+           text %in% c("Grilse", "Adults", "Totals")) |>
+    arrange(y)
+  if (nrow(col_hdr_words) == 0) return(NULL)
 
-run_data <- str_split_fixed(run_lines, "\\s{2,}", n = 7)
-run_df <- as.data.frame(run_data, stringsAsFactors = FALSE)
+  col_row_y   <- col_hdr_words$y[1]
+  col_centers <- col_hdr_words |>
+    filter(abs(y - col_row_y) < 3) |>
+    arrange(x) |>
+    pull(x)
+  if (length(col_centers) != 9) return(NULL)
 
-# Preview
-head(run_df)
+  nearest_col <- function(x_pos) COL_LABELS[which.min(abs(col_centers - x_pos))]
 
-start_year <- 1980
-colnames(run_df) <- c("location",
-                      paste0("grilse_", start_year),
-                      paste0("adults_", start_year),
-                      paste0("totals_", start_year),
-                      paste0("grilse_", start_year + 1),
-                      paste0("adults_", start_year + 1),
-                      paste0("totals_", start_year + 1))
+  # ---- identify label rows by y-position (left margin, x < 180) --------
+  lbl_words <- words |>
+    filter(y > col_row_y, y < runsize_y, x < 180) |>
+    mutate(yr = round(y, 0)) |>
+    arrange(yr)
 
-# Tidy it
-run_clean <- run_df |>
-  mutate(across(-location, ~ readr::parse_number(str_remove(.x, "\\s*[a-zA-Z/]+$")))) |>
-  mutate(section = "In-River Run") |>
-  pivot_longer(
-    cols = -c(location, section),
-    names_to = c("category", "year"),
-    names_sep = "_",
-    values_to = "value"
-  ) |>
-  mutate(
-    year = as.integer(year),
-    category = str_to_title(category)
+  row_ys   <- list()
+  angler_n <- 0L
+  for (yk in sort(unique(lbl_words$yr))) {
+    txts <- lbl_words$text[lbl_words$yr == yk]
+    if      ("Yurok"  %in% txts) {
+      row_ys[["yurok_tribal_harvest"]] <- yk
+    } else if ("Angler" %in% txts) {
+      angler_n <- angler_n + 1L
+      key <- if (angler_n == 1L) "klamath_river_angler" else "trinity_river_angler"
+      row_ys[[key]] <- yk
+    } else if ("Hoopa" %in% txts) {
+      row_ys[["hoopa_tribal_harvest"]] <- yk
+    } else if ("Total" %in% txts) {
+      row_ys[["total_river_harvest"]]  <- yk
+    }
+  }
+  if (length(row_ys) == 0) return(NULL)
+
+  # ---- parse numeric tokens and assign to (label, column) --------------
+  ly_vec <- unlist(row_ys)
+  ly_nms <- names(ly_vec)
+
+  num_df <- words |>
+    filter(y > col_row_y, y < runsize_y, x > 140) |>
+    mutate(yr  = round(y, 0),
+           val = clean_num(text)) |>
+    filter(!is.na(val)) |>
+    mutate(
+      # nearest label row by y-distance
+      label = ly_nms[apply(
+        outer(yr, ly_vec, function(a, b) abs(a - b)), 1, which.min)],
+      # nearest column center by x-distance
+      col   = sapply(x, nearest_col)
+    )
+
+  if (nrow(num_df) == 0) return(NULL)
+
+  # ---- pivot to wide (one row per label, one column per yr_measure) ----
+  wide <- num_df |>
+    select(label, col, val) |>
+    group_by(label, col) |>
+    summarise(val = last(val), .groups = "drop") |>
+    pivot_wider(names_from = col, values_from = val)
+
+  # ensure all 9 columns exist (fill absent ones with NA)
+  for (cn in COL_LABELS)
+    if (!cn %in% names(wide)) wide[[cn]] <- NA_integer_
+
+  # ---- assemble final (year × label) records ---------------------------
+  out_rows <- lapply(ALL_LABELS, function(lbl) {
+    row_w <- if (lbl %in% wide$label) wide[wide$label == lbl, ] else NULL
+    lapply(seq_along(years), function(i) {
+      p <- paste0("yr", i, "_")
+      data.frame(
+        year   = years[i],
+        label  = lbl,
+        grilse = if (!is.null(row_w)) row_w[[paste0(p, "grilse")]][[1L]] else NA_integer_,
+        adults = if (!is.null(row_w)) row_w[[paste0(p, "adults")]][[1L]] else NA_integer_,
+        totals = if (!is.null(row_w)) row_w[[paste0(p, "totals")]][[1L]] else NA_integer_,
+        stringsAsFactors = FALSE)
+      }) |> bind_rows()
+    }) |> bind_rows()
+  out_rows
+}
+
+# run across all 15 data pages
+page_data <- pdf_data(pdf_path) # one data frame per page
+
+harvest_list <- lapply(seq_len(15), function(pg) {
+  result <- tryCatch(
+    extract_harvest_page(page_data[[pg]]),
+    error = function(e) { message("Page ", pg, " error: ", e$message); NULL }
   )
+  if (!is.null(result)) {
+    message("Page ", pg, ": years ",
+            paste(sort(unique(result$year)), collapse = ", "))
+  } else {
+    message("Page ", pg, ": no harvest section found")
+  }
+  result
+})
 
+harvest_df <- bind_rows(harvest_list) |>
+  arrange(year, match(label, ALL_LABELS))
+
+spring_harvest_clean <- harvest_df |>
+  rename(location = label) |>
+  pivot_longer(
+    cols = c(grilse, adults, totals),
+    names_to = "category",
+    values_to = "value") |>
+  mutate(category = str_to_title(category),
+         section = "River Harvest",
+         subsection = "Harvest") |>
+  select(location, subsection, section, category, year, value) |>
+  filter(!is.na(value))
 
 
 ## Combining all sections of the megatable  ----
