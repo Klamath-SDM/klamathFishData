@@ -13,7 +13,7 @@ library(purrr)
 # This script reads and cleans Spring run megatable
 
 ##  ---- SPAWNER ----
-pdf_path <- "data-raw/2023.Spring.Chinook.Megatable.v.28-Mar-2024.pdf"
+pdf_path <- "data-raw/helper-data/2023.Spring.Chinook.Megatable.v.28-Mar-2024.pdf"
 tables_stream <- extract_tables(pdf_path, method = "stream", output = "tibble")
 
 # Same approach than fall run megatable ----

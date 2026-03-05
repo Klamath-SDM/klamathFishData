@@ -12,7 +12,7 @@ library(purrr)
 
 # This script reads and cleans fall run megatable
 ##  ---- SPAWNER ----
-pdf_path <- "data-raw/2022_Klamath_Basin_Megatable_20230216.pdf"
+pdf_path <- "data-raw/helper-data/2022_Klamath_Basin_Megatable_20230216.pdf"
 tables_stream <- extract_tables(pdf_path, method = "stream", output = "tibble")
 
 # Create empty lists to hold all 15 spawner, harvest, and run tables
