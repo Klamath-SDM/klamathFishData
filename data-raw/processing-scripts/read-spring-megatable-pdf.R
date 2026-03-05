@@ -370,13 +370,13 @@ extract_harvest_page <- function(words) {
   for (yk in sort(unique(lbl_words$yr))) {
     txts <- lbl_words$text[lbl_words$yr == yk]
     if      ("Yurok"  %in% txts) {
-      row_ys[["yurok_tribal_harvest"]] <- yk
+      row_ys[["klamath_yurok_tribal_harvest"]] <- yk
     } else if ("Angler" %in% txts) {
       angler_n <- angler_n + 1L
       key <- if (angler_n == 1L) "klamath_river_angler" else "trinity_river_angler"
       row_ys[[key]] <- yk
     } else if ("Hoopa" %in% txts) {
-      row_ys[["hoopa_tribal_harvest"]] <- yk
+      row_ys[["trinity_hoopa_tribal_harvest"]] <- yk
     } else if ("Total" %in% txts) {
       row_ys[["total_river_harvest"]]  <- yk
     }

@@ -480,7 +480,7 @@ in_river_run <- bind_rows(inriver_run_cleaned)
 
 ## Combining all sections of the megatable  ----
 
-fall_megatable <- bind_rows(in_river_run, in_river_harvest, spawner_escapement) |>
+fall_megatable <- bind_rows(in_river_run, fall_harvest_clean, spawner_escapement) |>
   rename(lifestage = category) |>
   mutate(species = "fall chinook salmon")
 

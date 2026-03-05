@@ -11,8 +11,8 @@ library(tidyverse)
 library(purrr)
 library(readxl)
 
-source("data-raw/processing-scripts/read_fall_megatable_pdf.R")
-source("data-raw/processing-scripts/read_spring_megatable_pdf.R")
+source("data-raw/processing-scripts/read-fall-megatable-pdf.R")
+source("data-raw/processing-scripts/read-spring-megatable-pdf.R")
 
 # Goal is to create a data object for spawner escapement data, which primarily comes from
 # the Megatable for fall and spring Chinook. There are, however, other data sources
