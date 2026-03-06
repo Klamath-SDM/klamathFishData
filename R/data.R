@@ -35,7 +35,7 @@
 #' @format A tibble with 265 rows and 13 columns
 #' \itemize{
 #'   \item \code{julian_year}: julian year (1999-2022). Min/max years vary by location, species, type of estimate.
-#'   \item \code{stream}: stream ("upper klamath lake")
+#'   \item \code{location}: location of data collection or estimate. This may be a river, wetland or marsh, hatchery etc
 #'   \item \code{species}: species (lost river sucker lakeshore spawning, lost river sucker river spawning, shortnose sucker)
 #'   \item \code{lifestage}: lifestage category (adult)
 #'   \item \code{sex}: sex, if applicable to model (female, male, NA)
