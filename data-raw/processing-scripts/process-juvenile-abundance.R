@@ -40,6 +40,7 @@ salmon_juvenile_abundance <- klamath_cdfw_population_processed |>
   mutate(species = case_when(species == "fall chinook" ~ "fall chinook salmon",
                              T ~ species),
          origin = case_when(origin == "natural" ~ "wild",
-                            T ~ origin))
+                            T ~ origin)) |>
+  rename(location = stream)
 
 usethis::use_data(salmon_juvenile_abundance, overwrite = TRUE)
