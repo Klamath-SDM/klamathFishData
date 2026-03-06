@@ -72,7 +72,7 @@
 'data_location_lookup'
 
 #' @title Salmon Spawner Escapement
-#' @name spawner_escapement
+#' @name salmon_spawner_escapement
 #' @description Digital version of [CDFW's Spring Chinook Salmon Megatable](https://wildlife.ca.gov/Conservation/Fishes/Chinook-Salmon/Anadromous-Assessment) and [CDFW's Spring Chinook Salmon Megatable](https://casalmon.org/wp-content/uploads/2024/08/FINAL-2023-Spring-Chinook-Megatable-v.28-Mar-2024.pdf) Spawner Escapement sections as well as other data sources for Coho and Steelhead not included in the Megatable.
 #' @format A tibble with 1,722 rows and 6 columns
 #' \itemize{
@@ -103,7 +103,7 @@
 #'
 #' @format A tibble with 39 rows and 16 columns
 #' \itemize{
-#'   \item{location}: Waterbody or colony area where piscivorous waterbirds nested and where PIT tags were recovered (upper klamath lake, clear lake reservoir, sheepy lake)
+#'   \item{location}: location of data collection or estimate. This may be a river, wetland or marsh, hatchery, etc. (upper klamath lake, clear lake reservoir, sheepy lake)
 #'   \item{species}: Fish species associated with each release group (e.g. sucker, chinook salmon)
 #'   \item{life_stage}: Fish life stage (e.g. juvenile, adult)
 #'   \item{origin}: Origin of realeased fish (e.g. hatchery, wild)
@@ -128,7 +128,7 @@
 #' Corresponds to **Table 1** and **Table 4** in the FY2024 KFNFH Annual Report.
 #' @format A tibble with 9 rows and 12 columns
 #' \itemize{
-#'   \item \code{hatchery_name}: name of hatchery (KFNFH)
+#'   \item \code{location}: location of data collection or estimate. This may be a river, wetland or marsh, hatchery, etc. (KFNFH)
 #'   \item \code{fiscal_year}: fiscal year
 #'   \item \code{larvae_collected}: number of wild larval suckers collected
 #'   \item \code{sarp_release}: number of fish released or transferred that were raised in the Sucker Assisted Rearing Program (SARP)
