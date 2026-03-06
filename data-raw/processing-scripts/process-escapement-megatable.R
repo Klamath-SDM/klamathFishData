@@ -94,7 +94,7 @@ spring_spawner_escapement_clean <- spring_spawner_escapement |>
 
 # Coho and steelhead are not included in the Megatable and are pulled from CDFW data table
 
-cdfw_population_raw <- read_xlsx(here::here("data-raw", "helper-data", "modeled", "Salmonid_Population_Monitoring_Data_CMPv2023.xlsx"), sheet = "Population Data")
+cdfw_population_raw <- read_xlsx(here::here("data-raw", "helper-data", "Salmonid_Population_Monitoring_Data_CMPv2023.xlsx"), sheet = "Population Data")
 
 klamath_cdfw_population_raw <- cdfw_population_raw |>
   filter(Watershed %in% c("Trinity River", "Scott River", "Shasta River", "Lower Klamath","Klamath River"))

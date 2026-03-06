@@ -76,7 +76,7 @@
 #' @description Digital version of [CDFW's Spring Chinook Salmon Megatable](https://wildlife.ca.gov/Conservation/Fishes/Chinook-Salmon/Anadromous-Assessment) and [CDFW's Spring Chinook Salmon Megatable](https://casalmon.org/wp-content/uploads/2024/08/FINAL-2023-Spring-Chinook-Megatable-v.28-Mar-2024.pdf) Spawner Escapement sections as well as other data sources for Coho and Steelhead not included in the Megatable.
 #' @format A tibble with 1,722 rows and 6 columns
 #' \itemize{
-#'   \item \code{location}: River, hatchery, or basin where escapement is reported. ("bogus creek", "hoopa and yurok tributaries", "hoopa trinity tributaries", "iron gate hatchery", "klamath basin", "klamath river", "lower klamath river", "other klamath tributaries", "other klamath trinity tributaries", "other trinity tributaries", "salmon river", "scott river", "shasta river", "south fork trinity river", "trinity basin", "trinity river", "trinity river hatchery", "yurok klamath tributaries")
+#'   \item \code{location}: location of data collection or estimate. This may be a river, wetland or marsh, hatchery, etc. ("bogus creek", "hoopa and yurok tributaries", "hoopa trinity tributaries", "iron gate hatchery", "klamath basin", "klamath river", "lower klamath river", "other klamath tributaries", "other klamath trinity tributaries", "other trinity tributaries", "salmon river", "scott river", "shasta river", "south fork trinity river", "trinity basin", "trinity river", "trinity river hatchery", "yurok klamath tributaries")
 #'   \item \code{year}: Return year of the escapement estimate/count (1978-2024)
 #'   \item \code{species}: Species name (spring chinook salmon, fall chinook salmon, coho salmon, winter steelhead, steelhead)
 #'   \item \code{origin}: Fish origin category (hatchery, wild, mixed, unknown)
@@ -154,7 +154,7 @@
 #' @format A tibble with 30 rows and 6 columns
 #' \itemize{
 #'   \item \code{taxa}: taxa (lost river suckers, shortnose suckers/klamath largescale suckers/SNS/KLS)
-#'   \item \code{location}: location of suckers (upper klamath lake)
+#'   \item \code{location}: location of data collection or estimate. This may be a river, wetland or marsh, hatchery, etc. (upper klamath lake)
 #'   \item \code{year}: julian year (2015-2022)
 #'   \item \code{age}: age of suckers (age-0 or age-0-age-1)
 #'   \item \code{survival_indice_type}: type of survival indice estimate (august to september and september to june)
