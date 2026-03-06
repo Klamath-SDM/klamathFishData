@@ -35,7 +35,7 @@
 #' @format A tibble with 265 rows and 13 columns
 #' \itemize{
 #'   \item \code{julian_year}: julian year (1999-2022). Min/max years vary by location, species, type of estimate.
-#'   \item \code{location}: location of data collection or estimate. This may be a river, wetland or marsh, hatchery etc
+#'   \item \code{location}: location of data collection or estimate. This may be a river, wetland or marsh, hatchery, etc
 #'   \item \code{species}: species (lost river sucker lakeshore spawning, lost river sucker river spawning, shortnose sucker)
 #'   \item \code{lifestage}: lifestage category (adult)
 #'   \item \code{sex}: sex, if applicable to model (female, male, NA)
@@ -58,7 +58,7 @@
 #' data collection locations.
 #' @format A tibble with 35 rows and 10 columns
 #' \itemize{
-#'   \item \code{stream}: stream
+#'   \item \code{location}: location of data collection or estimate. This may be a river, wetland or marsh, hatchery, etc
 #'   \item \code{sub_basin}: sub-basin name (upper klamath, lower klamath, trinity, shasta)
 #'   \item \code{data_type}: type of data (rst, hatchery, redd/carcass survey)
 #'   \item \code{site_name}: name of site such as a RST site or hatchery location (big bar, shasta river, bogus, willow creek, pear creek, weitchpec, iron gate fish hatchery, trinity river hatchery, klamath hatchery)
