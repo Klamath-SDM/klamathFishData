@@ -8,7 +8,7 @@
 #' @format A tibble with 122 rows and 14 columns
 #' \itemize{
 #'   \item \code{julian_year}: julian year (2001-2022). Min/max years vary by location, species, type of estimate. Juvenile abundance typically spans multiple years (e.g. Oct 2020 - May 2021) and would be assigned a julian year for the latter part of this period.
-#'   \item \code{stream}: stream ("scott river", "shasta river")
+#'   \item \code{location}: location of data collection or estimate. This may be a river, wetland or marsh, hatchery, etc
 #'   \item \code{species}: species (coho salmon, steelhead, fall chinook salmon)
 #'   \item \code{origin}: origin (wild)
 #'   \item \code{lifestage}: lifestage category (yoy, age 1+, age 2+, smolt)
