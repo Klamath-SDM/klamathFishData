@@ -450,22 +450,36 @@ harvest_list <- lapply(seq_len(15), function(pg) {
 harvest_df <- bind_rows(harvest_list) |>
   arrange(year, match(label, ALL_LABELS))
 
-spring_harvest_clean <- harvest_df |>
-  rename(location = label) |>
+# spring_harvest_clean <- harvest_df |>
+#   rename(location = label) |>
+#   pivot_longer(
+#     cols = c(grilse, adults, totals),
+#     names_to = "category",
+#     values_to = "value") |>
+#   mutate(category = str_to_title(category),
+#          section = "River Harvest",
+#          subsection = "Harvest") |>
+#   select(location, subsection, section, category, year, value) |>
+#   filter(!is.na(value))
+
+spring_in_river_harvest <- harvest_df |>
   pivot_longer(
     cols = c(grilse, adults, totals),
     names_to = "category",
     values_to = "value") |>
-  mutate(category = str_to_title(category),
+  mutate(location = label,
          section = "River Harvest",
-         subsection = "Harvest") |>
-  select(location, subsection, section, category, year, value) |>
-  filter(!is.na(value))
-
+         subsection = case_when(
+           label %in% c("yurok_tribal_harvest", "hoopa_tribal_harvest") ~ "tribal harvest",
+           label %in% c("klamath_river_angler", "trinity_river_angler") ~ "river angler",
+           label == "total_river_harvest" ~ "total river harvest",
+           TRUE ~ label),
+         category = str_to_title(category)) |>
+  select(location, subsection, section, category, year, value) |> glimpse()
 
 ## Combining all sections of the megatable  ----
-
-# megatable_data <- bind_rows(in_river_run, in_river_harvest, spawner_escapement)
+# pending - in_river_run
+spring_megatable <- bind_rows(spring_in_river_harvest, spring_spawner_escapement)
 
 # save clean data
-# usethis::use_data(megatable_data, overwrite = TRUE)
+# usethis::use_data(spring_megatable, overwrite = TRUE)
