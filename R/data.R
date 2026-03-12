@@ -93,6 +93,23 @@
 #'   }
 'salmon_spawner_escapement'
 
+#' @title Salmon Harvest
+#' @name salmon_harvest
+#' @description Digital version of [CDFW's Spring Chinook Salmon Megatable](https://wildlife.ca.gov/Conservation/Fishes/Chinook-Salmon/Anadromous-Assessment) and [CDFW's Spring Chinook Salmon Megatable](https://casalmon.org/wp-content/uploads/2024/08/FINAL-2023-Spring-Chinook-Megatable-v.28-Mar-2024.pdf) River Harvest sections.
+#' @format A tibble with 360 rows and 6 columns
+#' \itemize{
+#'   \item \code{location}: location of data collection or estimate. This may be a river, wetland or marsh, hatchery, etc (klamath river, trinity river)
+#'   \item \code{year}: return year of the escapement estimate/count (1978-2024)
+#'   \item \code{species}: species name (spring chinook salmon, fall chinook salmon)
+#'   \item \code{origin}: fish origin category (unknown)
+#'   \item \code{lifestage}: life stage reported (adult, grilse)
+#'   \item \code{estimate_type}: type of estimate reported. Work in progress as these have not been filled in yet for the data from the Megatables.
+#'   \item \code{estimate}: value of estimate
+#'   \item \code{source}: describes where data were sourced from. Currently data comes from: CDFW Spring and Fall Megatables
+#'   }
+'salmon_harvest'
+
+
 #' @title Predation Estimates on SARP and Chinook
 #' @name avian_predation_estimates
 #' @description This dataset combines avian predation rate estimates (with 95% credible intervals) and PIT-tag availability and recovery data for juvenile fishes in the Upper Klamath Basin. It includes PIT-tagged SARP suckers, hatchery-reared juvenile Chinook Salmon, and wild juvenile suckers released between 2021 and 2023.
