@@ -65,7 +65,8 @@ fall_spawner_escapement_clean <- filter(fall_megatable, section == "Spawning Esc
 
 
 # Spring Run megatable -----------------------------------
-spring_spawner_escapement_clean <- spring_spawner_escapement |>
+spring_spawner_escapement_clean <- filter(spring_megatable, section == "Spawning Escapement") |>
+# spring_spawner_escapement_clean <- spring_spawner_escapement |>
   rename(lifestage = category) |>
   mutate(species = "spring chinook salmon") |>
   filter(!location %in% c("Trinity River Basin","Klamath River Basin", "Subtotals", "Total Spawner Escapement")) |>
