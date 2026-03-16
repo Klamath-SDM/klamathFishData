@@ -81,7 +81,11 @@ habitat <- habitat_raw |>
 
 # Combine -----------------------------------------------------------------
 
-data_location_lookup <- bind_rows(rst_sites, hatcheries, redd_carcass_surveys, habitat)
+data_location_lookup <- bind_rows(rst_sites, hatcheries, redd_carcass_surveys, habitat) |>
+  mutate(location = tolower(stream)) |>
+  relocate(location, .before = sub_basin) |>
+  select(-stream) |>
+  glimpse()
 
 # save rda files
 usethis::use_data(data_location_lookup, overwrite = TRUE)

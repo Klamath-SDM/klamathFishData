@@ -63,8 +63,8 @@ KFNFH_annual_summary <- table_1 |>
          salvage_sl_mm = case_when(salvage_tl_mm == 129 ~ NA,
                                    salvage_tl_mm == 126 ~ NA,
                                    TRUE ~ salvage_sl_mm))|>
-  mutate(hatchery_name = "KFNFH") |>
-  relocate(hatchery_name, .before = fiscal_year) |>
+  mutate(location = "KFNFH") |>
+  relocate(location, .before = fiscal_year) |>
   left_join(table_4, by = join_by(fiscal_year, larvae_collected)) |>
   glimpse()
 
