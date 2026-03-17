@@ -76,7 +76,9 @@ spring_harvest <- filter(spring_megatable, section == "River Harvest") |>
   glimpse()
 
 # bind spring and fall
-salmon_harvest <- bind_rows(spring_harvest, fall_harvest)
+salmon_harvest <- bind_rows(spring_harvest, fall_harvest) |>
+  distinct() |>
+  glimpse()
 
 # save clean data
 usethis::use_data(salmon_harvest, overwrite = TRUE)
