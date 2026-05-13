@@ -1,6 +1,6 @@
 ---
 title: "Klamath Basin Salmon Spawning"
-subtitle: "Where and when — verified sources only"
+subtitle: "Badhia Yunes Katz - FlowWest"
 date: "`r format(Sys.Date(), '%B %d, %Y')`"
 output:
   html_document:
@@ -33,21 +33,7 @@ library(scales)
 This document records **where and when salmon spawn in the Klamath River basin**
 using only the sources listed in the [Source Inventory](#sources).
 
-**How to update this document as new data arrive:**
-
-- **New video years:** Add cleaned rows to the CSV files in `data-clean/` and
-  re-knit — all tables and figures update automatically
-- **New tributaries:** Add a new CSV with columns
-  `tributary, year, date, species, direction` and add a `read_csv()` call
-  in the Data Loading section
-- **New literature values:** Find the relevant `tribble()` in the hardcoded
-  section, add rows, and re-knit
-- **New sources:** Add a row to the [Source Inventory](#appendix) table
-
 ---
-
-
-
 
 ```{r load-cdfw, include=FALSE}
 # Data Loading {#loading}
@@ -1019,12 +1005,10 @@ timing %>%
 
 | ID | Full citation |
 |----|--------------|
-| `[PERRY-2019]` | Perry RW, Plumb JM, Jones EC, Som NA, Hardy TB, Hetrick NJ (2019). Application of the Stream Salmonid Simulator (S3) to Klamath River fall Chinook salmon, California — Parameterization and calibration. USGS Open-File Report 2019-1107. https://doi.org/10.3133/ofr20191107 |
-| `[DODRILL-2022]` | Dodrill MJ, Perry RW, Som NA, Manhard CV, Alexander JD (2022). Extending the Stream Salmonid Simulator to accommodate the life history of coho salmon in the Klamath River Basin, Northern California. USGS Open-File Report 2022-1071. https://doi.org/10.3133/ofr20221071 |
-| `[CDFW-VIDEO]` | California Department of Fish and Wildlife — Klamath River Project. DMP underwater video passage data: Bogus Creek (2003–2022), Shasta River (1999–2022), Scott River (2007–2022). Obtained via data.ca.gov — Fall Chinook Escapement, Klamath Basin Watershed. Cleaned and verified in R — see accompanying data cleaning script |
-| `[SRWC-2025]` | Scott River Watershed Council. Scott River Coho Salmon Spawning Ground Surveys: 2024–2025 Season. Etna, California, 2025. 5 |
-| `[SRWC-2024]` | Scott River Watershed Council. Scott River Spawning Ground Survey Report: 2023–2024 Season. Etna, California, 2024 |
-
-| `[SRWC-2023] ` | Scott River Watershed Council. Scott River Spawning Ground Survey Report: 2022–2023 Season. Etna, California, 2024 |
-
+| `[PERRY-2019]` | Perry RW, Plumb JM, Jones EC, Som NA, Hardy TB, Hetrick NJ (2019). Application of the Stream Salmonid Simulator (S3) to Klamath River fall Chinook salmon, California — Parameterization and calibration. [USGS Open-File Report 2019-1107](https://doi.org/10.3133/ofr20191107) |
+| `[DODRILL-2022]` | Dodrill MJ, Perry RW, Som NA, Manhard CV, Alexander JD (2022). Extending the Stream Salmonid Simulator to accommodate the life history of coho salmon in the Klamath River Basin, Northern California. [USGS Open-File Report 2022-1071](https://doi.org/10.3133/ofr20221071) |
+| `[CDFW-VIDEO]` | California Department of Fish and Wildlife — Klamath River Project. DMP underwater video passage data: Bogus Creek (2003–2022), Shasta River (1999–2022), Scott River (2007–2022). Obtained via data.ca.gov — Fall Chinook Escapement, Klamath Basin Watershed. Available at: [California Open Data Portal](https://data.ca.gov/dataset/fall-chinook-escapement-klamath-basin-watershed) |
+| `[SRWC-2025]` | Scott River Watershed Council. *Scott River Coho Salmon Spawning Ground Surveys: 2024–2025 Season*. Etna, California, 2025. Available at: [PDF](https://scottriver.org/wp-content/uploads/2025/03/Scott-River-Coho-Salmon-Spawning-Ground-Survey-2024-2025-Season.pdf) |
+| `[SRWC-2024]` | Scott River Watershed Council. *Scott River Spawning Ground Survey Report: 2023–2024 Season*. Etna, California, 2024. Available at: [PDF](https://scottriver.org/wp-content/uploads/2024/04/Scott-River-Spawning-Ground-Survey_2023_2024_Final-Report_compressed.pdf) |
+| `[SRWC-2023]` | Scott River Watershed Council. *Scott River Spawning Ground Survey Report: 2022–2023 Season*. Etna, California, 2024. Available at: [PDF](https://scottriver.org/wp-content/uploads/2024/04/2022_2023_ScottRiver_SpawningGroundSurveyReport_SRWC.pdf) |
 ---
