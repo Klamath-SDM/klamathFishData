@@ -1,0 +1,1030 @@
+---
+title: "Klamath Basin Salmon Spawning"
+subtitle: "Where and when — verified sources only"
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 3
+    theme: flatly
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo    = FALSE,
+  warning = FALSE,
+  message = FALSE,
+  fig.width  = 10,
+  fig.height = 5
+)
+library(tidyverse)
+library(knitr)
+library(kableExtra)
+library(lubridate)
+library(scales)
+```
+
+---
+
+# About This Document
+
+This document records **where and when salmon spawn in the Klamath River basin**
+using only the sources listed in the [Source Inventory](#sources).
+
+**How to update this document as new data arrive:**
+
+- **New video years:** Add cleaned rows to the CSV files in `data-clean/` and
+  re-knit — all tables and figures update automatically
+- **New tributaries:** Add a new CSV with columns
+  `tributary, year, date, species, direction` and add a `read_csv()` call
+  in the Data Loading section
+- **New literature values:** Find the relevant `tribble()` in the hardcoded
+  section, add rows, and re-knit
+- **New sources:** Add a row to the [Source Inventory](#appendix) table
+
+---
+
+
+
+
+```{r load-cdfw, include=FALSE}
+# Data Loading {#loading}
+# ── CDFW Fall Chinook Escapement ─────────────────────────────────────────────
+# Download from: https://data.ca.gov/dataset/fall-chinook-escapement-klamath-basin-watershed
+
+library(tidyverse)
+library(readxl)
+library(lubridate)
+
+path_bogus_video <- "data-raw/vignettes/redd-exploration/DMP-Bogus-Creek-Video-2003-2022.xlsx"
+
+# ── 2007 ──────────────────────────────────────────────────────────────────────
+sheet_2007 <- read_excel(path_bogus_video, sheet = "2007", col_types = "text")
+
+bogus_2007 <- sheet_2007 %>%
+  filter(!is.na(Date)) %>%
+  mutate(date = as.Date(as.numeric(Date), origin = "1899-12-30")) %>%
+  filter(!is.na(CHIN) | !is.na(COHO) | !is.na(STHD)) %>%
+  pivot_longer(
+    cols      = c(CHIN, COHO, STHD),
+    names_to  = "species_raw",
+    values_to = "direction_raw"
+  ) %>%
+  filter(!is.na(direction_raw)) %>%
+  mutate(
+    species = case_when(
+      species_raw == "CHIN" ~ "Chinook",
+      species_raw == "COHO" ~ "Coho",
+      species_raw == "STHD" ~ "Steelhead"
+    ),
+    direction = case_when(
+      trimws(toupper(direction_raw)) == "U"            ~ "upstream",
+      trimws(toupper(direction_raw)) == "D"            ~ "downstream",
+      str_starts(toupper(direction_raw), "D ")         ~ "downstream",
+      str_starts(toupper(direction_raw), "U ")         ~ "upstream",
+      TRUE                                             ~ NA_character_
+    ),
+    tributary = "Bogus Creek",
+    year      = 2007L
+  ) %>%
+  filter(!is.na(direction)) %>%
+  select(tributary, year, date, species, direction)
+
+# ── 2008 ──────────────────────────────────────────────────────────────────────
+# Note: steelhead column is AD_STHD not STHD
+# Note: serial 40086 is a typo — should be 39721 (2008-09-30)
+sheet_2008 <- read_excel(path_bogus_video, sheet = "2008", col_types = "text")
+
+bogus_2008 <- sheet_2008 %>%
+  mutate(
+    DATE = if_else(DATE == "40086", "39721", DATE),
+    date = as.Date(as.numeric(DATE), origin = "1899-12-30")
+  ) %>%
+  filter(!is.na(CHIN) | !is.na(COHO) | !is.na(AD_STHD)) %>%
+  pivot_longer(
+    cols      = c(CHIN, COHO, AD_STHD),
+    names_to  = "species_raw",
+    values_to = "direction_raw"
+  ) %>%
+  filter(!is.na(direction_raw)) %>%
+  mutate(
+    species = case_when(
+      species_raw == "CHIN"    ~ "Chinook",
+      species_raw == "COHO"    ~ "Coho",
+      species_raw == "AD_STHD" ~ "Steelhead"
+    ),
+    direction = case_when(
+      trimws(toupper(direction_raw)) == "U"            ~ "upstream",
+      trimws(toupper(direction_raw)) == "D"            ~ "downstream",
+      str_starts(toupper(direction_raw), "D ")         ~ "downstream",
+      str_starts(toupper(direction_raw), "U ")         ~ "upstream",
+      TRUE                                             ~ NA_character_
+    ),
+    tributary = "Bogus Creek",
+    year      = 2008L
+  ) %>%
+  filter(!is.na(direction)) %>%
+  select(tributary, year, date, species, direction)
+
+# ── 2009 ──────────────────────────────────────────────────────────────────────
+# Note: steelhead column is AD_STHD not STHD
+# Note: two typo serials corrected —
+#   113203 -> 40155 (2009-12-08)
+#   113205 -> 40157 (2009-12-10)
+sheet_2009 <- read_excel(path_bogus_video, sheet = "2009", col_types = "text")
+
+bogus_2009 <- sheet_2009 %>%
+  mutate(
+    DATE = case_when(
+      DATE == "113203" ~ "40155",
+      DATE == "113205" ~ "40157",
+      TRUE             ~ DATE
+    ),
+    date = as.Date(as.numeric(DATE), origin = "1899-12-30")
+  ) %>%
+  filter(!is.na(CHIN) | !is.na(COHO) | !is.na(AD_STHD)) %>%
+  pivot_longer(
+    cols      = c(CHIN, COHO, AD_STHD),
+    names_to  = "species_raw",
+    values_to = "direction_raw"
+  ) %>%
+  filter(!is.na(direction_raw)) %>%
+  mutate(
+    species = case_when(
+      species_raw == "CHIN"    ~ "Chinook",
+      species_raw == "COHO"    ~ "Coho",
+      species_raw == "AD_STHD" ~ "Steelhead"
+    ),
+    direction = case_when(
+      trimws(toupper(direction_raw)) == "U"            ~ "upstream",
+      trimws(toupper(direction_raw)) == "D"            ~ "downstream",
+      str_starts(toupper(direction_raw), "D ")         ~ "downstream",
+      str_starts(toupper(direction_raw), "U ")         ~ "upstream",
+      TRUE                                             ~ NA_character_
+    ),
+    tributary = "Bogus Creek",
+    year      = 2009L
+  ) %>%
+  filter(!is.na(direction)) %>%
+  select(tributary, year, date, species, direction)
+
+# ── 2010–2022 ─────────────────────────────────────────────────────────────────
+# Note: date column is DATE in 2010-2020, Date in 2021-2022 — handled dynamically
+# Note: records in January of the following year are legitimate late-season fish
+#       and are kept — survey_year reflects the sheet year (the run season)
+bogus_2010_2022 <- map_dfr(as.character(2010:2022), function(sh) {
+  df <- read_excel(path_bogus_video, sheet = sh, col_types = "text")
+
+  date_col <- names(df)[tolower(names(df)) == "date"][1]
+
+  df %>%
+    mutate(date = as.Date(as.numeric(.data[[date_col]]),
+                          origin = "1899-12-30")) %>%
+    filter(!is.na(CHIN) | !is.na(COHO) | !is.na(STHD)) %>%
+    pivot_longer(
+      cols      = c(CHIN, COHO, STHD),
+      names_to  = "species_raw",
+      values_to = "direction_raw"
+    ) %>%
+    filter(!is.na(direction_raw)) %>%
+    mutate(
+      species = case_when(
+        species_raw == "CHIN" ~ "Chinook",
+        species_raw == "COHO" ~ "Coho",
+        species_raw == "STHD" ~ "Steelhead"
+      ),
+      direction = case_when(
+        trimws(toupper(direction_raw)) == "U"        ~ "upstream",
+        trimws(toupper(direction_raw)) == "D"        ~ "downstream",
+        str_starts(toupper(direction_raw), "D ")     ~ "downstream",
+        str_starts(toupper(direction_raw), "U ")     ~ "upstream",
+        TRUE                                         ~ NA_character_
+      ),
+      tributary = "Bogus Creek",
+      year      = as.integer(sh)
+    ) %>%
+    filter(!is.na(direction), !is.na(date)) %>%
+    select(tributary, year, date, species, direction)
+})
+
+# ── Combine all years ─────────────────────────────────────────────────────────
+bogus_creek_video <- bind_rows(
+  bogus_2007,
+  bogus_2008,
+  bogus_2009,
+  bogus_2010_2022
+)
+
+# ── Final verification ────────────────────────────────────────────────────────
+bogus_creek_video %>%
+  group_by(year, species) %>%
+  summarise(
+    n_upstream   = sum(direction == "upstream"),
+    n_downstream = sum(direction == "downstream"),
+    first_date   = min(date),
+    last_date    = max(date),
+    .groups = "drop"
+  ) %>%
+  print(n = 60)
+
+# ── Save ──────────────────────────────────────────────────────────────────────
+# write_csv(bogus_creek_video, "data-clean/bogus_creek_video.csv")
+
+
+
+### ====== SHASTA ==== ###
+
+path_shasta_video <- "data-raw/vignettes/redd-exploration/DMP-Shasta-River-Video-1999-2022.xlsx"
+
+# Step 1 — see all sheet names
+excel_sheets(path_shasta_video)
+
+shasta_river_video <- map_dfr(
+  c("2006","2007","2008","2009", as.character(2010:2022)),
+  function(sh) {
+    df <- read_excel(path_shasta_video, sheet = sh, col_types = "text")
+    
+    date_col <- names(df)[tolower(names(df)) == "date"][1]
+    
+    df %>%
+      mutate(
+        # fix 2022 bad serial — 45282 (2023-12-22) should be 44917 (2022-12-22)
+        !!date_col := if_else(.data[[date_col]] == "45282", "44917", 
+                              .data[[date_col]]),
+        date = as.Date(as.numeric(.data[[date_col]]), origin = "1899-12-30")
+      ) %>%
+      filter(!is.na(CHIN) | !is.na(COHO) | !is.na(STHD)) %>%
+      pivot_longer(
+        cols      = c(CHIN, COHO, STHD),
+        names_to  = "species_raw",
+        values_to = "direction_raw"
+      ) %>%
+      filter(!is.na(direction_raw)) %>%
+      mutate(
+        species = case_when(
+          species_raw == "CHIN" ~ "Chinook",
+          species_raw == "COHO" ~ "Coho",
+          species_raw == "STHD" ~ "Steelhead"
+        ),
+        direction = case_when(
+          trimws(toupper(direction_raw)) == "U"        ~ "upstream",
+          trimws(toupper(direction_raw)) == "D"        ~ "downstream",
+          trimws(toupper(direction_raw)) == "U?"       ~ "upstream",
+          str_starts(toupper(direction_raw), "D ")     ~ "downstream",
+          str_starts(toupper(direction_raw), "U ")     ~ "upstream",
+          TRUE                                         ~ NA_character_
+        ),
+        tributary = "Shasta River",
+        year      = as.integer(sh)
+      ) %>%
+      filter(!is.na(direction), !is.na(date)) %>%
+      select(tributary, year, date, species, direction)
+  }
+)
+
+# Verify — check rows 49-51 specifically
+shasta_river_video %>%
+  group_by(year, species) %>%
+  summarise(
+    n_upstream   = sum(direction == "upstream"),
+    n_downstream = sum(direction == "downstream"),
+    first_date   = min(date),
+    last_date    = max(date),
+    .groups = "drop"
+  ) %>%
+  filter(year == 2022)
+
+# write_csv(shasta_river_video, "data-clean/shasta_river_video.csv")
+
+
+
+## ==== sCOTT ==== ##
+path_scott_video <- "data-raw/vignettes/redd-exploration/DMP-Scott-River-Video-2007-2022.xlsx"
+
+# Step 1 — sheet names
+excel_sheets(path_scott_video)
+
+# Step 2 — column inventory
+scott_inventory <- map_dfr(excel_sheets(path_scott_video), function(sh) {
+  df <- suppressMessages(
+    read_excel(path_scott_video, sheet = sh, col_types = "text")
+  )
+  tibble(
+    sheet     = sh,
+    col_names = paste(names(df), collapse = " | "),
+    n_rows    = nrow(df)
+  )
+})
+
+print(scott_inventory, n = 20)
+
+
+scott_river_video <- map_dfr(as.character(2008:2022), function(sh) {
+  df <- suppressMessages(
+    read_excel(path_scott_video, sheet = sh, col_types = "text")
+  )
+  
+  date_col <- names(df)[tolower(names(df)) == "date"][1]
+  
+  df %>%
+    mutate(date = as.Date(as.numeric(.data[[date_col]]),
+                          origin = "1899-12-30")) %>%
+    filter(!is.na(CHIN) | !is.na(COHO) | !is.na(STHD)) %>%
+    pivot_longer(
+      cols      = c(CHIN, COHO, STHD),
+      names_to  = "species_raw",
+      values_to = "direction_raw"
+    ) %>%
+    filter(!is.na(direction_raw)) %>%
+    mutate(
+      species = case_when(
+        species_raw == "CHIN" ~ "Chinook",
+        species_raw == "COHO" ~ "Coho",
+        species_raw == "STHD" ~ "Steelhead"
+      ),
+      direction = case_when(
+        trimws(toupper(direction_raw)) == "U"        ~ "upstream",
+        trimws(toupper(direction_raw)) == "D"        ~ "downstream",
+        str_starts(toupper(direction_raw), "D ")     ~ "downstream",
+        str_starts(toupper(direction_raw), "U ")     ~ "upstream",
+        TRUE                                         ~ NA_character_
+      ),
+      tributary = "Scott River",
+      year      = as.integer(sh)
+    ) %>%
+    filter(!is.na(direction), !is.na(date)) %>%
+    select(tributary, year, date, species, direction)
+})
+
+# Verify
+scott_river_video %>%
+  group_by(year, species) %>%
+  summarise(
+    n_upstream   = sum(direction == "upstream"),
+    n_downstream = sum(direction == "downstream"),
+    first_date   = min(date),
+    last_date    = max(date),
+    .groups = "drop"
+  ) %>%
+  print(n = 60)
+
+# write_csv(scott_river_video, "data-clean/scott_river_video.csv")
+
+# ── Combine all three tributaries into one dataset ────────────────────────────
+all_video <- bind_rows(
+  bogus_creek_video,
+  shasta_river_video,
+  scott_river_video
+)
+
+# Final check — row counts by tributary and year
+all_video %>%
+  count(tributary, year) %>%
+  pivot_wider(names_from = tributary, values_from = n) %>%
+  print(n = 30)
+
+# Save combined dataset
+# write_csv(klamath_video, "data-clean/klamath_video_all_tributaries.csv")
+```
+
+
+```{r helpers}
+# ── Shared colours ────────────────────────────────────────────────────────────
+SPP_COLS  <- c(Chinook   = "#1f78b4",
+               Coho      = "#e31a1c",
+               Steelhead = "#33a02c")
+
+TRIB_COLS <- c("Bogus Creek"  = "#7570b3",
+               "Shasta River" = "#d95f02",
+               "Scott River"  = "#1b9e77")
+
+# ── Styled table helper ───────────────────────────────────────────────────────
+kbl_s <- function(df, cap = NULL, full = FALSE) {
+  df %>%
+    kbl(caption = cap, align = "l") %>%
+    kable_styling(
+      bootstrap_options = c("striped","hover","condensed"),
+      full_width = full, position = "left", font_size = 12
+    )
+}
+
+# ── Annual upstream timing summary ────────────────────────────────────────────
+# Returns first date, peak week, last date, and count for each year/species/trib
+# min_n: minimum upstream fish to include a year (excludes near-zero years)
+annual_timing <- function(df, min_n = 20) {
+  df %>%
+    filter(direction == "upstream") %>%
+    group_by(tributary, year, species) %>%
+    filter(n() >= min_n) %>%
+    summarise(
+      n_upstream = n(),
+      first_date = min(date),
+      peak_week  = {
+        wk <- floor_date(date, "week")
+        as.Date(names(which.max(table(as.character(wk)))))
+      },
+      last_date  = max(date),
+      .groups    = "drop"
+    )
+}
+
+# Compute timing summaries
+timing <- annual_timing(all_video)
+
+# ── Run window plot (shared across tributary sections) ────────────────────────
+# Shows first fish (bar start), peak week (dot), last fish (bar end)
+# Dot size scaled to annual upstream count
+run_window_plot <- function(df, colour, title, subtitle) {
+  df %>%
+    mutate(
+      peak_x  = as.Date(yday(peak_week)  - 1, origin = "2000-01-01"),
+      first_x = as.Date(yday(first_date) - 1, origin = "2000-01-01"),
+      last_x  = as.Date(yday(last_date)  - 1, origin = "2000-01-01")
+    ) %>%
+    ggplot(aes(y = factor(year))) +
+    geom_segment(aes(x = first_x, xend = last_x, yend = factor(year)),
+                 colour = colour, linewidth = 3, alpha = 0.2) +
+    geom_point(aes(x = peak_x, size = n_upstream),
+               colour = colour, alpha = 0.85) +
+    scale_x_date(date_labels = "%b %d",
+                 limits = as.Date(c("2000-09-01","2000-12-31"))) +
+    scale_size_continuous(labels = comma, name = "Upstream count",
+                          range = c(2, 8)) +
+    labs(x = NULL, y = "Survey year",
+         title = title, subtitle = subtitle) +
+    theme_minimal(base_size = 12) +
+    theme(panel.grid.minor  = element_blank(),
+          legend.position   = "right")
+}
+```
+
+---
+
+# Basin Overview {#overview}
+
+## Tributary locations
+
+River km values from **Perry et al. (2019), p. 5**.
+
+```{r trib-locations}
+# ── TO UPDATE: add rows for new tributaries ───────────────────────────────────
+tribble(
+  ~Tributary,      ~"River km", ~State,
+    ~"Video data in hand",
+  "Bogus Creek",   311.6, "CA", "✅ 2007–2022",
+  "Shasta River",  289.6, "CA", "✅ 2006–2022",
+  "Scott River",   232.8, "CA", "✅ 2008–2022",
+  "Salmon River",  107.5, "CA", "⬜ Not yet collected",
+  "Trinity River",  70.6, "CA", "⬜ Not yet collected"
+) %>%
+  kbl_s("Tributary locations. Source: Perry et al. (2019) [PERRY-2019], p. 5.")
+```
+
+> **What the video counts measure:** Each row in the raw data is one fish observed
+> on an underwater camera, classified by species and direction. Upstream (U) =
+> fish entering the tributary to spawn. Annual upstream counts are a
+> **passage index** — not a complete escapement estimate — but give precise run
+> timing unavailable from any other source in hand.
+
+## Species coverage
+
+```{r species-coverage}
+# Derived from the loaded CSV data 
+all_video %>%
+  filter(direction == "upstream") %>%
+  group_by(tributary, species) %>%
+  summarise(
+    years     = paste(min(year), "–", max(year)),
+    n_years   = n_distinct(year),
+    total_obs = comma(n()),
+    .groups   = "drop"
+  ) %>%
+  arrange(tributary, species) %>%
+  rename(Tributary = tributary, Species = species,
+         Years = years, `Survey years` = n_years,
+         `Total upstream obs` = total_obs) %>%
+  kbl_s("Upstream passage observations by tributary and species.
+         Source: [CDFW-VIDEO]. Derived from cleaned CSV files.")
+```
+
+---
+
+# Bogus Creek {#bogus}
+
+**River km:** 311.6 | **State:** CA | **Monitoring:** CDFW Iron Gate Hatchery
+
+Bogus Creek enters the Klamath 0.4 km below Iron Gate Dam and receives some of
+the earliest-arriving fall Chinook in the system. It is one of three upstream
+source populations in the Perry et al. (2019) S3 model.
+
+> **Hatchery note:** Iron Gate Hatchery fish receive adipose fin clips.
+> Adipose clip rates in carcass surveys range 0–47% across years —
+> high-clip years indicate elevated hatchery contribution and should be
+> interpreted cautiously for natural spawner abundance.
+
+## Fall Chinook — run timing
+
+```{r bogus-chin-table}
+timing %>%
+  filter(tributary == "Bogus Creek", species == "Chinook") %>%
+  transmute(
+    Year             = year,
+    `Upstream count` = comma(n_upstream),
+    `First fish`     = format(first_date, "%b %d"),
+    `Peak week`      = format(peak_week,  "%b %d"),
+    `Last fish`      = format(last_date,  "%b %d")
+  ) %>%
+  kbl_s("Bogus Creek fall Chinook upstream passage.
+         Source: [CDFW-VIDEO]. Peak week = calendar week with highest
+         daily upstream count. Years with fewer than 20 upstream fish excluded.")
+```
+
+```{r bogus-chin-plot, fig.height=5,fig.cap="Bogus Creek fall Chinook run timing. Dot = peak week (size = annual count). Bar = full run window. Source: [CDFW-VIDEO]."}
+timing %>%
+  filter(tributary == "Bogus Creek", species == "Chinook") %>%
+  run_window_plot(
+    colour   = SPP_COLS["Chinook"],
+    title    = "Bogus Creek — Fall Chinook upstream passage",
+    subtitle = "Source: CDFW DMP video [CDFW-VIDEO]"
+  )
+```
+
+**Timing pattern:** Peak upstream Chinook passage at Bogus Creek falls
+consistently in **mid-October** (Oct 10–24 across 2007–2022). First fish arrive
+early-to-mid September; run concludes late November to early December.
+
+## Coho — run timing
+
+```{r bogus-coho-table}
+timing %>%
+  filter(tributary == "Bogus Creek", species == "Coho") %>%
+  transmute(
+    Year             = year,
+    `Upstream count` = comma(n_upstream),
+    `First fish`     = format(first_date, "%b %d"),
+    `Peak week`      = format(peak_week,  "%b %d"),
+    `Last fish`      = format(last_date,  "%b %d")
+  ) %>%
+  kbl_s("Bogus Creek coho upstream passage. Source: [CDFW-VIDEO].
+         Note: Dodrill et al. (2022) does not identify Bogus Creek as a
+         coho natal tributary — coho observed here may be passing through.")
+```
+
+## Steelhead — run timing
+
+```{r bogus-sthd-table}
+timing %>%
+  filter(tributary == "Bogus Creek", species == "Steelhead") %>%
+  transmute(
+    Year             = year,
+    `Upstream count` = comma(n_upstream),
+    `First fish`     = format(first_date, "%b %d"),
+    `Peak week`      = format(peak_week,  "%b %d"),
+    `Last fish`      = format(last_date,  "%b %d")
+  ) %>%
+  kbl_s("Bogus Creek steelhead upstream passage. Source: [CDFW-VIDEO].")
+```
+
+---
+
+# Shasta River {#shasta}
+
+**River km:** 289.6 | **State:** CA | **Monitoring:** CDFW Region 1
+
+The Shasta River confluence at rkm 289.6 marks the **upstream boundary of the
+*Ceratonova shasta* infectious zone** (rkm 289.6–213.0; Perry et al. 2019,
+p. 27). It is one of two primary coho natal tributaries in Dodrill et al. (2022).
+
+## Fall Chinook — run timing
+
+```{r shasta-chin-table}
+timing %>%
+  filter(tributary == "Shasta River", species == "Chinook") %>%
+  transmute(
+    Year             = year,
+    `Upstream count` = comma(n_upstream),
+    `First fish`     = format(first_date, "%b %d"),
+    `Peak week`      = format(peak_week,  "%b %d"),
+    `Last fish`      = format(last_date,  "%b %d")
+  ) %>%
+  kbl_s("Shasta River fall Chinook upstream passage. Source: [CDFW-VIDEO].
+         Peak week consistently last week of September to first week of
+         October — 2–4 weeks earlier than Bogus Creek and Scott River.")
+```
+
+```{r shasta-chin-plot, fig.height=5, fig.cap="Shasta River fall Chinook run timing. Source: [CDFW-VIDEO]."}
+timing %>%
+  filter(tributary == "Shasta River", species == "Chinook") %>%
+  run_window_plot(
+    colour   = TRIB_COLS["Shasta River"],
+    title    = "Shasta River — Fall Chinook upstream passage",
+    subtitle = "Source: CDFW DMP video [CDFW-VIDEO]"
+  )
+```
+
+## Coho — adult returns and run timing
+
+Adult return estimates are **exact values from Table 2, Dodrill et al. (2022),
+p. 6**, citing CDFW. Peak immigration timing **mid-November to early December**
+with less inter-annual variation than Scott River (Dodrill et al. 2022, Fig. 5B).
+
+```{r shasta-coho-returns}
+
+# ── TO UPDATE: add rows for brood years after 2013 ────────────────────────────
+# Source: Table 2, Dodrill et al. (2022) [DODRILL-2022], p. 6
+tribble(
+  ~"Brood year", ~"Adult coho returns", ~Notes,
+  2005L,  69L, "",           2006L,  47L, "",
+  2007L, 249L, "Highest",    2008L,  30L, "",
+  2009L,   9L, "Critically low",
+  2010L,  44L, "",           2011L,  62L, "",
+  2012L, 114L, "",           2013L, 163L, ""
+) %>%
+  kbl_s("Shasta River adult coho returns. Source: Table 2,
+         Dodrill et al. (2022) [DODRILL-2022], p. 6.")
+         
+```
+
+```{r shasta-coho-table}
+timing %>%
+  filter(tributary == "Shasta River", species == "Coho") %>%
+  transmute(
+    Year             = year,
+    `Upstream count` = comma(n_upstream),
+    `First fish`     = format(first_date, "%b %d"),
+    `Peak week`      = format(peak_week,  "%b %d"),
+    `Last fish`      = format(last_date,  "%b %d")
+  ) %>%
+  kbl_s("Shasta River coho upstream passage. Source: [CDFW-VIDEO].
+         Many years excluded (fewer than 20 upstream fish) — reflects
+         critically low coho abundance in the Shasta River.")
+```
+
+## Steelhead — run timing
+
+```{r shasta-sthd-table}
+timing %>%
+  filter(tributary == "Shasta River", species == "Steelhead") %>%
+  transmute(
+    Year             = year,
+    `Upstream count` = comma(n_upstream),
+    `First fish`     = format(first_date, "%b %d"),
+    `Peak week`      = format(peak_week,  "%b %d"),
+    `Last fish`      = format(last_date,  "%b %d")
+  ) %>%
+  kbl_s("Shasta River steelhead upstream passage. Source: [CDFW-VIDEO].")
+```
+
+---
+
+# Scott River {#scott}
+
+**River km:** 232.8 | **State:** CA | **Monitoring:** SRWC; CDFW Region 1
+
+The Scott River is excluded from Perry et al. (2019) calibration — it enters
+below the Kinsman trap (Perry et al. 2019, p. 23). It is one of two primary
+coho natal tributaries in Dodrill et al. (2022).
+
+## Fall Chinook — run timing
+
+```{r scott-chin-table}
+timing %>%
+  filter(tributary == "Scott River", species == "Chinook") %>%
+  transmute(
+    Year             = year,
+    `Upstream count` = comma(n_upstream),
+    `First fish`     = format(first_date, "%b %d"),
+    `Peak week`      = format(peak_week,  "%b %d"),
+    `Last fish`      = format(last_date,  "%b %d")
+  ) %>%
+  kbl_s("Scott River fall Chinook upstream passage. Source: [CDFW-VIDEO].
+         Peak passage mid-to-late October. Low-count years (2015: 406;
+         2016: 395; 2018: 283; 2022: 70) indicate poor run years.")
+```
+
+```{r scott-chin-plot, fig.height=5, fig.cap="Scott River fall Chinook run timing. Source: [CDFW-VIDEO]."}
+timing %>%
+  filter(tributary == "Scott River", species == "Chinook") %>%
+  run_window_plot(
+    colour   = TRIB_COLS["Scott River"],
+    title    = "Scott River — Fall Chinook upstream passage",
+    subtitle = "Source: CDFW DMP video [CDFW-VIDEO]"
+  )
+```
+
+## Coho — adult returns and run timing
+
+Adult return estimates from **Table 2, Dodrill et al. (2022), p. 6**. Peak
+immigration timing showed **considerable inter-annual variation, ranging from
+mid-October to late December** (Dodrill et al. 2022, Fig. 5A).
+
+```{r scott-coho-returns}
+# ── TO UPDATE: add rows for brood years after 2013 ────────────────────────────
+tribble(
+  ~"Brood year", ~"Adult coho returns", ~Notes,
+  2007L, 1622L, "High year",  2008L,   63L, "Very low",
+  2009L,   81L, "Very low",   2010L,  927L, "",
+  2011L,  355L, "",           2012L,  201L, "",
+  2013L, 2752L, "Highest in series"
+) %>%
+  kbl_s("Scott River adult coho returns. Source: Table 2,
+         Dodrill et al. (2022) [DODRILL-2022], p. 6.")
+```
+
+```{r scott-coho-table}
+timing %>%
+  filter(tributary == "Scott River", species == "Coho") %>%
+  transmute(
+    Year             = year,
+    `Upstream count` = comma(n_upstream),
+    `First fish`     = format(first_date, "%b %d"),
+    `Peak week`      = format(peak_week,  "%b %d"),
+    `Last fish`      = format(last_date,  "%b %d")
+  ) %>%
+  kbl_s("Scott River coho upstream passage. Source: [CDFW-VIDEO].
+         Peak passage consistently mid-to-late November — approximately
+         4–6 weeks after the Chinook peak at the same station.")
+```
+
+## Scott River — Coho Salmon Spawning {#scott-coho}
+
+**Source:** Scott River Watershed Council annual spawning ground surveys
+`[SRWC-2024]`, `[SRWC-2025]`. Coho only. Survey method: walk surveys,
+redd counting. A redd = nest excavated by a female, confirming spawning
+at that location.
+
+### Season summary
+
+| Season | Survey period | Miles surveyed | Total redds | Spawner estimate |
+|--------|--------------|----------------|-------------|-----------------|
+| 2022-2023 | Jan 4–27, 2023 | 1.45 (4 reaches only) | 5 | 236 (CDFW weir) |
+| 2023-2024 | Nov 28, 2023–Jan 16, 2024 | 38.3 | 251 | 912 (preliminary) |
+| 2024-2025 | Nov 25, 2024–Jan 16, 2025 | 28.7 | 111 | 1,052 (preliminary) |
+
+> 2022-2023 is an acknowledged undercount — high flows pushed fish into
+> unsurveyed areas. Do not use for trend comparisons.
+
+### Where spawning occurs
+
+```{r srwc-table-2024, echo=FALSE, results='asis'}
+img_path <- normalizePath(
+  "data-raw/vignettes/figures/srwc_table25_2023_2024.png",
+  winslash = "/"
+)
+
+cat(
+  paste0(
+    '<figure>',
+    '<figcaption style="margin-bottom:8px;">',
+    'Table 25. Coho redd counts by reach, 2023-2024. Source: SRWC [SRWC-2024]',
+    '</figcaption>',
+    '<img src="', img_path, '" width="100%">',
+    '</figure>'
+  )
+)
+
+```
+
+```{r srwc-table-2025, echo=FALSE, results='asis'}
+img_path <- normalizePath(
+  "data-raw/vignettes/figures/srwc_table3_2024_2025.png",
+  winslash = "/"
+)
+
+cat(
+  paste0(
+    '<figure>',
+    '<figcaption style="margin-bottom:8px;">',
+    'Table 3. Coho redd counts by reach, 2024-2025. Source: SRWC [SRWC-2025].',
+    '</figcaption>',
+    '<img src="', img_path, '" width="100%">',
+    '</figure>'
+  )
+)
+```
+
+
+### How spatial distribution has shifted
+
+```{r srwc-comparison, echo=FALSE, results='asis'}
+img_path <- normalizePath(
+  "data-raw/vignettes/figures/srwc_table26_comparison.png",
+  winslash = "/"
+)
+
+cat(
+  paste0(
+    '<figure>',
+    '<figcaption style="margin-bottom:8px;">',
+    'Table 26. Redd distribution comparison 2020-2021 vs 2023-2024. Source: SRWC [SRWC-2024].',
+    '</figcaption>',
+    '<img src="', img_path, '" width="100%">',
+    '</figure>'
+  )
+)
+```
+
+### When spawning occurs
+
+| Season | First redds | Peak spawning | Last live fish |
+|--------|------------|------------------|----------------|
+| 2023-2024 | Nov 28, 2023 (Scott R. near Sugar Ck) | Mid-Dec to early Jan | Jan 16, 2024 |
+| 2024-2025 | Nov 25, 2024 (French Ck, Sugar Ck) | Mid-Dec | Jan 16, 2025 |
+
+First coho at CDFW weir (rkm 29.2): **Oct 30–Nov 5, 2024**. Peak weir
+passage: **Nov 15–20**. First redds appear approximately 5–10 days after
+peak weir passage. Spawning window approximately 10 weeks.
+
+## Steelhead — run timing
+
+```{r scott-sthd-table}
+timing %>%
+  filter(tributary == "Scott River", species == "Steelhead") %>%
+  transmute(
+    Year             = year,
+    `Upstream count` = comma(n_upstream),
+    `First fish`     = format(first_date, "%b %d"),
+    `Peak week`      = format(peak_week,  "%b %d"),
+    `Last fish`      = format(last_date,  "%b %d")
+  ) %>%
+  kbl_s("Scott River steelhead upstream passage. Source: [CDFW-VIDEO].")
+```
+
+---
+
+# Mainstem Klamath River — Fall Chinook {#mainstem}
+
+**Source: Perry et al. (2019) [PERRY-2019]**
+
+Spawning confined to rkm 178–312. Most redds concentrated immediately below
+Iron Gate Dam (Perry et al. 2019, p. 36).
+
+## Female spawner counts and timing
+
+Exact values from **Table 6, p. 37**, citing Gough & Som (2015). Covers rkm
+236–312 (Iron Gate Dam to Kinsman trap).
+
+```{r mainstem-spawners}
+# ── TO UPDATE: add rows for brood years after 2012 ────────────────────────────
+mainstem_spawners <- tribble(
+  ~"Brood year", ~"20th percentile", ~"50th percentile (peak)",
+    ~"80th percentile", ~"Female spawners",
+  2004L, "Oct 16", "Oct 24", "Oct 31",  "2,948",
+  2006L, "Oct 12", "Oct 19", "Oct 26",  "2,196",
+  2007L, "Nov 1",  "Nov 8",  "Nov 16",  "4,522",
+  2008L, "Oct 22", "Oct 29", "Nov 6",   "3,324",
+  2009L, "Oct 23", "Oct 31", "Nov 8",   "4,543",
+  2010L, "Oct 25", "Nov 1",  "Nov 7",   "1,925",
+  2011L, "Oct 23", "Nov 1",  "Nov 9",   "2,158",
+  2012L, "Oct 16", "Oct 24", "Oct 31", "10,697"
+)
+
+mainstem_spawners %>%
+  kbl_s("Female fall Chinook spawners in mainstem Klamath River (rkm 236–312).
+         Peak spawning (50th percentile) consistently Oct 19–Nov 8.
+         Source: Table 6, Perry et al. (2019) [PERRY-2019], p. 37.
+         Series ends at brood year 2012.")
+```
+
+```{r mainstem-timing-plot, fig.height=4, fig.cap="Mainstem fall Chinook peak spawning window by brood year. Dot = 50th percentile. Bar = 20th–80th percentile. Source: Table 6, Perry et al. (2019)."}
+mainstem_spawners %>%
+  mutate(
+    yr   = as.integer(`Brood year`),
+    p20  = as.Date(paste("2000", `20th percentile`),          "%Y %b %d"),
+    p50  = as.Date(paste("2000", `50th percentile (peak)`),   "%Y %b %d"),
+    p80  = as.Date(paste("2000", `80th percentile`),          "%Y %b %d")
+  ) %>%
+  ggplot(aes(y = factor(yr))) +
+  geom_segment(aes(x = p20, xend = p80, yend = factor(yr)),
+               colour = "#1f78b4", linewidth = 3, alpha = 0.25) +
+  geom_point(aes(x = p50), colour = "#1f78b4", size = 4) +
+  scale_x_date(date_labels = "%b %d",
+               limits = as.Date(c("2000-10-01","2000-11-25"))) +
+  labs(x = NULL, y = "Brood year",
+       title = "Mainstem Klamath — Fall Chinook spawning window",
+       subtitle = "Dot = 50th percentile (peak). Bar = 20th–80th percentile.
+Source: Table 6, Perry et al. (2019) [PERRY-2019]") +
+  theme_minimal(base_size = 12) +
+  theme(panel.grid.minor = element_blank())
+```
+
+---
+
+# Cross-Tributary Comparison {#comparison}
+
+All figures in this section derived from `[CDFW-VIDEO]`.
+
+## Fall Chinook — peak week by tributary
+
+```{r comparison-chinook, fig.height=6, fig.cap="Fall Chinook peak upstream passage week by tributary and year. Dot = peak week (size = annual count). Bar = full run window. Years with fewer than 100 upstream fish excluded. Source: [CDFW-VIDEO]."}
+timing %>%
+  filter(species == "Chinook", n_upstream >= 100) %>%
+  mutate(
+    peak_x  = as.Date(yday(peak_week)  - 1, origin = "2000-01-01"),
+    first_x = as.Date(yday(first_date) - 1, origin = "2000-01-01"),
+    last_x  = as.Date(yday(last_date)  - 1, origin = "2000-01-01")
+  ) %>%
+  ggplot(aes(y = factor(year), colour = tributary)) +
+  geom_segment(aes(x = first_x, xend = last_x, yend = factor(year)),
+               linewidth = 2.5, alpha = 0.2) +
+  geom_point(aes(x = peak_x, size = n_upstream), alpha = 0.85) +
+  scale_colour_manual(values = TRIB_COLS, name = NULL) +
+  scale_size_continuous(labels = comma, name = "Upstream count",
+                        range = c(1, 7)) +
+  scale_x_date(date_labels = "%b %d",
+               limits = as.Date(c("2000-09-01","2000-12-15"))) +
+  labs(x = NULL, y = "Survey year",
+       title = "Fall Chinook run timing — all monitored tributaries",
+       subtitle = "Source: [CDFW-VIDEO]") +
+  theme_minimal(base_size = 12) +
+  theme(legend.position   = "bottom",
+        panel.grid.minor  = element_blank())
+```
+
+## Fall Chinook — timing summary table
+
+```{r chinook-summary-table}
+timing %>%
+  filter(species == "Chinook", n_upstream >= 100) %>%
+  group_by(Tributary = tributary) %>%
+  summarise(
+    `Years of data`       = n(),
+    `Median first fish`   = format(
+      as.Date(median(yday(first_date)) - 1, origin = "2000-01-01"), "%b %d"),
+    `Median peak week`    = format(
+      as.Date(median(yday(peak_week))  - 1, origin = "2000-01-01"), "%b %d"),
+    `Median last fish`    = format(
+      as.Date(median(yday(last_date))  - 1, origin = "2000-01-01"), "%b %d"),
+    `Median annual count` = comma(as.integer(median(n_upstream))),
+    .groups = "drop"
+  ) %>%
+  kbl_s("Fall Chinook run timing summary by tributary.
+         Years with fewer than 100 upstream fish excluded.
+         Dates are median day-of-year across all included years.
+         Source: [CDFW-VIDEO].")
+```
+
+## Coho — peak week by tributary
+
+```{r comparison-coho, fig.height=5, fig.cap="Coho peak upstream passage week by tributary and year. Source: [CDFW-VIDEO]."}
+timing %>%
+  filter(species == "Coho", n_upstream >= 20) %>%
+  mutate(
+    peak_x  = as.Date(yday(peak_week)  - 1, origin = "2000-01-01"),
+    first_x = as.Date(yday(first_date) - 1, origin = "2000-01-01"),
+    last_x  = as.Date(yday(last_date)  - 1, origin = "2000-01-01")
+  ) %>%
+  ggplot(aes(y = factor(year), colour = tributary)) +
+  geom_segment(aes(x = first_x, xend = last_x, yend = factor(year)),
+               linewidth = 2.5, alpha = 0.2) +
+  geom_point(aes(x = peak_x, size = n_upstream), alpha = 0.85) +
+  scale_colour_manual(values = TRIB_COLS, name = NULL) +
+  scale_size_continuous(labels = comma, name = "Upstream count",
+                        range = c(2, 7)) +
+  scale_x_date(date_labels = "%b %d") +
+  labs(x = NULL, y = "Survey year",
+       title = "Coho run timing — all monitored tributaries",
+       subtitle = "Source: [CDFW-VIDEO]") +
+  theme_minimal(base_size = 12) +
+  theme(legend.position  = "bottom",
+        panel.grid.minor = element_blank())
+```
+
+## Annual upstream counts — all species and tributaries
+
+```{r annual-counts-plot, fig.height=6, fig.cap="Annual upstream passage counts by tributary and species. Source: [CDFW-VIDEO]."}
+timing %>%
+  filter(n_upstream >= 20) %>%
+  ggplot(aes(x = year, y = n_upstream, colour = tributary)) +
+  geom_line(linewidth = 0.8, alpha = 0.8) +
+  geom_point(size = 2) +
+  facet_wrap(~species, scales = "free_y", ncol = 1) +
+  scale_colour_manual(values = TRIB_COLS, name = NULL) +
+  scale_y_continuous(labels = comma) +
+  scale_x_continuous(breaks = seq(2006, 2022, 2)) +
+  labs(x = NULL, y = "Upstream passage count",
+       title = "Annual upstream passage by tributary and species",
+       subtitle = "Source: [CDFW-VIDEO]") +
+  theme_minimal(base_size = 12) +
+  theme(legend.position  = "bottom",
+        strip.text       = element_text(face = "bold"),
+        panel.grid.minor = element_blank())
+```
+
+---
+
+# Sources Appendix {#appendix}
+
+| ID | Full citation |
+|----|--------------|
+| `[PERRY-2019]` | Perry RW, Plumb JM, Jones EC, Som NA, Hardy TB, Hetrick NJ (2019). Application of the Stream Salmonid Simulator (S3) to Klamath River fall Chinook salmon, California — Parameterization and calibration. USGS Open-File Report 2019-1107. https://doi.org/10.3133/ofr20191107 |
+| `[DODRILL-2022]` | Dodrill MJ, Perry RW, Som NA, Manhard CV, Alexander JD (2022). Extending the Stream Salmonid Simulator to accommodate the life history of coho salmon in the Klamath River Basin, Northern California. USGS Open-File Report 2022-1071. https://doi.org/10.3133/ofr20221071 |
+| `[CDFW-VIDEO]` | California Department of Fish and Wildlife — Klamath River Project. DMP underwater video passage data: Bogus Creek (2003–2022), Shasta River (1999–2022), Scott River (2007–2022). Obtained via data.ca.gov — Fall Chinook Escapement, Klamath Basin Watershed. Cleaned and verified in R — see accompanying data cleaning script |
+| `[SRWC-2025]` | Scott River Watershed Council. Scott River Coho Salmon Spawning Ground Surveys: 2024–2025 Season. Etna, California, 2025. 5 |
+| `[SRWC-2024]` | Scott River Watershed Council. Scott River Spawning Ground Survey Report: 2023–2024 Season. Etna, California, 2024 |
+
+| `[SRWC-2023] ` | Scott River Watershed Council. Scott River Spawning Ground Survey Report: 2022–2023 Season. Etna, California, 2024 |
+
+---
