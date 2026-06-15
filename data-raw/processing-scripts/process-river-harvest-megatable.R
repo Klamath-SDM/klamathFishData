@@ -41,10 +41,12 @@ fall_harvest <- fall_harvest_clean |>
   filter(lifestage != "Totals") |>
   mutate(location = tolower(location),
          lifestage = tolower(lifestage),
-         estimate_type = NA) |>
+         estimate_type = NA,
+         lifestage = case_when(lifestage == "adults" ~ "adult",
+                               T ~ lifestage)) |>
   rename(estimate = value) |>
   mutate(source = "CDFW Fall Chinook Salmon Megatable available here: https://nrm.dfg.ca.gov/FileHandler.ashx?DocumentID=122850&inline") |>
-  select(location, year, species, origin, estimate_type, estimate, source) |>
+  select(location, year, species, origin, lifestage, estimate_type, estimate, source) |>
   glimpse()
 
 # Spring Run megatable -----------------------------------
@@ -69,10 +71,12 @@ spring_harvest <- filter(spring_megatable, section == "River Harvest") |>
   filter(lifestage != "Totals") |>
   mutate(location = tolower(location),
          lifestage = tolower(lifestage),
-         estimate_type = NA) |>
+         estimate_type = NA,
+         lifestage = case_when(lifestage == "adults" ~ "adult",
+                               T ~ lifestage)) |>
   rename(estimate = value) |>
   mutate(source = "CDFW Spring Chinook Salmon Megatable available here: https://nrm.dfg.ca.gov/FileHandler.ashx?DocumentID=165311") |>
-  select(location, year, species, origin, estimate_type, estimate, source) |>
+  select(location, year, species, origin, lifestage, estimate_type, estimate, source) |>
   glimpse()
 
 # bind spring and fall
