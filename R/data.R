@@ -96,7 +96,7 @@
 #' @title Salmon Harvest
 #' @name salmon_harvest
 #' @description Digital version of [CDFW's Spring Chinook Salmon Megatable](https://wildlife.ca.gov/Conservation/Fishes/Chinook-Salmon/Anadromous-Assessment) and [CDFW's Spring Chinook Salmon Megatable](https://casalmon.org/wp-content/uploads/2024/08/FINAL-2023-Spring-Chinook-Megatable-v.28-Mar-2024.pdf) River Harvest sections.
-#' @format A tibble with 360 rows and 6 columns
+#' @format A tibble with 360 rows and 8 columns
 #' \itemize{
 #'   \item \code{location}: location of data collection or estimate. This may be a river, wetland or marsh, hatchery, etc (klamath river, trinity river)
 #'   \item \code{year}: return year of the escapement estimate/count (1978-2024)
@@ -108,6 +108,30 @@
 #'   \item \code{source}: describes where data were sourced from. Currently data comes from: CDFW Spring and Fall Megatables
 #'   }
 'salmon_harvest'
+
+#' @title In-River Run Estimates
+#' @name inriver_run_estimates
+#' @description Digital version of [CDFW's Spring Chinook Salmon Megatable](https://wildlife.ca.gov/Conservation/Fishes/Chinook-Salmon/Anadromous-Assessment) and [CDFW's Spring Chinook Salmon Megatable](https://casalmon.org/wp-content/uploads/2024/08/FINAL-2023-Spring-Chinook-Megatable-v.28-Mar-2024.pdf) River Harvest sections.
+#' The fall Chinook figures represent basin-wide in-river totals (i.e. fish entering the river mouth, distinct from the ocean harvest tracked separately by the Klamath Ocean Harvest Model). The spring Chinook figures are mark-recapture-based run-size estimates
+#'   primarily upstream of the Junction City Weir on the Trinity River and do not include harvest below the weir or spawning in the South Fork Trinity, North Fork Trinity, or New River. All estimates are provided by CDFW unless otherwise noted; tribal harvest
+#'   figures for fall Chinook are provided by the Hoopa Valley Business Council Fisheries Department (HVBCFD) and the Yurok Tribal Fisheries Department.
+#' @format A tibble with 180 rows and 8 columns
+#' \itemize{
+#'   \item \code{location}: location of data collection or estimate. This may be a river, wetland or marsh, hatchery, etc (klamath river, trinity river)
+#'   \item \code{year}: return year of the escapement estimate/count (1978-2024)
+#'   \item \code{species}: species name (spring chinook salmon, fall chinook salmon)
+#'   \item \code{origin}: fish origin category (unknown)
+#'   \item \code{lifestage}: life stage reported (adult, grilse)
+#'   \item \code{estimate_type}: type of estimate reported. Work in progress as these have not been filled in yet for the data from the Megatables.
+#'   \item \code{estimate}: value of estimate
+#'   \item \code{source}: describes where data were sourced from. Currently data comes from: CDFW Spring and Fall Megatables
+#'   }
+#' @note The two source tables use different terminology for total run size ("in-river run"
+#'   for fall Chinook; "run-size estimates" for spring Chinook) reflecting genuine differences
+#'   in geographic scope and estimation methodology. Users should apply caution when comparing
+#'   spring and fall figures directly. Spring Chinook are listed as threatened under the
+#'   California Endangered Species Act (Upper Klamath/Trinity River Spring Chinook Salmon).
+'inriver_run_estimates'
 
 
 #' @title Predation Estimates on SARP and Chinook
