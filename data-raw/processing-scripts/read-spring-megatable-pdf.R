@@ -1,14 +1,9 @@
 library(pdftools)
-library(stringr)
-library(dplyr)
-library(tidyr)
 library(tidyverse)
-library(readr)
 library(janitor)
 # options(java.parameters = "-Xmx600m")
 library(tabulapdf)
-library(tidyverse)
-library(purrr)
+library(readxl)
 
 # This script reads and cleans Spring run megatable
 
