@@ -479,7 +479,7 @@ spring_in_river_harvest <- harvest_df |>
 
 ## Combining all sections of the megatable  ----
 # pending - in_river_run
-spring_megatable <- bind_rows(spring_in_river_harvest, spring_spawner_escapement)
+spring_megatable <- bind_rows(spring_in_river_harvest, spring_spawner_escapement, run_size)
 
 # save clean data
-# usethis::use_data(spring_megatable, overwrite = TRUE)
+usethis::use_data(spring_megatable, overwrite = TRUE)
