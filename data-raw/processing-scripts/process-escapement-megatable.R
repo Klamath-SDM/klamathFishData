@@ -122,14 +122,15 @@ klamath_cdfw_population_processed <- klamath_cdfw_population_raw |>
   filter(lifestage%in% c("adult", "adult and subadult"), species %in% c("coho salmon", "winter steelhead", "steelhead"))
 
 
-## Combine spring and fall run - TODO do some checks before saving
+## Combine spring and fall run
 salmon_spawner_escapement <- bind_rows(klamath_cdfw_population_processed,
                                 spring_spawner_escapement_clean,
                                 fall_spawner_escapement_clean) |>
   mutate(origin = case_when(origin == "natural" ~ "wild",
                             T ~ origin),
          lifestage = case_when(lifestage == "adults" ~ "adult",
-                               T ~ lifestage))
+                               T ~ lifestage)) |>
+  filter(year != "2024") # removing 2024 since it is a placeholder and are all 0
 
 # save clean data
 usethis::use_data(salmon_spawner_escapement, overwrite = TRUE)

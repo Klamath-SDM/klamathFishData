@@ -33,6 +33,7 @@ fall_river_run <- fall_run_estimate_clean |>
   rename(estimate = value) |>
   mutate(source = "CDFW Fall Chinook Salmon Megatable available here: https://nrm.dfg.ca.gov/FileHandler.ashx?DocumentID=122850&inline") |>
   select(location, year, species, origin, lifestage, estimate_type, estimate, source) |>
+  filter(year != "2024") |>
   glimpse()
 
 
@@ -60,6 +61,7 @@ spring_run_size_clean <- filter(spring_megatable, section == "Run Size Estimate"
   rename(estimate = value) |>
   mutate(source = "CDFW Spring Chinook Salmon Megatable available here: https://nrm.dfg.ca.gov/FileHandler.ashx?DocumentID=165311") |>
   select(location, year, species, origin, lifestage, estimate_type, estimate, source) |>
+  filter(year != "2024") |>
   glimpse()
 
 # # bind spring and fall
@@ -69,4 +71,3 @@ inriver_run_estimates <- bind_rows(spring_run_size_clean, fall_river_run) |>
 #
 # # save clean data
 usethis::use_data(inriver_run_estimates, overwrite = TRUE)
-

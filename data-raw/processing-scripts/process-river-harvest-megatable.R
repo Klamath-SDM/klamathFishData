@@ -70,12 +70,11 @@ spring_harvest <- filter(spring_megatable, section == "River Harvest") |>
                                T ~ lifestage)) |>
   rename(estimate = value) |>
   mutate(source = "CDFW Spring Chinook Salmon Megatable available here: https://nrm.dfg.ca.gov/FileHandler.ashx?DocumentID=165311") |>
-  select(location, year, species, origin, lifestage, estimate_type, estimate, source) |>
-  glimpse()
-
+  select(location, year, species, origin, lifestage, estimate_type, estimate, source)
 # bind spring and fall
 salmon_harvest <- bind_rows(spring_harvest, fall_harvest) |>
   distinct() |>
+  filter(year != "2024") |>  # removing 2024 since it is a placeholder and are all 0
   glimpse()
 
 # save clean data
