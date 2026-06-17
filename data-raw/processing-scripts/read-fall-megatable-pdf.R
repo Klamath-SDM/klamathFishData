@@ -12,7 +12,7 @@ library(purrr)
 
 # This script reads and cleans fall run megatable
 ##  ---- SPAWNER ----
-pdf_path <- "data-raw/helper-data/2022_Klamath_Basin_Megatable_20230216.pdf"
+pdf_path <- "data-raw/2022_Klamath_Basin_Megatable_20230216.pdf"
 tables_stream <- extract_tables(pdf_path, method = "stream", output = "tibble")
 
 # Create empty lists to hold all 15 spawner, harvest, and run tables
@@ -373,7 +373,7 @@ harvest_cleaned <- pmap(
   list(harvest_list_cleaned, harvest_years, tribal_labels),
   clean_harvest_table)
 
-in_river_harvest <- bind_rows(harvest_cleaned)
+fall_harvest_clean <- bind_rows(harvest_cleaned)
 
 ## IN-RIVER RUN ----
 
@@ -479,8 +479,7 @@ inriver_run_cleaned <- pmap(
 in_river_run <- bind_rows(inriver_run_cleaned)
 
 ## Combining all sections of the megatable  ----
-
-fall_megatable <- bind_rows(in_river_run, in_river_harvest, spawner_escapement) |>
+fall_megatable <- bind_rows(in_river_run, fall_harvest_clean, spawner_escapement) |>
   rename(lifestage = category) |>
   mutate(species = "fall chinook salmon")
 
