@@ -11,12 +11,12 @@ library(stringr)
 library(readr)
 
 ## 2021-2023 DATA
-pdf_path <- "data-raw/Avian_Predation_on_UKB_Suckers_Summary_Report_2021_2023.pdf"
+pdf_path <- "data-raw/helper-data/Avian_Predation_on_UKB_Suckers_Summary_Report_2021_2023.pdf"
 tables <- extract_tables(pdf_path, method = "stream", output = "tibble")
 
 
 ## 2024 DATA
-pdf_path_2024 <- "data-raw/Avian-Predation-Final-Summary-Report_2024.pdf"
+pdf_path_2024 <- "data-raw/helper-data/Avian-Predation-Final-Summary-Report_2024.pdf"
 tables_2024 <- extract_tables(pdf_path_2024, method = "stream", output = "tibble")
 
 #### ======= PIT-tagged LRS, SNS, KLS, SNS-KLS and SARP ===== ####

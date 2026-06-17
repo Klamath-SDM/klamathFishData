@@ -11,8 +11,8 @@ library(tidyr)
 # we have decided to pull only data below, as of January of 2026
 
 # USFWS Klamath Falls National Fish Hatchery Report - 2024
-pdf_path <- here::here("data-raw/20250619_FY2024 KFNFH Annual Report_Final Draft.pdf")
-filename <- here::here("data-raw", "pdf-tables", "kfnfh_2024_tables_raw.Rds")
+pdf_path <- here::here("data-raw", "helper-data", "20250619_FY2024 KFNFH Annual Report_Final Draft.pdf")
+filename <- here::here("data-raw", "helper-data", "kfnfh_2024_tables_raw.Rds")
 if(!file.exists(filename)) {
   tables_raw_2024 <- extract_tables(pdf_path, method = "stream", output = "tibble")
   tables_raw_2024 |> saveRDS(filename)
@@ -63,8 +63,8 @@ KFNFH_annual_summary <- table_1 |>
          salvage_sl_mm = case_when(salvage_tl_mm == 129 ~ NA,
                                    salvage_tl_mm == 126 ~ NA,
                                    TRUE ~ salvage_sl_mm))|>
-  mutate(hatchery_name = "KFNFH") |>
-  relocate(hatchery_name, .before = fiscal_year) |>
+  mutate(location = "KFNFH") |>
+  relocate(location, .before = fiscal_year) |>
   left_join(table_4, by = join_by(fiscal_year, larvae_collected)) |>
   glimpse()
 

@@ -3,7 +3,7 @@
 library(tidyverse)
 library(readxl)
 
-sucker_survival_model <- read_csv(here::here("data-raw", "tables_with_data", "sucker_survival.csv"))
+sucker_survival_model <- read_csv(here::here("data-raw", "helper-data", "sucker_survival.csv"))
 
 sucker_data <- sucker_survival_model |>
   select(sex, year, population, apparent_survival_CI, apparent_survival_estimate) |>
@@ -45,6 +45,7 @@ sucker_adult_estimates <- sucker_data |>
   mutate(species = case_when(species == "lost river lakeshore spawning" ~ "lost river sucker lakeshore spawning",
                              species == "lost river river spawning" ~ "lost river sucker river spawning",
                              species == "shortnose" ~ "shortnose sucker",
-                             T ~ species))
+                             T ~ species)) |>
+  rename(location = stream) |> glimpse()
 
 usethis::use_data(sucker_adult_estimates, overwrite = TRUE)

@@ -3,7 +3,7 @@ library(tidyverse)
 library(janitor)
 # options(java.parameters = "-Xmx600m")
 library(tabulapdf)
-library(readxl)
+library(readxl
 
 # This script reads and cleans Spring run megatable
 

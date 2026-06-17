@@ -8,7 +8,7 @@
 #' @format A tibble with 122 rows and 14 columns
 #' \itemize{
 #'   \item \code{julian_year}: julian year (2001-2022). Min/max years vary by location, species, type of estimate. Juvenile abundance typically spans multiple years (e.g. Oct 2020 - May 2021) and would be assigned a julian year for the latter part of this period.
-#'   \item \code{stream}: stream ("scott river", "shasta river")
+#'   \item \code{location}: location of data collection or estimate. This may be a river, wetland or marsh, hatchery, etc
 #'   \item \code{species}: species (coho salmon, steelhead, fall chinook salmon)
 #'   \item \code{origin}: origin (wild)
 #'   \item \code{lifestage}: lifestage category (yoy, age 1+, age 2+, smolt)
@@ -35,7 +35,7 @@
 #' @format A tibble with 265 rows and 13 columns
 #' \itemize{
 #'   \item \code{julian_year}: julian year (1999-2022). Min/max years vary by location, species, type of estimate.
-#'   \item \code{stream}: stream ("upper klamath lake")
+#'   \item \code{location}: location of data collection or estimate. This may be a river, wetland or marsh, hatchery, etc
 #'   \item \code{species}: species (lost river sucker lakeshore spawning, lost river sucker river spawning, shortnose sucker)
 #'   \item \code{lifestage}: lifestage category (adult)
 #'   \item \code{sex}: sex, if applicable to model (female, male, NA)
@@ -58,15 +58,15 @@
 #' data collection locations.
 #' @format A tibble with 35 rows and 10 columns
 #' \itemize{
-#'   \item \code{stream}: stream
+#'   \item \code{location}: location of data collection or estimate. This may be a river, wetland or marsh, hatchery, etc
 #'   \item \code{sub_basin}: sub-basin name (upper klamath, lower klamath, trinity, shasta)
 #'   \item \code{data_type}: type of data (rst, hatchery, redd/carcass survey)
 #'   \item \code{site_name}: name of site such as a RST site or hatchery location (big bar, shasta river, bogus, willow creek, pear creek, weitchpec, iron gate fish hatchery, trinity river hatchery, klamath hatchery)
 #'   \item \code{agency}: agency that manages/monitors the site (arcata fwo, arcata fwo, cdfw, hoopa tribal fisheries department, karuk, yurok tribal fisheries program, usfws)
 #'   \item \code{latitude}: longitude
 #'   \item \code{longitude}: longitude
-#'   \item \code{downstream_latitude}: Latitude of the downstream end of the feature's extent, applicable for survey extents
-#'   \item \code{downstream_longitude}: Longitude of the downstream end of the feature's extent, applicable for survey extents
+#'   \item \code{downstream_latitude}: latitude of the downstream end of the feature's extent, applicable for survey extents
+#'   \item \code{downstream_longitude}: longitude of the downstream end of the feature's extent, applicable for survey extents
 #'   \item \code{link}: web link containing more information about fisheries locations
 #'   }
 'data_location_lookup'
@@ -149,19 +149,19 @@
 #'
 #' @format A tibble with 39 rows and 16 columns
 #' \itemize{
-#'   \item{location}: Waterbody or colony area where piscivorous waterbirds nested and where PIT tags were recovered (upper klamath lake, clear lake reservoir, sheepy lake)
-#'   \item{species}: Fish species associated with each release group (e.g. sucker, chinook salmon)
-#'   \item{life_stage}: Fish life stage (e.g. juvenile, adult)
-#'   \item{origin}: Origin of realeased fish (e.g. hatchery, wild)
-#'   \item{release_season}: Season when fish were realeased (e.g. spring_summer, fall_winter)
-#'   \item{sarp_program}: Whether fish are part of the Sucker Assisted Rearing Program (SARP) (e.g. TRUE, FALSE)
+#'   \item{location}: location of data collection or estimate. This may be a river, wetland or marsh, hatchery, etc. (upper klamath lake, clear lake reservoir, sheepy lake)
+#'   \item{species}: fish species associated with each release group (e.g. sucker, chinook salmon)
+#'   \item{life_stage}: fish life stage (e.g. juvenile, adult)
+#'   \item{origin}: origin of realeased fish (e.g. hatchery, wild)
+#'   \item{release_season}: season when fish were realeased (e.g. spring_summer, fall_winter)
+#'   \item{sarp_program}: whether fish are part of the Sucker Assisted Rearing Program (SARP) (e.g. TRUE, FALSE)
 #'   \item{year}: Year (2021–2023)
-#'   \item{percent_estimate}: Estimated predation rate (% of available fish consumed). This is a statistically adjusted percentage that accounts for the probability of a bird depositing a tag on a colony and the probability of a
+#'   \item{percent_estimate}: estimated predation rate (% of available fish consumed). This is a statistically adjusted percentage that accounts for the probability of a bird depositing a tag on a colony and the probability of a
 #'   researcher successfully detecting that tag. Predation estimates are adjusted to account for PIT tag detection and deposition probabilities that were unique to each predator species, colony, and year
-#'   \item{lower_ci_pct}: Lower 95% credible interval. This interval provides the range in which the true predation rate is likely to fall. Predation rates are estimates derived from a hierarchical Bayesian model.
-#'   \item{upper_ci_pct}: Upper 95% credible interval. This interval provides the range in which the true predation rate is likely to fall. Predation rates are estimates derived from a hierarchical Bayesian model.
-#'   \item{number_adults_tagged}: Total number of PIT-tagged fish (both adults and juveniles) present in the study area and considered "available" to avian predators during the specified year
-#'   \item{number_recovered_tags}: Raw count of physical PIT-tags recovered on piscivorous waterbird colonies during the 2021–2023 breeding seasons.
+#'   \item{lower_ci_pct}: lower 95% credible interval. This interval provides the range in which the true predation rate is likely to fall. Predation rates are estimates derived from a hierarchical Bayesian model.
+#'   \item{upper_ci_pct}: upper 95% credible interval. This interval provides the range in which the true predation rate is likely to fall. Predation rates are estimates derived from a hierarchical Bayesian model.
+#'   \item{number_adults_tagged}: total number of PIT-tagged fish (both adults and juveniles) present in the study area and considered "available" to avian predators during the specified year
+#'   \item{number_recovered_tags}: raw count of physical PIT-tags recovered on piscivorous waterbird colonies during the 2021–2023 breeding seasons.
 #' }
 #'
 #' @source Bird Research Northwest (2023)
@@ -174,7 +174,7 @@
 #' Corresponds to **Table 1** and **Table 4** in the FY2024 KFNFH Annual Report.
 #' @format A tibble with 9 rows and 12 columns
 #' \itemize{
-#'   \item \code{hatchery_name}: name of hatchery (KFNFH)
+#'   \item \code{location}: location of data collection or estimate. This may be a river, wetland or marsh, hatchery, etc. (KFNFH)
 #'   \item \code{fiscal_year}: fiscal year
 #'   \item \code{larvae_collected}: number of wild larval suckers collected
 #'   \item \code{sarp_release}: number of fish released or transferred that were raised in the Sucker Assisted Rearing Program (SARP)
@@ -200,7 +200,7 @@
 #' @format A tibble with 30 rows and 6 columns
 #' \itemize{
 #'   \item \code{taxa}: taxa (lost river suckers, shortnose suckers/klamath largescale suckers/SNS/KLS)
-#'   \item \code{location}: location of suckers (upper klamath lake)
+#'   \item \code{location}: location of data collection or estimate. This may be a river, wetland or marsh, hatchery, etc. (upper klamath lake)
 #'   \item \code{year}: julian year (2015-2022)
 #'   \item \code{age}: age of suckers (age-0 or age-0-age-1)
 #'   \item \code{survival_indice_type}: type of survival indice estimate (august to september and september to june)
