@@ -64,8 +64,31 @@ spring_run_size_clean <- filter(spring_megatable, section == "Run Size Estimate"
   filter(year != "2024") |>
   glimpse()
 
+
+
+# ========================================================== #
+# ===== Adding 2024 and 2025 data =========================
+
+source("data-raw/processing-scripts/read-krtt-2026-pdf.R")
+
+# lamath River Technical Team May 20, 2026 report -----------------------------------
+krtt_2026_data_run <- filter(fall_run_2024_2025, section == "In-River Run") |> glimpse()
+
+fall_2024_2025_run_estimates <- krtt_2026_data_run |>
+  rename(estimate = value) |>
+  mutate(origin = "unknown",
+         location = "klamath basin",
+         estimate_type = NA,
+         lifestage = tolower(lifestage),
+         source = "Pacific Fishery Management Council report Klamath River Fall Chinook Salmon Age-Specific Escapement, River Harvest, and Run Size Estimates, 2025 Run Klamath River Technical Team May 20,2026
+         [available here:](https://www.pcouncil.org/documents/2026/06/2026-run-klamath-river-fall-chinook-salmon-age-specific-escapement-river-harvest-and-run-size-estimates-2026-run-may-20-2026.pdf/)") |>
+  select(location, year, species, origin, lifestage, estimate_type, estimate, source) |>
+  filter(lifestage != "total run") |>
+  glimpse()
+
+
 # # bind spring and fall
-inriver_run_estimates <- bind_rows(spring_run_size_clean, fall_river_run) |>
+inriver_run_estimates <- bind_rows(spring_run_size_clean, fall_river_run, fall_2024_2025_run_estimates) |>
   distinct() |>
   glimpse()
 #

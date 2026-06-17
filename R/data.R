@@ -75,7 +75,7 @@
 #' @name salmon_spawner_escapement
 #' @description Digital version of [CDFW's Spring Chinook Salmon Megatable](https://wildlife.ca.gov/Conservation/Fishes/Chinook-Salmon/Anadromous-Assessment) and [CDFW's Spring Chinook Salmon Megatable](https://casalmon.org/wp-content/uploads/2024/08/FINAL-2023-Spring-Chinook-Megatable-v.28-Mar-2024.pdf) Spawner Escapement sections as well as other data sources for Coho and Steelhead not included in the Megatable.
 #' Coho, Steelhead and Winter steelhead data comes from California Department of Fish and Wildlife (CDFW) [document library](https://www.nrm.dfg.ca.gov/documents/ContextDocs.aspx?cat=Fisheries--AnadromousSalmonidPopulationMonitoring).
-#' Most recent data comes from digitized tables (table 5 adn appedix G.) from the [Klamath River Technical Team Report 2026](https://www.pcouncil.org/documents/2026/06/2026-run-klamath-river-fall-chinook-salmon-age-specific-escapement-river-harvest-and-run-size-estimates-2026-run-may-20-2026.pdf/) obtained from Pacific Fishery Management Council
+#' Most recent data comes from digitized tables (table 5 and appedix G.) from the [Klamath River Technical Team Report 2026](https://www.pcouncil.org/documents/2026/06/2026-run-klamath-river-fall-chinook-salmon-age-specific-escapement-river-harvest-and-run-size-estimates-2026-run-may-20-2026.pdf/) obtained from Pacific Fishery Management Council
 #' @format A tibble with 1,854 rows and 13 columns
 #' \itemize{
 #'   \item \code{location}: River, hatchery, or basin where escapement is reported. ("bogus creek", "hoopa and yurok tributaries", "hoopa trinity tributaries", "iron gate hatchery", "klamath basin", "klamath river", "lower klamath river", "other klamath tributaries", "other klamath trinity tributaries", "other trinity tributaries", "salmon river", "scott river", "shasta river", "south fork trinity river", "trinity basin", "trinity river", "trinity river hatchery", "yurok klamath tributaries")
@@ -99,7 +99,7 @@
 #' @title Salmon Harvest
 #' @name salmon_harvest
 #' @description Digital version of [CDFW's Spring Chinook Salmon Megatable](https://wildlife.ca.gov/Conservation/Fishes/Chinook-Salmon/Anadromous-Assessment), [CDFW's Spring Chinook Salmon Megatable](https://casalmon.org/wp-content/uploads/2024/08/FINAL-2023-Spring-Chinook-Megatable-v.28-Mar-2024.pdf) River Harvest sections,
-#' and digitized tables (table 5 adn appedix G.) from the [Klamath River Technical Team Report 2026](https://www.pcouncil.org/documents/2026/06/2026-run-klamath-river-fall-chinook-salmon-age-specific-escapement-river-harvest-and-run-size-estimates-2026-run-may-20-2026.pdf/) obtained from Pacific Fishery Management Council
+#' and digitized tables (table 5 and appedix G.) from the [Klamath River Technical Team Report 2026](https://www.pcouncil.org/documents/2026/06/2026-run-klamath-river-fall-chinook-salmon-age-specific-escapement-river-harvest-and-run-size-estimates-2026-run-may-20-2026.pdf/) obtained from Pacific Fishery Management Council
 #' @format A tibble with 392 rows and 8 columns
 #' \itemize{
 #'   \item \code{location}: location of data collection or estimate. This may be a river, wetland or marsh, hatchery, etc (klamath river, trinity river)
@@ -115,22 +115,23 @@
 
 #' @title In-River Run Estimates
 #' @name inriver_run_estimates
-#' @description Digital version of [CDFW's Spring Chinook Salmon Megatable](https://wildlife.ca.gov/Conservation/Fishes/Chinook-Salmon/Anadromous-Assessment) and [CDFW's Spring Chinook Salmon Megatable](https://casalmon.org/wp-content/uploads/2024/08/FINAL-2023-Spring-Chinook-Megatable-v.28-Mar-2024.pdf) River Harvest sections.
+#' @description Digital version of [CDFW's Spring Chinook Salmon Megatable](https://wildlife.ca.gov/Conservation/Fishes/Chinook-Salmon/Anadromous-Assessment), [CDFW's Spring Chinook Salmon Megatable](https://casalmon.org/wp-content/uploads/2024/08/FINAL-2023-Spring-Chinook-Megatable-v.28-Mar-2024.pdf)
+#' and tables (table 5 and appedix G.) from the [Klamath River Technical Team Report 2026](https://www.pcouncil.org/documents/2026/06/2026-run-klamath-river-fall-chinook-salmon-age-specific-escapement-river-harvest-and-run-size-estimates-2026-run-may-20-2026.pdf/) obtained from Pacific Fishery Management Council River Harvest sections.
 #' The fall Chinook figures represent basin-wide in-river totals (i.e. fish entering the river mouth, distinct from the ocean harvest tracked separately by the Klamath Ocean Harvest Model). The spring Chinook figures are mark-recapture-based run-size estimates
 #'   primarily upstream of the Junction City Weir on the Trinity River and do not include harvest below the weir or spawning in the South Fork Trinity, North Fork Trinity, or New River. All estimates are provided by CDFW unless otherwise noted; tribal harvest
 #'   figures for fall Chinook are provided by the Hoopa Valley Business Council Fisheries Department (HVBCFD) and the Yurok Tribal Fisheries Department.
-#' @format A tibble with 178 rows and 8 columns
+#' @format A tibble with 182 rows and 8 columns
 #' \itemize{
 #'   \item \code{location}: location of data collection or estimate. This may be a river, wetland or marsh, hatchery, etc (klamath river, trinity river)
-#'   \item \code{year}: return year of the escapement estimate/count (1978-2023)
+#'   \item \code{year}: return year of the escapement estimate/count (1978-2025)
 #'   \item \code{species}: species name (spring chinook salmon, fall chinook salmon)
 #'   \item \code{origin}: fish origin category (unknown)
 #'   \item \code{lifestage}: life stage reported (adult, grilse)
 #'   \item \code{estimate_type}: type of estimate reported. Work in progress as these have not been filled in yet for the data from the Megatables.
 #'   \item \code{estimate}: value of estimate
-#'   \item \code{source}: describes where data were sourced from. Currently data comes from: CDFW Spring and Fall Megatables
+#'   \item \code{source}: describes where data were sourced from. Currently data comes from: CDFW Spring and Fall Megatables, and Klamath River Technical Team Report 2026 obtained from Pacific Fishery Management Council
 #'   }
-#' @note The two source tables use different terminology for total run size ("in-river run"
+#' @note The source tables use different terminology for total run size ("in-river run"
 #'   for fall Chinook; "run-size estimates" for spring Chinook) reflecting genuine differences
 #'   in geographic scope and estimation methodology. Users should apply caution when comparing
 #'   spring and fall figures directly. Spring Chinook are listed as threatened under the

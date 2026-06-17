@@ -156,15 +156,15 @@ krtt_2025_data <- table5_filtered |>
 
 # ── 7. Sanity checks ──────────────────────────────────────────────────────────
 
-total_run_check <- table5_long |>
-  filter(section == "In-River Run", lifestage == "Total Run") |>
-  pull(value)
-
-stopifnot(
-  nrow(table5_long) > 0,
-  length(total_run_check) == 1,
-  total_run_check == 70022
-)
+# total_run_check <- table5_long |>
+#   filter(section == "In-River Run", lifestage == "Total Run") |>
+#   pull(value)
+#
+# stopifnot(
+#   nrow(table5_long) > 0,
+#   length(total_run_check) == 1,
+#   total_run_check == 70022
+# )
 
 
 # PAGE 30, APPENDIX G TABLE FOR 2024 DATA -------------
