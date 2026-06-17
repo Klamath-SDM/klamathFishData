@@ -122,10 +122,38 @@ klamath_cdfw_population_processed <- klamath_cdfw_population_raw |>
   filter(lifestage%in% c("adult", "adult and subadult"), species %in% c("coho salmon", "winter steelhead", "steelhead"))
 
 
+
+# ========================================================== #
+# ===== Adding 2025 and 2025 data =========================
+
+source("data-raw/processing-scripts/read-krtt-2026-pdf.R")
+
+# Fall Run megatable -----------------------------------
+krtt_2026_data <- filter(krtt_2026_data, section == "Spawning Escapement") |>
+  mutate(origin = case_when(subsection == "Hatchery Spawners" ~ "hatchery",
+                            T ~ "wild")) |>
+  glimpse()
+
+krtt_2026_data_clean <- krtt_2026_data |>
+select(-c(section, subsection)) |>
+  pivot_wider(id_cols = c(location, year, species, origin), names_from = lifestage, values_from = value, values_fill = 0) |>
+  # fix missing Grilse values
+  # mutate(Grilse = ifelse(is.na(Grilse), Totals - Adults, Grilse)) |>
+  pivot_longer(cols = c(Grilse, Adult, 'Total Run'), names_to = "lifestage", values_to = "value") |>
+  filter(lifestage != "otal run") |>
+  mutate(location = tolower(location),
+         lifestage = tolower(lifestage)) |>
+  rename(estimate = value) |>
+  mutate(source = "Pacific Fishery Management Cuncil report Klamath River Fall Chinook Salmon Age-Specific Escapement,
+River Harvest, and Run Size Estimates, 2025 Run Klamath River Technical Team May 20, 2026  [available here:](https://www.pcouncil.org/documents/2026/06/2026-run-klamath-river-fall-chinook-salmon-age-specific-escapement-river-harvest-and-run-size-estimates-2026-run-may-20-2026.pdf/)") |>
+  glimpse()
+# ================================================== #
+
+
 ## Combine spring and fall run
 salmon_spawner_escapement <- bind_rows(klamath_cdfw_population_processed,
-                                spring_spawner_escapement_clean,
-                                fall_spawner_escapement_clean) |>
+                                       spring_spawner_escapement_clean,
+                                       fall_spawner_escapement_clean, krtt_2026_data_clean) |>
   mutate(origin = case_when(origin == "natural" ~ "wild",
                             T ~ origin),
          lifestage = case_when(lifestage == "adults" ~ "adult",
