@@ -75,7 +75,7 @@
 #' @name salmon_spawner_escapement
 #' @description Digital version of [CDFW's Spring Chinook Salmon Megatable](https://wildlife.ca.gov/Conservation/Fishes/Chinook-Salmon/Anadromous-Assessment) and [CDFW's Spring Chinook Salmon Megatable](https://casalmon.org/wp-content/uploads/2024/08/FINAL-2023-Spring-Chinook-Megatable-v.28-Mar-2024.pdf) Spawner Escapement sections as well as other data sources for Coho and Steelhead not included in the Megatable.
 #' Coho, Steelhead and Winter steelhead data comes from California Department of Fish and Wildlife (CDFW) [document library](https://www.nrm.dfg.ca.gov/documents/ContextDocs.aspx?cat=Fisheries--AnadromousSalmonidPopulationMonitoring)
-#' @format A tibble with 1,756 rows and 13 columns
+#' @format A tibble with 1,854 rows and 13 columns
 #' \itemize{
 #'   \item \code{location}: River, hatchery, or basin where escapement is reported. ("bogus creek", "hoopa and yurok tributaries", "hoopa trinity tributaries", "iron gate hatchery", "klamath basin", "klamath river", "lower klamath river", "other klamath tributaries", "other klamath trinity tributaries", "other trinity tributaries", "salmon river", "scott river", "shasta river", "south fork trinity river", "trinity basin", "trinity river", "trinity river hatchery", "yurok klamath tributaries")
 #'   \item \code{year}: Return year of the escapement estimate/count (1978-2023)
@@ -90,7 +90,8 @@
 #'   \item \code{estimation_method}: type of model used (count, net upstream count, upstream count, expanded redd estimate, mark recapture. Work in progress as these have not been filled in yet for the data from the Megatables.)
 #'   \item \code{is_complete_estimate}: data included in model are complete. In some cases, it is known that an
 #'   estimate is not complete, otherwise it is assumed that estimate is complete.
-#'   \item \code{source}: describes where data were sourced from. Currently there are 2 sources: (1) California Department of Fish and Wildlife (CDFW) document library (https://www.nrm.dfg.ca.gov/documents/ContextDocs.aspx?cat=Fisheries--AnadromousSalmonidPopulationMonitoring), (2) CDFW Spring and Fall Megatables
+#'   \item \code{source}: describes where data were sourced from. Currently there are 3 sources: (1) California Department of Fish and Wildlife (CDFW) document library (https://www.nrm.dfg.ca.gov/documents/ContextDocs.aspx?cat=Fisheries--AnadromousSalmonidPopulationMonitoring),
+#'   (2) CDFW Spring and Fall Megatables, and (3) Klamath River Technical Team Report 2026 obtained from Pacific Fishery Management Council
 #'   }
 'salmon_spawner_escapement'
 

@@ -144,7 +144,7 @@ table5_filtered <- table5_wide |>
 
 # ── 6. Pivot to long format ───────────────────────────────────────────────────
 
-krtt_2026_data <- table5_filtered |>
+krtt_2025_data <- table5_filtered |>
   pivot_longer(
     cols      = c(Grilse, Adult, `Total Run`),
     names_to  = "lifestage",
@@ -166,3 +166,110 @@ stopifnot(
   total_run_check == 70022
 )
 
+
+# PAGE 30, APPENDIX G TABLE FOR 2024 DATA -------------
+
+pages   <- pdf_text(pdf_url)
+page30  <- pages[[30]]   # Appendix G is on page 30
+cat("Page 30 extracted (", nchar(page30), " characters)\n\n")
+
+# ── 2. Split into lines and locate Appendix G table ───────────────────────────
+
+lines <- strsplit(page30, "\n")[[1]]
+
+start_idx <- grep("Escapement & Harvest", lines, fixed = TRUE)
+end_idx   <- grep("^\\s*\\*\\s+New survey reach", lines)
+
+if (length(end_idx) == 0) end_idx <- length(lines) + 1
+
+table_lines <- lines[(start_idx + 1):(end_idx - 1)]
+
+# ── 3. Parse data rows ────────────────────────────────────────────────────────
+
+data_pattern <- paste0(
+  "^(.+?)\\s+",
+  "([\\d,]+)\\s+",   # age-2
+  "([\\d,]+)\\s+",   # age-3
+  "([\\d,]+)\\s+",   # age-4
+  "([\\d,]+)\\s+",   # age-5
+  "([\\d,]+)\\s+",   # total adults
+  "([\\d,]+)\\s*$"   # total run
+)
+
+to_int <- function(x) as.integer(gsub(",", "", trimws(x)))
+
+rows <- list()
+current_section <- NA_character_
+
+for (line in table_lines) {
+  line <- trimws(line)
+  if (nchar(line) == 0) next
+
+  m <- regmatches(line, regexec(data_pattern, line, perl = TRUE))[[1]]
+
+  if (length(m) == 8) {
+    rows[[length(rows) + 1]] <- data.frame(
+      section      = current_section,
+      sector       = trimws(m[2]),
+      age2         = to_int(m[3]),
+      age3         = to_int(m[4]),
+      age4         = to_int(m[5]),
+      age5         = to_int(m[6]),
+      total_adults = to_int(m[7]),
+      total_run    = to_int(m[8]),
+      stringsAsFactors = FALSE
+    )
+  } else {
+    if (grepl("[A-Za-z]", line)) current_section <- line
+  }
+}
+
+table_wide <- bind_rows(rows)
+
+# ── 4. Clean up footnote markers ──────────────────────────────────────────────
+
+table_wide <- table_wide |>
+  mutate(sector = gsub("\\*|a/", "", sector) |> trimws())
+
+# ── 5. Select, rename, filter, and assign section / subsection / year ─────────
+
+drop_pattern <- paste(
+  "subtotal", "Total Spawner Escapement", "Total Harvest",
+  "Harvest and escapement",
+  "dropoff mortality", "Ich disease monitoring",
+  sep = "|"
+)
+
+section_map <- tribble(
+  ~section_raw,            ~section,              ~subsection,
+  "Hatchery Spawners",     "Spawning Escapement", "Hatchery Spawners",
+  "Natural Spawners",      "Spawning Escapement", "Natural Spawners",
+  "Recreational Harvest",  "Harvest",             "Recreational Harvest",
+  "Tribal Harvest",        "Harvest",             "Tribal Harvest",
+  "Totals",                "In-River Run",        "In-River Run"
+)
+
+table_filtered <- table_wide |>
+  filter(!grepl(drop_pattern, sector, ignore.case = TRUE)) |>
+  filter(!(section == "Totals" & sector != "Total River Run")) |>
+  select(section_raw = section, location = sector, Grilse = age2,
+         Adult = total_adults, `Total Run` = total_run) |>
+  left_join(section_map, by = "section_raw") |>
+  select(-section_raw) |>
+  mutate(year = 2024L)
+
+# ── 6. Pivot to long format ───────────────────────────────────────────────────
+
+krtt_2024_data <- table_filtered |>
+  pivot_longer(
+  cols      = c(Grilse, Adult, `Total Run`),
+  names_to  = "lifestage",
+  values_to = "value"
+) |>
+
+  mutate(species = "fall chinook salmon") |>
+  select(location, subsection, section, lifestage, year, value, species)
+
+
+## Combine 2024 and 2025 data
+fall_run_2024_2025 <- bind_rows(krtt_2024_data, krtt_2025_data) |> glimpse()
