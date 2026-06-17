@@ -74,11 +74,12 @@
 #' @title Salmon Spawner Escapement
 #' @name salmon_spawner_escapement
 #' @description Digital version of [CDFW's Spring Chinook Salmon Megatable](https://wildlife.ca.gov/Conservation/Fishes/Chinook-Salmon/Anadromous-Assessment) and [CDFW's Spring Chinook Salmon Megatable](https://casalmon.org/wp-content/uploads/2024/08/FINAL-2023-Spring-Chinook-Megatable-v.28-Mar-2024.pdf) Spawner Escapement sections as well as other data sources for Coho and Steelhead not included in the Megatable.
-#' Coho, Steelhead and Winter steelhead data comes from California Department of Fish and Wildlife (CDFW) [document library](https://www.nrm.dfg.ca.gov/documents/ContextDocs.aspx?cat=Fisheries--AnadromousSalmonidPopulationMonitoring)
+#' Coho, Steelhead and Winter steelhead data comes from California Department of Fish and Wildlife (CDFW) [document library](https://www.nrm.dfg.ca.gov/documents/ContextDocs.aspx?cat=Fisheries--AnadromousSalmonidPopulationMonitoring).
+#' Most recent data comes from digitized tables (table 5 adn appedix G.) from the [Klamath River Technical Team Report 2026](https://www.pcouncil.org/documents/2026/06/2026-run-klamath-river-fall-chinook-salmon-age-specific-escapement-river-harvest-and-run-size-estimates-2026-run-may-20-2026.pdf/) obtained from Pacific Fishery Management Council
 #' @format A tibble with 1,854 rows and 13 columns
 #' \itemize{
 #'   \item \code{location}: River, hatchery, or basin where escapement is reported. ("bogus creek", "hoopa and yurok tributaries", "hoopa trinity tributaries", "iron gate hatchery", "klamath basin", "klamath river", "lower klamath river", "other klamath tributaries", "other klamath trinity tributaries", "other trinity tributaries", "salmon river", "scott river", "shasta river", "south fork trinity river", "trinity basin", "trinity river", "trinity river hatchery", "yurok klamath tributaries")
-#'   \item \code{year}: Return year of the escapement estimate/count (1978-2023)
+#'   \item \code{year}: Return year of the escapement estimate/count (1978-2025)
 #'   \item \code{species}: Species name (spring chinook salmon, fall chinook salmon, coho salmon, winter steelhead, steelhead)
 #'   \item \code{origin}: Fish origin category (hatchery, wild, mixed, unknown)
 #'   \item \code{lifestage}: Life stage reported (adult, adult and subadult, grilse). In a few cases adult and subadult were not distinguished and are grouped together.
@@ -97,17 +98,18 @@
 
 #' @title Salmon Harvest
 #' @name salmon_harvest
-#' @description Digital version of [CDFW's Spring Chinook Salmon Megatable](https://wildlife.ca.gov/Conservation/Fishes/Chinook-Salmon/Anadromous-Assessment) and [CDFW's Spring Chinook Salmon Megatable](https://casalmon.org/wp-content/uploads/2024/08/FINAL-2023-Spring-Chinook-Megatable-v.28-Mar-2024.pdf) River Harvest sections.
-#' @format A tibble with 356 rows and 8 columns
+#' @description Digital version of [CDFW's Spring Chinook Salmon Megatable](https://wildlife.ca.gov/Conservation/Fishes/Chinook-Salmon/Anadromous-Assessment), [CDFW's Spring Chinook Salmon Megatable](https://casalmon.org/wp-content/uploads/2024/08/FINAL-2023-Spring-Chinook-Megatable-v.28-Mar-2024.pdf) River Harvest sections,
+#' and digitized tables (table 5 adn appedix G.) from the [Klamath River Technical Team Report 2026](https://www.pcouncil.org/documents/2026/06/2026-run-klamath-river-fall-chinook-salmon-age-specific-escapement-river-harvest-and-run-size-estimates-2026-run-may-20-2026.pdf/) obtained from Pacific Fishery Management Council
+#' @format A tibble with 392 rows and 8 columns
 #' \itemize{
 #'   \item \code{location}: location of data collection or estimate. This may be a river, wetland or marsh, hatchery, etc (klamath river, trinity river)
-#'   \item \code{year}: return year of the escapement estimate/count (1978-2023)
+#'   \item \code{year}: return year of the escapement estimate/count (1978-2025)
 #'   \item \code{species}: species name (spring chinook salmon, fall chinook salmon)
 #'   \item \code{origin}: fish origin category (unknown)
 #'   \item \code{lifestage}: life stage reported (adult, grilse)
 #'   \item \code{estimate_type}: type of estimate reported. Work in progress as these have not been filled in yet for the data from the Megatables.
 #'   \item \code{estimate}: value of estimate
-#'   \item \code{source}: describes where data were sourced from. Currently data comes from: CDFW Spring and Fall Megatables
+#'   \item \code{source}: describes where data were sourced from. Currently data comes from: CDFW Spring and Fall Megatables, and Klamath River Technical Team Report 2026 obtained from Pacific Fishery Management Council
 #'   }
 'salmon_harvest'
 

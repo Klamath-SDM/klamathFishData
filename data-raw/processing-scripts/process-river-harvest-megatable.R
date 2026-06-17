@@ -71,10 +71,44 @@ spring_harvest <- filter(spring_megatable, section == "River Harvest") |>
   rename(estimate = value) |>
   mutate(source = "CDFW Spring Chinook Salmon Megatable available here: https://nrm.dfg.ca.gov/FileHandler.ashx?DocumentID=165311") |>
   select(location, year, species, origin, lifestage, estimate_type, estimate, source)
-# bind spring and fall
-salmon_harvest <- bind_rows(spring_harvest, fall_harvest) |>
+
+
+
+# ========================================================== #
+# ===== Adding 2024 and 2025 data =========================
+
+source("data-raw/processing-scripts/read-krtt-2026-pdf.R")
+
+# Fall Run megatable -----------------------------------
+krtt_2026_data_harvest <- filter(fall_run_2024_2025, section == "Harvest") |> glimpse()
+
+fall_2024_2025_harvest <- krtt_2026_data_harvest |>
+  mutate(origin = "unknown") |>
+  select(-c(section, subsection)) |>
+  group_by(location, year, species, origin, lifestage) |>
+  summarize(value = sum(value, na.rm = TRUE), .groups = "drop") |>
+  pivot_wider(id_cols = c(location, year, species, origin),
+              names_from = lifestage,
+              values_from = value,
+              values_fill = 0) |>
+  pivot_longer(cols = c(Grilse, Adult, 'Total Run'), names_to = "lifestage", values_to = "value") |>
+  filter(lifestage != "Total Run") |>
+  mutate(location = tolower(location),
+         lifestage = tolower(lifestage),
+         estimate_type = NA,
+         lifestage = case_when(lifestage == "adults" ~ "adult",
+                               T ~ lifestage)) |>
+  rename(estimate = value) |>
+  mutate(source = "Pacific Fishery Management Cuncil report Klamath River Fall Chinook Salmon Age-Specific Escapement,
+River Harvest, and Run Size Estimates, 2025 Run Klamath River Technical Team May 20, 2026  [available here:](https://www.pcouncil.org/documents/2026/06/2026-run-klamath-river-fall-chinook-salmon-age-specific-escapement-river-harvest-and-run-size-estimates-2026-run-may-20-2026.pdf/)") |>
+  select(location, year, species, origin, lifestage, estimate_type, estimate, source) |>
+  glimpse()
+
+# =====================================
+
+# bind spring and fall and 2024-2025
+salmon_harvest <- bind_rows(spring_harvest, fall_harvest, fall_2024_2025_harvest) |>
   distinct() |>
-  filter(year != "2024") |>  # removing 2024 since it is a placeholder and are all 0
   glimpse()
 
 # save clean data
