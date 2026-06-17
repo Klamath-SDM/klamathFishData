@@ -79,7 +79,7 @@ spring_harvest <- filter(spring_megatable, section == "River Harvest") |>
 
 source("data-raw/processing-scripts/read-krtt-2026-pdf.R")
 
-# Fall Run megatable -----------------------------------
+# lamath River Technical Team May 20, 2026 report -----------------------------------
 krtt_2026_data_harvest <- filter(fall_run_2024_2025, section == "Harvest") |> glimpse()
 
 fall_2024_2025_harvest <- krtt_2026_data_harvest |>
@@ -106,7 +106,7 @@ River Harvest, and Run Size Estimates, 2025 Run Klamath River Technical Team May
 
 # =====================================
 
-# bind spring and fall and 2024-2025
+# bind spring, fall and 2024-2025
 salmon_harvest <- bind_rows(spring_harvest, fall_harvest, fall_2024_2025_harvest) |>
   distinct() |>
   glimpse()
