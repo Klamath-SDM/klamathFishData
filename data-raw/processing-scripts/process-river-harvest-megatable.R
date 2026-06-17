@@ -99,7 +99,7 @@ fall_2024_2025_harvest <- krtt_2026_data_harvest |>
          lifestage = case_when(lifestage == "adults" ~ "adult",
                                T ~ lifestage)) |>
   rename(estimate = value) |>
-  mutate(source = "Pacific Fishery Management Cuncil report Klamath River Fall Chinook Salmon Age-Specific Escapement,
+  mutate(source = "Pacific Fishery Management Council report Klamath River Fall Chinook Salmon Age-Specific Escapement,
 River Harvest, and Run Size Estimates, 2025 Run Klamath River Technical Team May 20, 2026  [available here:](https://www.pcouncil.org/documents/2026/06/2026-run-klamath-river-fall-chinook-salmon-age-specific-escapement-river-harvest-and-run-size-estimates-2026-run-may-20-2026.pdf/)") |>
   select(location, year, species, origin, lifestage, estimate_type, estimate, source) |>
   glimpse()

@@ -147,7 +147,7 @@ select(-c(section, subsection)) |>
   mutate(location = case_when(location == "upstream of iron gate (sonar)" ~ "klamath river - upstream of iron gate (sonar)",
                               location == "upstream of keno dam" ~ "klamath river - upstream of keno dam",
                               T ~ location),
-                              source = "Pacific Fishery Management Cuncil report Klamath River Fall Chinook Salmon Age-Specific Escapement,
+                              source = "Pacific Fishery Management Council report Klamath River Fall Chinook Salmon Age-Specific Escapement,
 River Harvest, and Run Size Estimates, 2025 Run Klamath River Technical Team May 20, 2026  [available here:](https://www.pcouncil.org/documents/2026/06/2026-run-klamath-river-fall-chinook-salmon-age-specific-escapement-river-harvest-and-run-size-estimates-2026-run-may-20-2026.pdf/)") |>
   glimpse()
 # ================================================== #
