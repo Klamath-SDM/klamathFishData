@@ -21,7 +21,8 @@
 #'   \item \code{estimation_method}: type of model used (mark-recapture)
 #'   \item \code{is_complete_estimate}: data included in model are complete. In some cases, it is known that an
 #'   estimate is not complete, otherwise it is assumed that estimate is complete.
-#'   \item \code{source}: describes where data were sourced from. Currently there is one data source: (1) California Department of Fish and Wildlife (CDFW) document library (https://www.nrm.dfg.ca.gov/documents/ContextDocs.aspx?cat=Fisheries--AnadromousSalmonidPopulationMonitoring)
+#'   \item \code{source}: describes where data were sourced from. Currently there is one data source: (1) California Department of Fish and Wildlife (CDFW)
+#'   \href{https://www.nrm.dfg.ca.gov/documents/ContextDocs.aspx?cat=Fisheries--AnadromousSalmonidPopulationMonitoring}{document library}
 #'   }
 'salmon_juvenile_abundance'
 
@@ -47,7 +48,7 @@
 #'   \item \code{estimation_method}: type of model used (Cormack-Jolly-Seber model)
 #'   \item \code{is_complete_estimate}: data included in model are complete. In some cases, it is known that an
 #'   estimate is not complete, otherwise it is assumed that estimate is complete.
-#'   \item \code{source}: describes where data were sourced from. Currently there is one source: Hewitt, D.A., Janney, E.C., Hayes, B.S., and Harris, A.C., 2018, Status and trends of adult Lost River (Deltistes luxatus) and shortnose (Chasmistes brevirostris) sucker populations in Upper Klamath Lake, Oregon, 2017: U.S. Geological Survey Open-File Report 2018-1064, 31 p., https://doi.org/10.3133/ofr20181064. (https://pubs.usgs.gov/of/2018/1064/ofr20181064.pdf)
+#'   \item \code{source}: describes where data were sourced from. Currently there is one source: Hewitt, D.A., Janney, E.C., Hayes, B.S., and Harris, A.C., 2018, Status and trends of adult Lost River (Deltistes luxatus) and shortnose (Chasmistes brevirostris) sucker populations in Upper Klamath Lake, Oregon, 2017: \href{U.S. Geological Survey Open-File Report 2018-1064, 31 p}{https://pubs.usgs.gov/of/2018/1064/ofr20181064.pdf}.
 #'   }
 'sucker_adult_estimates'
 
@@ -73,9 +74,20 @@
 
 #' @title Salmon Spawner Escapement
 #' @name salmon_spawner_escapement
-#' @description Digital version of [CDFW's Spring Chinook Salmon Megatable](https://wildlife.ca.gov/Conservation/Fishes/Chinook-Salmon/Anadromous-Assessment) and [CDFW's Spring Chinook Salmon Megatable](https://casalmon.org/wp-content/uploads/2024/08/FINAL-2023-Spring-Chinook-Megatable-v.28-Mar-2024.pdf) Spawner Escapement sections as well as other data sources for Coho and Steelhead not included in the Megatable.
-#' Coho, Steelhead and Winter steelhead data comes from California Department of Fish and Wildlife (CDFW) [document library](https://www.nrm.dfg.ca.gov/documents/ContextDocs.aspx?cat=Fisheries--AnadromousSalmonidPopulationMonitoring).
-#' Most recent data comes from digitized tables (table 5 and appedix G.) from the [Klamath River Technical Team Report 2026](https://www.pcouncil.org/documents/2026/06/2026-run-klamath-river-fall-chinook-salmon-age-specific-escapement-river-harvest-and-run-size-estimates-2026-run-may-20-2026.pdf/) obtained from Pacific Fishery Management Council
+#' @description Digital version of the Spawner Escapement sections from
+#' \href{https://nrm.dfg.ca.gov/FileHandler.ashx?DocumentID=122850&inline}{CDFW's Fall Chinook Salmon Megatable}
+#' and
+#' \href{https://casalmon.org/wp-content/uploads/2024/08/FINAL-2023-Spring-Chinook-Megatable-v.28-Mar-2024.pdf}{CDFW's Spring Chinook Salmon Megatable},
+#' as well as other data sources for Coho Salmon and Steelhead not included in the Megatables.
+#'
+#' Coho Salmon, Steelhead, and Winter Steelhead data come from the California
+#' Department of Fish and Wildlife (CDFW)
+#' \href{https://www.nrm.dfg.ca.gov/documents/ContextDocs.aspx?cat=Fisheries--AnadromousSalmonidPopulationMonitoring}{document library}.
+#'
+#' The most recent data come from digitized tables (Table 5 and Appendix G)
+#' from the
+#' \href{https://www.pcouncil.org/documents/2026/06/2026-run-klamath-river-fall-chinook-salmon-age-specific-escapement-river-harvest-and-run-size-estimates-2026-run-may-20-2026.pdf/}{Klamath River Technical Team Report 2026},
+#' obtained from the Pacific Fishery Management Council.
 #' @format A tibble with 1,854 rows and 13 columns
 #' \itemize{
 #'   \item \code{location}: River, hatchery, or basin where escapement is reported. ("bogus creek", "hoopa and yurok tributaries", "hoopa trinity tributaries", "iron gate hatchery", "klamath basin", "klamath river", "lower klamath river", "other klamath tributaries", "other klamath trinity tributaries", "other trinity tributaries", "salmon river", "scott river", "shasta river", "south fork trinity river", "trinity basin", "trinity river", "trinity river hatchery", "yurok klamath tributaries")
@@ -91,15 +103,18 @@
 #'   \item \code{estimation_method}: type of model used (count, net upstream count, upstream count, expanded redd estimate, mark recapture. Work in progress as these have not been filled in yet for the data from the Megatables.)
 #'   \item \code{is_complete_estimate}: data included in model are complete. In some cases, it is known that an
 #'   estimate is not complete, otherwise it is assumed that estimate is complete.
-#'   \item \code{source}: describes where data were sourced from. Currently there are 3 sources: (1) California Department of Fish and Wildlife (CDFW) document library (https://www.nrm.dfg.ca.gov/documents/ContextDocs.aspx?cat=Fisheries--AnadromousSalmonidPopulationMonitoring),
+#'   \item \code{source}: describes where data were sourced from. Currently there are 3 sources: (1) California Department of Fish and Wildlife (CDFW)
+#'   \href{https://www.nrm.dfg.ca.gov/documents/ContextDocs.aspx?cat=Fisheries--AnadromousSalmonidPopulationMonitoring}{document library},
 #'   (2) CDFW Spring and Fall Megatables, and (3) Klamath River Technical Team Report 2026 obtained from Pacific Fishery Management Council
 #'   }
 'salmon_spawner_escapement'
 
 #' @title Salmon Harvest
 #' @name salmon_harvest
-#' @description Digital version of [CDFW's Spring Chinook Salmon Megatable](https://wildlife.ca.gov/Conservation/Fishes/Chinook-Salmon/Anadromous-Assessment), [CDFW's Spring Chinook Salmon Megatable](https://casalmon.org/wp-content/uploads/2024/08/FINAL-2023-Spring-Chinook-Megatable-v.28-Mar-2024.pdf) River Harvest sections,
-#' and digitized tables (table 5 and appedix G.) from the [Klamath River Technical Team Report 2026](https://www.pcouncil.org/documents/2026/06/2026-run-klamath-river-fall-chinook-salmon-age-specific-escapement-river-harvest-and-run-size-estimates-2026-run-may-20-2026.pdf/) obtained from Pacific Fishery Management Council
+#' @description Digital version of \href{https://wildlife.ca.gov/Conservation/Fishes/Chinook-Salmon/Anadromous-Assessment}{CDFW's Spring Chinook Salmon Megatable},
+#' \href{https://casalmon.org/wp-content/uploads/2024/08/FINAL-2023-Spring-Chinook-Megatable-v.28-Mar-2024.pdf}{CDFW's Spring Chinook Salmon Megatable} River Harvest sections,
+#' and digitized tables (table 5 and appedix G.) from the
+#' \href{https://www.pcouncil.org/documents/2026/06/2026-run-klamath-river-fall-chinook-salmon-age-specific-escapement-river-harvest-and-run-size-estimates-2026-run-may-20-2026.pdf/}{Klamath River Technical Team Report 2026} obtained from Pacific Fishery Management Council
 #' @format A tibble with 392 rows and 8 columns
 #' \itemize{
 #'   \item \code{location}: location of data collection or estimate. This may be a river, wetland or marsh, hatchery, etc (klamath river, trinity river)
@@ -115,8 +130,8 @@
 
 #' @title In-River Run Estimates
 #' @name inriver_run_estimates
-#' @description Digital version of [CDFW's Spring Chinook Salmon Megatable](https://wildlife.ca.gov/Conservation/Fishes/Chinook-Salmon/Anadromous-Assessment), [CDFW's Spring Chinook Salmon Megatable](https://casalmon.org/wp-content/uploads/2024/08/FINAL-2023-Spring-Chinook-Megatable-v.28-Mar-2024.pdf)
-#' and tables (table 5 and appedix G.) from the [Klamath River Technical Team Report 2026](https://www.pcouncil.org/documents/2026/06/2026-run-klamath-river-fall-chinook-salmon-age-specific-escapement-river-harvest-and-run-size-estimates-2026-run-may-20-2026.pdf/) obtained from Pacific Fishery Management Council River Harvest sections.
+#' @description Digital version of \href{https://wildlife.ca.gov/Conservation/Fishes/Chinook-Salmon/Anadromous-Assessment}{CDFW's Spring Chinook Salmon Megatable}, \href{https://casalmon.org/wp-content/uploads/2024/08/FINAL-2023-Spring-Chinook-Megatable-v.28-Mar-2024.pdf}{CDFW's Spring Chinook Salmon Megatable}
+#' and tables (table 5 and appedix G.) from the \href{https://www.pcouncil.org/documents/2026/06/2026-run-klamath-river-fall-chinook-salmon-age-specific-escapement-river-harvest-and-run-size-estimates-2026-run-may-20-2026.pdf/}{Klamath River Technical Team Report 2026} obtained from Pacific Fishery Management Council River Harvest sections.
 #' The fall Chinook figures represent basin-wide in-river totals (i.e. fish entering the river mouth, distinct from the ocean harvest tracked separately by the Klamath Ocean Harvest Model). The spring Chinook figures are mark-recapture-based run-size estimates
 #'   primarily upstream of the Junction City Weir on the Trinity River and do not include harvest below the weir or spawning in the South Fork Trinity, North Fork Trinity, or New River. All estimates are provided by CDFW unless otherwise noted; tribal harvest
 #'   figures for fall Chinook are provided by the Hoopa Valley Business Council Fisheries Department (HVBCFD) and the Yurok Tribal Fisheries Department.
@@ -165,7 +180,7 @@
 #' }
 #'
 #' @source Bird Research Northwest (2023)
-#' [Avian Predation on UKB Suckers 2021–2023 Summary Report](https://birdresearchnw.org/brn-publications/avian-predation-on-ukb-suckers-summary-report-2021-2023/)
+#' \href{https://birdresearchnw.org/brn-publications/avian-predation-on-ukb-suckers-summary-report-2021-2023/}{Avian Predation on UKB Suckers 2021–2023 Summary Report}
 "avian_predation_estimates"
 
 #' @title Annual Summary of Hatchery
@@ -196,7 +211,7 @@
 #' @name sucker_juvenile_survival
 #' @description This dataset compiles modeled estimates of juvenile sucker survival
 #' for both age-0 and age-0 to age-1 for Upper Klamath Lake from 2015-2022. These data
-#' are from Martin et al. 2024 (https://doi.org/10.3133/ofr20241013)
+#' are from \href{Martin et al. 2024}{https://doi.org/10.3133/ofr20241013}
 #' @format A tibble with 30 rows and 6 columns
 #' \itemize{
 #'   \item \code{taxa}: taxa (lost river suckers, shortnose suckers/klamath largescale suckers/SNS/KLS)
@@ -206,5 +221,5 @@
 #'   \item \code{survival_indice_type}: type of survival indice estimate (august to september and september to june)
 #'   \item \code{value}: value of survival estimate
 #'   }
-#' @source [Growth, Survival, and Cohort Formation of Juvenile Lost River (Deltistes luxatus) and Shortnose Suckers (Chasmistes brevirostris) in Upper Klamath Lake, Oregon, and Clear Lake Reservoir, California—2021–22 Monitoring Report](https://doi.org/10.3133/ofr20241013)
+#' @source \href{Growth, Survival, and Cohort Formation of Juvenile Lost River (Deltistes luxatus) and Shortnose Suckers (Chasmistes brevirostris) in Upper Klamath Lake, Oregon, and Clear Lake Reservoir, California—2021–22 Monitoring Report}{https://doi.org/10.3133/ofr20241013}
 'sucker_juvenile_survival'

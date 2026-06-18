@@ -8,7 +8,7 @@
 A tibble with 265 rows and 13 columns
 \itemize{
   \item \code{julian_year}: julian year (1999-2022). Min/max years vary by location, species, type of estimate.
-  \item \code{stream}: stream ("upper klamath lake")
+  \item \code{location}: location of data collection or estimate. This may be a river, wetland or marsh, hatchery, etc
   \item \code{species}: species (lost river sucker lakeshore spawning, lost river sucker river spawning, shortnose sucker)
   \item \code{lifestage}: lifestage category (adult)
   \item \code{sex}: sex, if applicable to model (female, male, NA)
@@ -20,7 +20,7 @@ A tibble with 265 rows and 13 columns
   \item \code{estimation_method}: type of model used (Cormack-Jolly-Seber model)
   \item \code{is_complete_estimate}: data included in model are complete. In some cases, it is known that an
   estimate is not complete, otherwise it is assumed that estimate is complete.
-  \item \code{source}: describes where data were sourced from. Currently there is one source: Hewitt, D.A., Janney, E.C., Hayes, B.S., and Harris, A.C., 2018, Status and trends of adult Lost River (Deltistes luxatus) and shortnose (Chasmistes brevirostris) sucker populations in Upper Klamath Lake, Oregon, 2017: U.S. Geological Survey Open-File Report 2018-1064, 31 p., https://doi.org/10.3133/ofr20181064. (https://pubs.usgs.gov/of/2018/1064/ofr20181064.pdf)
+  \item \code{source}: describes where data were sourced from. Currently there is one source: Hewitt, D.A., Janney, E.C., Hayes, B.S., and Harris, A.C., 2018, Status and trends of adult Lost River (Deltistes luxatus) and shortnose (Chasmistes brevirostris) sucker populations in Upper Klamath Lake, Oregon, 2017: \href{U.S. Geological Survey Open-File Report 2018-1064, 31 p}{https://pubs.usgs.gov/of/2018/1064/ofr20181064.pdf}.
   }
 }
 \usage{

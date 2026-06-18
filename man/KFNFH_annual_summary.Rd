@@ -7,7 +7,7 @@
 \format{
 A tibble with 9 rows and 12 columns
 \itemize{
-  \item \code{hatchery_name}: name of hatchery (KFNFH)
+  \item \code{location}: location of data collection or estimate. This may be a river, wetland or marsh, hatchery, etc. (KFNFH)
   \item \code{fiscal_year}: fiscal year
   \item \code{larvae_collected}: number of wild larval suckers collected
   \item \code{sarp_release}: number of fish released or transferred that were raised in the Sucker Assisted Rearing Program (SARP)

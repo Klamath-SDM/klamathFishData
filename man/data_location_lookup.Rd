@@ -7,15 +7,15 @@
 \format{
 A tibble with 35 rows and 10 columns
 \itemize{
-  \item \code{stream}: stream
+  \item \code{location}: location of data collection or estimate. This may be a river, wetland or marsh, hatchery, etc
   \item \code{sub_basin}: sub-basin name (upper klamath, lower klamath, trinity, shasta)
   \item \code{data_type}: type of data (rst, hatchery, redd/carcass survey)
   \item \code{site_name}: name of site such as a RST site or hatchery location (big bar, shasta river, bogus, willow creek, pear creek, weitchpec, iron gate fish hatchery, trinity river hatchery, klamath hatchery)
   \item \code{agency}: agency that manages/monitors the site (arcata fwo, arcata fwo, cdfw, hoopa tribal fisheries department, karuk, yurok tribal fisheries program, usfws)
   \item \code{latitude}: longitude
   \item \code{longitude}: longitude
-  \item \code{downstream_latitude}: Latitude of the downstream end of the feature's extent, applicable for survey extents
-  \item \code{downstream_longitude}: Longitude of the downstream end of the feature's extent, applicable for survey extents
+  \item \code{downstream_latitude}: latitude of the downstream end of the feature's extent, applicable for survey extents
+  \item \code{downstream_longitude}: longitude of the downstream end of the feature's extent, applicable for survey extents
   \item \code{link}: web link containing more information about fisheries locations
   }
 }

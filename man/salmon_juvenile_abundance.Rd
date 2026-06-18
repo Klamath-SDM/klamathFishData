@@ -8,7 +8,7 @@
 A tibble with 122 rows and 14 columns
 \itemize{
   \item \code{julian_year}: julian year (2001-2022). Min/max years vary by location, species, type of estimate. Juvenile abundance typically spans multiple years (e.g. Oct 2020 - May 2021) and would be assigned a julian year for the latter part of this period.
-  \item \code{stream}: stream ("scott river", "shasta river")
+  \item \code{location}: location of data collection or estimate. This may be a river, wetland or marsh, hatchery, etc
   \item \code{species}: species (coho salmon, steelhead, fall chinook salmon)
   \item \code{origin}: origin (wild)
   \item \code{lifestage}: lifestage category (yoy, age 1+, age 2+, smolt)
@@ -21,7 +21,8 @@ A tibble with 122 rows and 14 columns
   \item \code{estimation_method}: type of model used (mark-recapture)
   \item \code{is_complete_estimate}: data included in model are complete. In some cases, it is known that an
   estimate is not complete, otherwise it is assumed that estimate is complete.
-  \item \code{source}: describes where data were sourced from. Currently there is one data source: (1) California Department of Fish and Wildlife (CDFW) document library (https://www.nrm.dfg.ca.gov/documents/ContextDocs.aspx?cat=Fisheries--AnadromousSalmonidPopulationMonitoring)
+  \item \code{source}: describes where data were sourced from. Currently there is one data source: (1) California Department of Fish and Wildlife (CDFW)
+  \href{https://www.nrm.dfg.ca.gov/documents/ContextDocs.aspx?cat=Fisheries--AnadromousSalmonidPopulationMonitoring}{document library}
   }
 }
 \usage{

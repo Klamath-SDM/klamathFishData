@@ -8,7 +8,7 @@
 A tibble with 30 rows and 6 columns
 \itemize{
   \item \code{taxa}: taxa (lost river suckers, shortnose suckers/klamath largescale suckers/SNS/KLS)
-  \item \code{location}: location of suckers (upper klamath lake)
+  \item \code{location}: location of data collection or estimate. This may be a river, wetland or marsh, hatchery, etc. (upper klamath lake)
   \item \code{year}: julian year (2015-2022)
   \item \code{age}: age of suckers (age-0 or age-0-age-1)
   \item \code{survival_indice_type}: type of survival indice estimate (august to september and september to june)
@@ -16,7 +16,7 @@ A tibble with 30 rows and 6 columns
   }
 }
 \source{
-[Growth, Survival, and Cohort Formation of Juvenile Lost River (Deltistes luxatus) and Shortnose Suckers (Chasmistes brevirostris) in Upper Klamath Lake, Oregon, and Clear Lake Reservoir, California—2021–22 Monitoring Report](https://doi.org/10.3133/ofr20241013)
+\href{Growth, Survival, and Cohort Formation of Juvenile Lost River (Deltistes luxatus) and Shortnose Suckers (Chasmistes brevirostris) in Upper Klamath Lake, Oregon, and Clear Lake Reservoir, California—2021–22 Monitoring Report}{https://doi.org/10.3133/ofr20241013}
 }
 \usage{
 sucker_juvenile_survival
@@ -24,6 +24,6 @@ sucker_juvenile_survival
 \description{
 This dataset compiles modeled estimates of juvenile sucker survival
 for both age-0 and age-0 to age-1 for Upper Klamath Lake from 2015-2022. These data
-are from Martin et al. 2024 (https://doi.org/10.3133/ofr20241013)
+are from \href{Martin et al. 2024}{https://doi.org/10.3133/ofr20241013}
 }
 \keyword{datasets}

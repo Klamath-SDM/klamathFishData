@@ -7,24 +7,24 @@
 \format{
 A tibble with 39 rows and 16 columns
 \itemize{
-  \item{location}: Waterbody or colony area where piscivorous waterbirds nested and where PIT tags were recovered (upper klamath lake, clear lake reservoir, sheepy lake)
-  \item{species}: Fish species associated with each release group (e.g. sucker, chinook salmon)
-  \item{life_stage}: Fish life stage (e.g. juvenile, adult)
-  \item{origin}: Origin of realeased fish (e.g. hatchery, wild)
-  \item{release_season}: Season when fish were realeased (e.g. spring_summer, fall_winter)
-  \item{sarp_program}: Whether fish are part of the Sucker Assisted Rearing Program (SARP) (e.g. TRUE, FALSE)
+  \item{location}: location of data collection or estimate. This may be a river, wetland or marsh, hatchery, etc. (upper klamath lake, clear lake reservoir, sheepy lake)
+  \item{species}: fish species associated with each release group (e.g. sucker, chinook salmon)
+  \item{life_stage}: fish life stage (e.g. juvenile, adult)
+  \item{origin}: origin of realeased fish (e.g. hatchery, wild)
+  \item{release_season}: season when fish were realeased (e.g. spring_summer, fall_winter)
+  \item{sarp_program}: whether fish are part of the Sucker Assisted Rearing Program (SARP) (e.g. TRUE, FALSE)
   \item{year}: Year (2021–2023)
-  \item{percent_estimate}: Estimated predation rate (% of available fish consumed). This is a statistically adjusted percentage that accounts for the probability of a bird depositing a tag on a colony and the probability of a
+  \item{percent_estimate}: estimated predation rate (% of available fish consumed). This is a statistically adjusted percentage that accounts for the probability of a bird depositing a tag on a colony and the probability of a
   researcher successfully detecting that tag. Predation estimates are adjusted to account for PIT tag detection and deposition probabilities that were unique to each predator species, colony, and year
-  \item{lower_ci_pct}: Lower 95% credible interval. This interval provides the range in which the true predation rate is likely to fall. Predation rates are estimates derived from a hierarchical Bayesian model.
-  \item{upper_ci_pct}: Upper 95% credible interval. This interval provides the range in which the true predation rate is likely to fall. Predation rates are estimates derived from a hierarchical Bayesian model.
-  \item{number_adults_tagged}: Total number of PIT-tagged fish (both adults and juveniles) present in the study area and considered "available" to avian predators during the specified year
-  \item{number_recovered_tags}: Raw count of physical PIT-tags recovered on piscivorous waterbird colonies during the 2021–2023 breeding seasons.
+  \item{lower_ci_pct}: lower 95% credible interval. This interval provides the range in which the true predation rate is likely to fall. Predation rates are estimates derived from a hierarchical Bayesian model.
+  \item{upper_ci_pct}: upper 95% credible interval. This interval provides the range in which the true predation rate is likely to fall. Predation rates are estimates derived from a hierarchical Bayesian model.
+  \item{number_adults_tagged}: total number of PIT-tagged fish (both adults and juveniles) present in the study area and considered "available" to avian predators during the specified year
+  \item{number_recovered_tags}: raw count of physical PIT-tags recovered on piscivorous waterbird colonies during the 2021–2023 breeding seasons.
 }
 }
 \source{
 Bird Research Northwest (2023)
-[Avian Predation on UKB Suckers 2021–2023 Summary Report](https://birdresearchnw.org/brn-publications/avian-predation-on-ukb-suckers-summary-report-2021-2023/)
+\href{https://birdresearchnw.org/brn-publications/avian-predation-on-ukb-suckers-summary-report-2021-2023/}{Avian Predation on UKB Suckers 2021–2023 Summary Report}
 }
 \usage{
 avian_predation_estimates
