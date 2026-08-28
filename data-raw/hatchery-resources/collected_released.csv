@@ -1,0 +1,11 @@
+fiscal_year,larvae_collected,sarp_release,sarp_tl_mm,fingerling_release,fingerling_tl_mm,fry_release,fry_tl_mm,salvage_release,salvage_length,salvage_length_unit,total_released,broodstock_on_station_raw,broodstock_cohort_years,new_broodstock_reported,broodstock_on_station
+2016,4134,NA,NA,NA,NA,NA,NA,NA,NA,NA,0,NA,NA,NA,NA
+2017,8730,NA,NA,NA,NA,NA,NA,NA,NA,NA,0,NA,NA,NA,NA
+2018,9544,2355,147,NA,NA,NA,NA,784,102,SL,3139,NA,NA,NA,NA
+2019,24426,4497,189,NA,NA,NA,NA,1586,103,SL,6083,NA,NA,NA,NA
+2020,40603,11774,223,NA,NA,NA,NA,1928,94,SL,13702,NA,NA,NA,NA
+2021,106710,13394,208,NA,NA,NA,NA,1689,143,SL,15083,over 650,CY2017-2019,300,650
+2022,51929,12768,193,4655,118,19993,10,NA,NA,NA,37416,NA,NA,NA,NA
+2023,6036,17399,194,15604,89,14973,10,436,129,TL,48412,"approximately 1,369",CY2017-2022,NA,1369
+2024,30142,12433,221,NA,NA,4632,10,801,126,TL,17866,"approximately 1,341",CY2017-2022,NA,1341
+2025,70049,2623,223,NA,NA,23719,10,112,144,TL,26454,"approximately 1,119",CY2017-2024,NA,1119

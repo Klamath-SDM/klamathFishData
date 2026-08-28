@@ -1,0 +1,780 @@
+---
+title: "Hatchery Data Exploration"
+author: "Ashley Vizek"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    theme: flatly
+    toc: true
+    toc_float: true
+    toc_depth: 2
+    code_folding: show
+    df_print: kable
+---
+
+```{r setup, include=FALSE}
+# Force the knit root to the project root regardless of IDE "knit directory"
+# defaults (which are often "Document Directory") - every path below is
+# written relative to the project root (e.g. "data-raw/hatchery-resources/...").
+knitr::opts_knit$set(root.dir = rprojroot::find_root(rprojroot::has_file("DESCRIPTION")))
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,
+                       fig.width = 8, fig.height = 4.5, dpi = 120)
+library(tidyverse)
+library(readxl)
+library(wesanderson)
+library(klamathFishData)
+
+# Wes Anderson "Zissou1" palette (The Life Aquatic) - blue -> teal -> yellow -> orange -> red
+pal_zissou <- wes_palette("Zissou1", 5, type = "discrete")
+pal_binary <- as.character(pal_zissou[c(1, 5)])     # 2-level comparisons (e.g. pond vs harvest)
+pal_sequence <- as.character(pal_zissou[c(1, 3, 5)]) # ordered/time series (e.g. fiscal year)
+pal_categorical <- as.character(pal_zissou[c(1, 2, 4, 5)]) # up to 4 unordered categories
+
+theme_hatchery <- function(base_size = 12) {
+  theme_minimal(base_size = base_size) +
+    theme(
+      plot.title = element_text(face = "bold", size = rel(1.15), color = "grey15"),
+      plot.subtitle = element_text(color = "grey40", size = rel(0.9)),
+      plot.title.position = "plot",
+      panel.grid.minor = element_blank(),
+      panel.grid.major = element_line(color = "grey90", linewidth = 0.3),
+      axis.title = element_text(color = "grey30", size = rel(0.9)),
+      axis.text = element_text(color = "grey40"),
+      legend.position = "bottom",
+      legend.title = element_text(face = "bold", size = rel(0.85)),
+      strip.background = element_rect(fill = "grey95", color = NA),
+      strip.text = element_text(face = "bold", color = "grey20")
+    )
+}
+theme_set(theme_hatchery())
+```
+
+<style>
+.callout-questions {
+  border-left: 4px solid #E1AF00;
+  background-color: #FDF6E3;
+  padding: 0.1em 1.2em;
+  margin: 1em 0;
+  border-radius: 4px;
+}
+.callout-questions > p:first-child {
+  margin-top: 0.8em;
+  font-weight: bold;
+  text-transform: uppercase;
+  font-size: 0.8em;
+  letter-spacing: 0.04em;
+  color: #8a6d00;
+}
+.callout-questions > ul:last-child,
+.callout-questions > p:last-child {
+  margin-bottom: 0.8em;
+}
+</style>
+
+The goal of this document is to explore data from the Klamath Falls National Fish Hatchery and produce preliminary data objects to support the sucker hatchery DSM model development.
+
+KFNFH Data Contact: Michelle Jackson, michelle_jackson@fws.gov
+
+Source files live in `data-raw/hatchery-resources/`
+
+Each section includes **Key Output** and **Next Steps**. The key output is shared as csv files. We need feedback on what is useful so we can decide what to integrate as R data objects in our packages. The next steps outlines specific questions we have.
+
+## 1. Age / Facility Lookup
+
+**Key Output**
+
+- `usfws_sarp_age_facility_lookup`
+
+::: {.callout-questions}
+**Next Steps / Questions**
+
+- Is it worth working with USFWS to track down the starting counts that we couldn't fill in?
+:::
+
+**Details**
+
+USFWS does not maintain a data table that maps facilities to fish age so we built one using the information provided to us. We also tried to add in the starting count of fish those this value is complicated as it may change through the year. Currently we just use the starting count. In some cases we couldn't find any numbers and those are left blank.
+
+`usfws_sarp_age_facility_lookup` maps each facility (pond/tank/net pen) to the
+age group(s) reared there, by fiscal year - facilities are re-purposed for
+different age classes across years, so the same facility code can carry a
+different age in another fiscal year. Some facilities held more than one age
+group in the same year (e.g. `"1/2/3"`); `wild` and `other` also occur.
+
+```{r}
+usfws_sarp_age_facility_lookup <- read_csv("data-raw/hatchery-resources/usfws_sarp_age_facility_lookup.csv") |>
+  mutate(facility = str_to_upper(facility))
+
+glimpse(usfws_sarp_age_facility_lookup)
+```
+
+## 2. Mortality events
+
+**Key Output**
+
+- `mortality_events_summary`
+- `mortality_spreadsheets`
+
+::: {.callout-questions}
+**Next Steps / Questions**
+
+- Is it worth it to work with USFWS to assign numbers to the `mortality_events_summary` or do we have what we need?
+:::
+
+### Mortality events from the KFNFH reports
+
+Jim Peterson provided this guidance, "Record the disease/catastrophic-event using the narratives into a frequency and severity estimate, ideally in consultation with Mark’s staff to confirm which events should count as "catastrophic" vs. "severe infection" and to fill in mortality magnitudes the reports leave qualitative."
+
+We reviewed FY2021-2024 KFNFH Reports and synthesized narrative descriptions of mortality (or other) events at the hatchery. 
+
+`mortality_events_summary` simplifies a more detailed table we created (`mortality_events`). Most events do not have a quantity attached.
+
+```{r}
+mortality_events <- read_csv("data-raw/hatchery-resources/mortality_events.csv")
+mortality_events_summary <- read_csv("data-raw/hatchery-resources/mortality_events_summary.csv")
+glimpse(mortality_events_summary)
+```
+
+### Mortality events from KFNFH mortality spreadsheets
+
+In addition to the narrative annual reports, KFNFH keeps daily water-quality/mortality
+logs. A mortality spreadsheet exists in the FY2023, FY2024, and FY2025
+"Supporting Excel Tables" folders. These are recorded at different granularity:
+
+  - **FY2023** (`Fiscal Year 23 WQ_Mortality reporting.xlsx`): pre-tabulated as a
+    pond x month matrix (`Pond Mortality FY 23` sheet), covering FY2023 (Oct 2022-Sep 2023).
+    A separate `Harvest Morts FY 23` sheet records per-event mortality specifically
+    during harvest operations (pond, harvest date, count) - a distinct process from
+    routine pond mortality, so it is kept in its own `type` category below rather
+    than folded into the pond totals.
+  - **FY2024** (`Copy of 2024_KFNFH_WQ.xlsx`): daily per-pond water quality
+    readings with a `Morts` column, split across `JanToMar_WQ`, `ApriltoJune_WQ`,
+    and `JulytoSeptember_WQ` sheets. This workbook only covers Jan-Sep 2024 -
+    the Oct-Dec 2023 quarter was not found, so FY2024 totals below are a partial year.
+  - **FY2025** (`KFNFH_WQ_FY2025_2 (version 1).xlsx`): same daily per-pond format,
+    split across `OctobertoDecember_WQ`, `JantoMar_WQ`, `AprtoJun_WQ`, and
+    `JulytoSept_WQ` sheets, covering the full FY2025 (Oct 2024-Sep 2025).
+
+We combined all the years together to make it easier to use the data and also added the age/facility lookup to have some understanding of the age of fish associated with the mortality event. 
+
+```{r, include = F}
+read_wq_mortality <- function(path, sheet, fiscal_year) {
+  read_excel(path, sheet = sheet, col_types = "text") |>
+    rename_with(str_to_lower) |>
+    transmute(
+      fiscal_year = fiscal_year,
+      pond = str_to_upper(pond),
+      date = as.Date(suppressWarnings(as.numeric(date)), origin = "1899-12-30"),
+      mortality = suppressWarnings(as.numeric(morts))
+    ) |>
+    filter(!is.na(mortality)) |>
+    mutate(month = as.character(month(date, label = TRUE, abbr = TRUE)),
+           type = "pond") |>
+    select(fiscal_year, month, pond, mortality, type)
+}
+
+fy2024_wq_path <- "data-raw/hatchery-resources/FY2024 Supporting Excel Tables/Copy of 2024_KFNFH_WQ.xlsx"
+mortality_fy2024 <- c("JanToMar_WQ", "ApriltoJune_WQ", "JulytoSeptember_WQ") |>
+  map(~ read_wq_mortality(fy2024_wq_path, .x, 2024)) |>
+  list_rbind()
+
+fy2025_wq_path <- "data-raw/hatchery-resources/FY2025 Supporting Excel Tables/KFNFH_WQ_FY2025_2 (version 1).xlsx"
+mortality_fy2025 <- c("OctobertoDecember_WQ", "JantoMar_WQ", "AprtoJun_WQ", "JulytoSept_WQ") |>
+  map(~ read_wq_mortality(fy2025_wq_path, .x, 2025)) |>
+  list_rbind()
+
+fy2023_wq_path <- "data-raw/hatchery-resources/FY2023 Supporting Excel Tables/Fiscal Year 23 WQ_Mortality reporting.xlsx"
+pond_mortality_fy2023_wide <- read_excel(fy2023_wq_path, sheet = "Pond Mortality FY 23", col_types = "text")
+names(pond_mortality_fy2023_wide)[1] <- "month"
+names(pond_mortality_fy2023_wide)[ncol(pond_mortality_fy2023_wide)] <- "monthly_total"
+
+mortality_fy2023 <- pond_mortality_fy2023_wide |>
+  filter(!is.na(month), month != "Total") |>
+  select(-monthly_total) |>
+  pivot_longer(-month, names_to = "pond", values_to = "mortality") |>
+  transmute(
+    fiscal_year = 2023,
+    month = str_sub(month, 1, 3),
+    pond,
+    mortality = suppressWarnings(as.numeric(na_if(mortality, "-"))),
+    type = "pond"
+  ) |>
+  filter(!is.na(mortality))
+
+harvest_fy2023_wide <- read_excel(fy2023_wq_path, sheet = "Harvest Morts FY 23", col_types = "text")
+harvest_header_row <- which(harvest_fy2023_wide[[1]] == "Pond")
+
+harvest_fy2023 <- harvest_fy2023_wide[(harvest_header_row + 1):nrow(harvest_fy2023_wide), 1:3] |>
+  set_names(c("pond", "harvest_date", "mortality")) |>
+  filter(!is.na(pond)) |>
+  transmute(
+    fiscal_year = 2023,
+    harvest_date = as.Date(as.numeric(harvest_date), origin = "1899-12-30"),
+    month = as.character(month(harvest_date, label = TRUE, abbr = TRUE)),
+    pond = str_to_upper(pond),
+    mortality = as.numeric(mortality),
+    type = "harvest"
+  ) |>
+  select(fiscal_year, month, pond, mortality, type)
+```
+
+```{r}
+mortality_spreadsheets <- bind_rows(mortality_fy2023, mortality_fy2024, mortality_fy2025, harvest_fy2023) |>
+  left_join(usfws_sarp_age_facility_lookup, by = c("fiscal_year", "pond" = "facility"))
+
+glimpse(mortality_spreadsheets)
+write_csv(mortality_spreadsheets, "data-raw/hatchery-resources/mortality_spreadsheets_combined.csv")
+```
+
+Every fiscal_year/pond combination in `mortality_spreadsheets` has a matching row
+in `usfws_sarp_age_facility_lookup`, so this join adds an `age` group to every
+mortality record without dropping or duplicating any rows. Some facilities carry
+more than one age group in a given year (e.g. `"1/2/3"`), so `age` should be
+treated as "which age group(s) were present," not a single clean value.
+
+**Total mortality by fiscal year**, split into routine pond mortality (from daily/monthly
+WQ checks) vs. harvest-related mortality (currently only digitized for FY2023):
+
+```{r}
+mortality_spreadsheets |>
+  group_by(fiscal_year, type) |>
+  summarise(total_mortality = sum(mortality), n_records = n(), .groups = "drop") |>
+  pivot_wider(names_from = type, values_from = c(total_mortality, n_records), values_fill = 0) |>
+  mutate(total_mortality_all = total_mortality_pond + coalesce(total_mortality_harvest, 0))
+```
+
+**Ponds with the greatest cumulative mortality**, all types combined, by fiscal year:
+
+```{r}
+mortality_spreadsheets |>
+  group_by(fiscal_year, pond) |>
+  summarise(total_mortality = sum(mortality), .groups = "drop") |>
+  arrange(fiscal_year, desc(total_mortality)) |>
+  group_by(fiscal_year) |>
+  slice_max(total_mortality, n = 5) |>
+  ungroup()
+```
+
+**Monthly mortality trend**, ordered by fiscal year (Oct-Sep), pond vs. harvest mortality:
+
+```{r}
+fy_month_order <- c("Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep")
+
+mortality_spreadsheets |>
+  mutate(month = factor(as.character(month), levels = fy_month_order)) |>
+  group_by(fiscal_year, month, type) |>
+  summarise(total_mortality = sum(mortality), .groups = "drop") |>
+  ggplot(aes(x = month, y = total_mortality, color = as_factor(fiscal_year),
+             linetype = type, group = interaction(fiscal_year, type))) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 1.8) +
+  scale_color_manual(values = pal_sequence) +
+  scale_y_continuous(labels = scales::label_comma()) +
+  labs(x = "Month (fiscal year)", y = "Total Mortality", color = "Fiscal Year", linetype = "Type",
+       title = "Monthly Mortality Recorded in KFNFH WQ/Mortality Logs")
+```
+
+- Both FY2024 and FY2025 show a large late-summer mortality spike (Aug 2024;
+Jul-Sep 2025), concentrated in a handful of ponds (see table above).
+
+- FY2023 harvest mortality (1,785 fish) is larger than FY2023 routine pond
+mortality (733 fish) and is concentrated in Feb/Mar/Apr/Dec harvests - since
+only FY2023 has harvest mortality digitized so far, it is not yet possible to
+tell whether that pattern holds in other years.
+
+### Reconciling narrative events with the mortality spreadsheets
+
+`mortality_events` is built from narrative descriptions in the FY2021-2024 annual
+reports; `mortality_spreadsheets` is built from the underlying FY2023-2025 daily
+WQ/harvest logs. To see where they actually overlap, we pull any pond code
+(e.g. `P12`, `A2`) mentioned in an event's location and look up that pond in the
+spreadsheet data:
+
+```{r, include = F}
+events_pond_refs <- mortality_events |>
+  transmute(
+    event_id = `Event ID`,
+    date_period = `Date / Period`,
+    location = `Location / Pond-Tank-Pen`,
+    pond = str_extract_all(location, "\\b[ABCP]\\d{1,2}\\b")
+  ) |>
+  unnest(pond, keep_empty = TRUE) |>
+  filter(!is.na(pond))
+
+events_pond_refs |>
+  left_join(
+    mortality_spreadsheets |>
+      group_by(fiscal_year, pond) |>
+      summarise(spreadsheet_mortality = sum(mortality), .groups = "drop"),
+    by = "pond", relationship = "many-to-many"
+  ) |>
+  arrange(event_id, fiscal_year) |>
+  select(event_id, date_period, pond, fiscal_year, spreadsheet_mortality)
+```
+
+Only 5 of the 28 narrative events mention a pond code from the P/A/B/C outdoor
+series at all - the rest occurred in net pens (UKL, Gerber), tanks (Salvage
+Building, greenhouse research racks), or in-transport, none of which are
+covered by these pond-level WQ/harvest logs, so most events are structurally
+impossible to cross-check this way. Of the 5:
+
+  - **E22** (Ponds P12 & P13, mid-to-late Aug 2024) is a strong match. The report
+    narrative gives "several thousand fish lost" out of 6,039 stocked, roughly
+    30-65% by a rough read. The spreadsheet shows 2,955 mortalities in P12+P13
+    in August alone (2,986 for FY2024 overall) - 49% of the 6,039 stocked,
+    squarely inside the narrative's estimated range and a real quantification
+    of an event the report could only describe qualitatively.
+  - **E10** (Pond P9, December 2022, tetany) does not clearly match - the FY2023
+    spreadsheet shows 22 mortalities at P9 in *November*, and none recorded in
+    December. This could be a reporting-period mismatch, an event too small to
+    stand out in the daily log, or a gap in the WQ log itself.
+  - **E09** (Ponds A2 & A4, Aug-Sept 2022) predates the spreadsheet coverage
+    window (FY2023 begins Oct 2022), so it can't be checked against these logs
+    - the large FY2023 A2/A4 totals shown above are a later time period, not
+    the same event.
+  - **E16** (Tank C14, Jul 2023) does not match any spreadsheet pond - `C14` here
+    is a greenhouse larval-rearing tank, not one of the outdoor "C" ponds that
+    show up in the FY2025 pond mortality data (C1-C6); those are different
+    physical units that happen to share a naming convention.
+
+Separately, the large FY2025 mortality spike found in the spreadsheets
+(Jul-Sep 2025, concentrated in ponds C1, C2, C4-C6, and B3) has no narrative
+counterpart at all, since `mortality_events` was only synthesized from the
+FY2021-2024 reports. A `FY25 KFNFH Annual Report.pdf` already exists in
+`hatchery-resources/` and has not yet been reviewed for this catalog.
+
+## 3. Wild larvae collected/released/retained
+
+**Key Output**
+
+- `collected_released`
+- `broodstock_spawned`
+
+::: {.callout-questions}
+**Next Steps / Questions**
+
+- `Broodstock Currently On Station` is only reported as an approximate figure
+  in the source ("over 650", "approximately 1,369", etc.) - we parse out the
+  leading number, so `broodstock_on_station` is a floor/rounded estimate, not
+  an exact count.
+- One row in `broodstock_spawned` (2 LRS males) has capture year "N/A (not
+  recorded)" - kept as a missing `capture_year` rather than guessed at, so it
+  drops out of the by-year chart below.
+:::
+
+**Details**
+
+Using the KFNFH reports we can reconstruct the wild larvae collected,
+released, and retained as broodstock. `collected_released` covers FY2016-2025
+and adds broodstock-on-station figures; `broodstock_spawned` summarizes
+females/males spawned by capture year and species (SNS, LRS).
+
+```{r}
+collected_released <- read_csv("data-raw/hatchery-resources/collected_released.csv") |>
+  rename(any_of(c(
+    fiscal_year = "Fiscal Year",
+    larvae_collected = "Wild Larvae Collected",
+    sarp_release = "Production (SARP) Release #",
+    sarp_tl_mm = "Production Release Mean TL (mm)",
+    fingerling_release = "Fingerling Release #",
+    fingerling_tl_mm = "Fingerling Release Mean TL (mm)",
+    fry_release = "Fry Release #",
+    fry_tl_mm = "Fry Release Mean TL (mm)",
+    salvage_release = "Salvage Release #",
+    salvage_length = "Salvage Release Mean Length (mm)",
+    salvage_length_unit = "Salvage Length Unit",
+    total_released = "Total Released (all 4 categories)",
+    broodstock_on_station_raw = "Broodstock Currently On Station (as reported)",
+    broodstock_cohort_years = "Broodstock Cohort Years (as reported)",
+    new_broodstock_reported = "New Broodstock Explicitly Reported This FY"
+  ))) |>
+  mutate(broodstock_on_station = readr::parse_number(broodstock_on_station_raw))
+
+glimpse(collected_released)
+
+write_csv(collected_released, "data-raw/hatchery-resources/collected_released.csv")
+```
+
+```{r}
+collected_released |>
+  select(fiscal_year, larvae_collected, ends_with("_release")) |>
+  pivot_longer(ends_with("_release"), names_to = "release_type", values_to = "count") |>
+  ggplot(aes(x = as_factor(fiscal_year), y = count, fill = release_type)) +
+  geom_col(position = "dodge") +
+  scale_fill_manual(values = pal_categorical) +
+  scale_y_continuous(labels = scales::label_comma()) +
+  labs(x = "Fiscal Year", y = "Number of Fish", fill = "Release Type",
+       title = "Wild Larvae Collected vs Released")
+```
+
+**Broodstock currently on station**, where reported:
+
+```{r}
+collected_released |>
+  filter(!is.na(broodstock_on_station)) |>
+  ggplot(aes(x = as_factor(fiscal_year), y = broodstock_on_station)) +
+  geom_col(fill = pal_zissou[1]) +
+  scale_y_continuous(labels = scales::label_comma()) +
+  labs(x = "Fiscal Year", y = "Broodstock On Station (approx.)",
+       title = "Broodstock Currently On Station, as Reported")
+```
+
+```{r}
+broodstock_spawned <- read_csv("data-raw/hatchery-resources/broodstock_spawned.csv") |>
+  rename(any_of(c(
+    capture_year_raw = "Capture Year (CY)",
+    species = "Species",
+    females_spawned = "Females Spawned",
+    males_spawned = "Males Spawned",
+    total_spawned = "Total Spawned"
+  ))) |>
+  mutate(capture_year = suppressWarnings(as.numeric(capture_year_raw)))
+
+glimpse(broodstock_spawned)
+
+write_csv(broodstock_spawned, "data-raw/hatchery-resources/broodstock_spawned.csv")
+```
+
+```{r}
+broodstock_spawned |>
+  filter(!is.na(capture_year)) |>
+  select(capture_year, species, females_spawned, males_spawned) |>
+  pivot_longer(c(females_spawned, males_spawned), names_to = "sex", values_to = "n") |>
+  mutate(sex = str_remove(sex, "_spawned")) |>
+  ggplot(aes(x = as_factor(capture_year), y = n, fill = sex)) +
+  geom_col() +
+  facet_wrap(~species) +
+  scale_fill_manual(values = pal_binary) +
+  labs(x = "Capture Year", y = "Number Spawned", fill = "Sex",
+       title = "Broodstock Spawned by Capture Year and Species")
+```
+
+## 4. Pond/tank capacity
+
+**Key Output**
+
+- `usfws_sarp_capacity`
+
+::: {.callout-questions}
+**Next Steps**
+
+- Complete
+:::
+
+**Details**
+
+The goal was to compile pond/tank capacity by year and flag the construction discontinuity. For example, record both the "current constrained" and "planned full buildout" capacity as separate estimates rather than picking one.
+
+```{r}
+pond_tank_capacity <- read_csv(
+  "data-raw/hatchery-resources/usfws_sarp_capacity.csv",
+)
+
+glimpse(pond_tank_capacity)
+```
+
+```{r}
+pond_tank_capacity |>
+  ggplot(aes(x = as_factor(fiscal_year), y = acreage_outdoor_ponds, fill = capacity_type)) +
+  geom_col() +
+  scale_fill_manual(values = pal_binary) +
+  labs(x = "Fiscal Year", y = "Outdoor Pond Acreage", fill = "Capacity Type",
+       title = "KFNFH Outdoor Pond Capacity, Current vs Planned")
+```
+
+## 5. Wild LRS broodstock time series from family group
+
+**Key Output**
+
+- `wild_lrs_family_groups`
+
+::: {.callout-questions}
+**Next Steps / Questions**
+
+- One FY2025 wild LRS spawning row is an unattributed "Escaped" line item with
+  no female ID or spawning date (3,672 fry) - it's excluded from the time
+  series below since it can't be placed on a date, but it's a real fry
+  contribution worth accounting for elsewhere.
+:::
+
+**Details**
+
+`family_groups.csv` records each spawning/cross event (by female, program, and
+species) with the number of distinct family groups (males) crossed and the
+resulting egg/fry outcomes using Table 3 from the 2024 and 2025 reports. We filter to wild-collected LRS broodstock
+(`Program == "Wild ESS Spawning"`, `Species == "LRS"`) to match this section's
+scope; the same file also has FY2025 Captive Broodstock Spawning events for
+LRS and SNS, not used here.
+
+```{r, include = F}
+family_groups <- read_csv("data-raw/hatchery-resources/family_groups.csv") |>
+  rename(
+    fiscal_year = `Fiscal Year`,
+    program = Program,
+    species = Species,
+    source_table = `Source Table`,
+    spawning_date = `Spawning / Cross Date`,
+    female_id = `Female ID`,
+    n_males = `Number of Males in Cross`,
+    family_groups = `Family Groups`,
+    incubation_vessel = `Incubation Vessel`,
+    egg_volume_ml = `Egg Volume (mL)`,
+    eggs_per_ml = `Eggs per mL`,
+    total_eggs = `Total Eggs`,
+    fry_count = `1st Fry Count`,
+    hatch_rate_percent = `1st Hatch Rate (%)`,
+    hatch_date = `Hatch Date`
+  ) |>
+  mutate(spawning_date = mdy(spawning_date), hatch_date = mdy(hatch_date))
+
+glimpse(family_groups)
+```
+
+```{r}
+wild_lrs_family_groups <- family_groups |>
+  filter(program == "Wild ESS Spawning", species == "LRS", !is.na(spawning_date))
+write_csv(wild_lrs_family_groups, "data-raw/hatchery-resources/wild_lrs_family_groups.csv")
+
+wild_lrs_family_groups |>
+  select(fiscal_year, spawning_date, female_id, n_males, family_groups,
+         total_eggs, fry_count, hatch_rate_percent)
+```
+
+**Wild LRS spawning summary by fiscal year**:
+
+```{r}
+wild_lrs_family_groups |>
+  group_by(fiscal_year) |>
+  summarise(n_crosses = n(),
+            total_family_groups = sum(family_groups),
+            total_eggs = sum(total_eggs, na.rm = TRUE),
+            mean_hatch_rate = mean(hatch_rate_percent, na.rm = TRUE),
+            .groups = "drop")
+```
+
+```{r}
+wild_lrs_family_groups |>
+  ggplot(aes(x = spawning_date, y = family_groups, fill = family_groups)) +
+  geom_col() +
+  scale_fill_gradientn(colors = as.character(pal_zissou)) +
+  scale_x_date(date_labels = "%b %Y") +
+  labs(x = "Spawning Date", y = "Number of Family Groups", fill = "Family Groups",
+       title = "Wild LRS Broodstock Family Groups per Spawning Event")
+```
+
+## 6. Growth and survival by stage
+
+**Key Output**
+
+- `production_harvest`
+
+::: {.callout-questions}
+**Next Steps / Questions**
+
+- Weight-based growth and feed-conversion columns are not extracted yet (only
+  length-based growth in mm/day) - some seasons split weight across ambiguous
+  duplicate columns that need a visual check of the original spreadsheet
+  formatting to resolve correctly. Worth adding if useful for the DSM model?
+- `stocked_to` (destination pond/lot) is only populated for a handful of
+  seasons - is it worth going back through the older sheets to fill this in?
+:::
+
+**Details**
+
+Each fiscal year's "Supporting Excel Tables" folder includes a Production
+Harvest Data Sheet workbook with one sheet per stocking season (`Fall 2021`,
+`Spring 2022`, ... `Fall 2025`). Column layout drifts season to season (e.g.
+`Start #` vs `Start TL`, `End #` vs `End # Live`, `Daily Growth Rate (mm)` vs
+`Growth (mm/day)`), and some seasons are duplicated across multiple fiscal-year
+workbooks (e.g. `Fall 2021` appears in both the FY2023 and FY2024 files) - we
+take the most recently updated workbook's version of any repeated season,
+since later workbooks contain more complete records for the same season. Two
+sheets per workbook (`FALL 2023 MORTALITY`, `SPRING 2024 MORTALITY`) are pond x
+month mortality matrices rather than growth/harvest records, so they are
+excluded here and left for the mortality section above.
+
+We keep the core length/count fields needed for growth and survival (pond,
+lot, stocked/harvest dates, start/end counts, start/end total length, days in
+pond, growth rate in mm/day, harvest mortality, survival percent), matching
+each season's columns to a canonical name by pattern rather than by fixed
+position, since the exact column set/order is not stable across seasons.
+
+```{r, include = F}
+extract_col <- function(raw, pattern) {
+  matched <- names(raw)[str_detect(str_squish(names(raw)), regex(pattern, ignore_case = TRUE))]
+  if (length(matched) == 0) return(rep(NA_character_, nrow(raw)))
+  if (length(matched) == 1) return(raw[[matched]])
+  exec(coalesce, !!!as.list(raw[matched]))
+}
+
+read_production_harvest <- function(path, sheet, season) {
+  raw <- read_excel(path, sheet = sheet, col_types = "text")
+
+  tibble(
+    pond = extract_col(raw, "^Pond$"),
+    lot = extract_col(raw, "^Lot$"),
+    stocked_date_raw = extract_col(raw, "^Stocked? Date$"),
+    start_number_raw = extract_col(raw, "^Start #$"),
+    start_tl_mm_raw = extract_col(raw, "^Start TL$"),
+    harvest_date_raw = extract_col(raw, "^Harvest Date$"),
+    end_number_raw = extract_col(raw, "^End # Live$|^End #$"),
+    end_tl_mm_raw = extract_col(raw, "^End TL$"),
+    days_in_pond_raw = extract_col(raw, "^Days in Pond$"),
+    growth_mm_day_raw = extract_col(raw, "^Daily Growth Rate \\(mm\\)$|^Growth \\(mm/day\\)$"),
+    harvest_morts_raw = extract_col(raw, "^Harv(est)? Morts$"),
+    survival_percent_raw = extract_col(raw, "^Survival$"),
+    stocked_to = extract_col(raw, "^Stocked ?[Tt]o(/#)?$")
+  ) |>
+    filter(!is.na(pond), pond != "Pond") |>
+    transmute(
+      season = season,
+      season_type = str_extract(season, "^[A-Za-z]+"),
+      season_year = as.numeric(str_extract(season, "\\d{4}")),
+      pond = str_to_upper(pond),
+      lot,
+      stocked_date = as.Date(suppressWarnings(as.numeric(stocked_date_raw)), origin = "1899-12-30"),
+      start_number = suppressWarnings(as.numeric(start_number_raw)),
+      start_tl_mm = suppressWarnings(as.numeric(start_tl_mm_raw)),
+      harvest_date = as.Date(suppressWarnings(as.numeric(harvest_date_raw)), origin = "1899-12-30"),
+      end_number = suppressWarnings(as.numeric(end_number_raw)),
+      end_tl_mm = suppressWarnings(as.numeric(end_tl_mm_raw)),
+      days_in_pond = suppressWarnings(as.numeric(days_in_pond_raw)),
+      growth_mm_day = suppressWarnings(as.numeric(growth_mm_day_raw)),
+      harvest_morts = suppressWarnings(as.numeric(harvest_morts_raw)),
+      survival_percent = suppressWarnings(as.numeric(survival_percent_raw)),
+      stocked_to
+    )
+}
+
+production_harvest_sources <- tribble(
+  ~path, ~sheet, ~season,
+  "data-raw/hatchery-resources/FY2024 Supporting Excel Tables/Production Harvest Data Sheet.xlsx", "Fall 2021", "Fall 2021",
+  "data-raw/hatchery-resources/FY2024 Supporting Excel Tables/Production Harvest Data Sheet.xlsx", "Spring 2022", "Spring 2022",
+  "data-raw/hatchery-resources/FY2024 Supporting Excel Tables/Production Harvest Data Sheet.xlsx", "Fall 2022", "Fall 2022",
+  "data-raw/hatchery-resources/FY2024 Supporting Excel Tables/Production Harvest Data Sheet.xlsx", "SPRING 2023", "Spring 2023",
+  "data-raw/hatchery-resources/FY2024 Supporting Excel Tables/Production Harvest Data Sheet.xlsx", "FALL 2023", "Fall 2023",
+  "data-raw/hatchery-resources/FY2024 Supporting Excel Tables/Production Harvest Data Sheet.xlsx", "SPRING 2024", "Spring 2024",
+  "data-raw/hatchery-resources/FY2025 Supporting Excel Tables/FY2025 Production Harvest Data Sheet_20251107.xlsx", "FALL 2024", "Fall 2024",
+  "data-raw/hatchery-resources/FY2025 Supporting Excel Tables/FY2025 Production Harvest Data Sheet_20251107.xlsx", "Spring 2025", "Spring 2025",
+  "data-raw/hatchery-resources/FY2025 Supporting Excel Tables/FY2025 Production Harvest Data Sheet_20251107.xlsx", "Fall 2025", "Fall 2025"
+)
+```
+
+```{r}
+production_harvest <- production_harvest_sources |>
+  pmap(read_production_harvest) |>
+  list_rbind()
+
+glimpse(production_harvest)
+```
+
+```{r}
+production_harvest <- production_harvest |>
+  mutate(survival_percent = if_else(survival_percent == 0 & is.na(end_number),
+                                     NA_real_, survival_percent)) |>
+  group_by(season) |>
+  mutate(survival_percent = case_when(
+    all(is.na(survival_percent)) ~ survival_percent,
+    max(survival_percent, na.rm = TRUE) <= 1 ~ survival_percent * 100,
+    TRUE ~ survival_percent
+  )) |>
+  ungroup()
+```
+
+`usfws_sarp_age_facility_lookup` is keyed by federal fiscal year (Oct-Sep), not
+by season label, so we derive a `fiscal_year` for each pond-season from its
+`harvest_date` (the same convention already used in `KFNFH_pond_growout` - a
+fish harvested in Oct-Dec is assigned to the fiscal year that just started).
+Ponds not yet harvested (mostly the in-progress `Fall 2025` season) get no
+`fiscal_year` and so no age match yet.
+
+```{r}
+production_harvest <- production_harvest |>
+  mutate(fiscal_year = year(harvest_date) + if_else(month(harvest_date) >= 10, 1, 0)) |>
+  left_join(usfws_sarp_age_facility_lookup, by = c("fiscal_year", "pond" = "facility"))
+
+glimpse(production_harvest)
+write_csv(production_harvest, "data-raw/hatchery-resources/production_harvest_combined.csv")
+```
+
+Of the 234 harvested rows with a derivable fiscal year, only 3 don't find a
+match in `usfws_sarp_age_facility_lookup` (`A3`/`A4` in FY2024 and `P17` in
+FY2025) - gaps in the lookup itself rather than a join problem.
+
+**Rows and mean survival by season**:
+
+```{r}
+production_harvest |>
+  group_by(season) |>
+  summarise(n_ponds = n(),
+            mean_survival = mean(survival_percent, na.rm = TRUE),
+            mean_growth_mm_day = mean(growth_mm_day, na.rm = TRUE),
+            .groups = "drop")
+```
+
+```{r}
+season_levels <- production_harvest_sources$season
+
+production_harvest |>
+  group_by(season, season_type) |>
+  summarise(mean_survival = mean(survival_percent, na.rm = TRUE), .groups = "drop") |>
+  mutate(season = factor(season, levels = season_levels)) |>
+  ggplot(aes(x = season, y = mean_survival, fill = season_type)) +
+  geom_col() +
+  scale_fill_manual(values = pal_binary) +
+  labs(x = "Season", y = "Mean Survival (%)", fill = "Season",
+       title = "Mean Pond Survival by Season") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r}
+production_harvest |>
+  filter(!is.na(growth_mm_day), !is.na(survival_percent)) |>
+  ggplot(aes(x = growth_mm_day, y = survival_percent, color = season_type)) +
+  geom_point(size = 2, alpha = 0.8) +
+  scale_color_manual(values = pal_binary) +
+  labs(x = "Growth Rate (mm/day)", y = "Survival (%)", color = "Season",
+       title = "Pond Growth Rate vs Survival, All Seasons")
+```
+
+**Growth and survival by age group**: a pond's `age` can carry more than one age
+group at once (e.g. `"1/2/3"`), so we split those into one row per age group
+before averaging - a pond like that contributes its growth/survival to every
+age group it held, since we don't know the split between them.
+
+```{r}
+age_levels <- c("0", "1", "2", "3", "4", "wild", "other")
+
+growth_survival_by_age <- production_harvest |>
+  filter(!is.na(age)) |>
+  separate_longer_delim(age, delim = "/") |>
+  mutate(age = factor(age, levels = age_levels)) |>
+  filter(!is.na(age)) |>
+  group_by(age) |>
+  summarise(n_ponds = n(),
+            mean_growth_mm_day = mean(growth_mm_day, na.rm = TRUE),
+            mean_survival_percent = mean(survival_percent, na.rm = TRUE),
+            .groups = "drop")
+
+growth_survival_by_age
+```
+
+```{r}
+growth_survival_by_age |>
+  pivot_longer(c(mean_growth_mm_day, mean_survival_percent), names_to = "metric", values_to = "value") |>
+  mutate(metric = recode(metric,
+                          mean_growth_mm_day = "Mean Growth (mm/day)",
+                          mean_survival_percent = "Mean Survival (%)")) |>
+  ggplot(aes(x = age, y = value, fill = age)) +
+  geom_col() +
+  facet_wrap(~metric, scales = "free_y") +
+  scale_fill_manual(values = colorRampPalette(as.character(pal_zissou))(length(age_levels))) +
+  labs(x = "Age Group", y = NULL, fill = "Age Group",
+       title = "Growth and Survival by Age Group")
+```
+
+Growth rate declines steadily with age (0s grow fastest, 3s/4s slowest, as
+expected for length-based growth), while mean survival is highest for age
+2-4 fish and clearly lower for `wild` and `other` - both smaller, more
+heterogeneous groups worth a closer look before reading too much into them.
+
