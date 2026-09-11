@@ -173,7 +173,7 @@ salmon_spawner_escapement <- salmon_spawner_escapement |>
           species = "fall chinook salmon",
           origin = "wild",
           lifestage = "adult",
-          estimate_type = "count",
+          estimate_type = "redd and video weir",
           estimate = 1835,
           lower_bounds_estimate = NA,
           upper_bounds_estimate = NA,

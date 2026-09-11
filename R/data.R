@@ -89,8 +89,8 @@
 #' \href{https://www.pcouncil.org/documents/2026/06/2026-run-klamath-river-fall-chinook-salmon-age-specific-escapement-river-harvest-and-run-size-estimates-2026-run-may-20-2026.pdf/}{Klamath River Technical Team Report 2026},
 #' obtained from the Pacific Fishery Management Council.
 #'
-#' ODFW Summary of field data collection efforts for Fall-run Chinook Salmon in the Oregon portion of the Mainstem Klamath River during the 2025 Season and
-#' ODFW Summary of field data collection efforts for fall-run Chinook Salmon in Spencer Creek, Oregon during the 2025 season
+#' Table 2 of ODFW Summary of field data collection efforts for Fall-run Chinook Salmon in the Oregon portion of the Mainstem Klamath River during the 2025 Season and
+#' Table 3 of ODFW Summary of field data collection efforts for fall-run Chinook Salmon in Spencer Creek, Oregon during the 2025 season
 #'
 #' @format A tibble with 1,858 rows and 13 columns
 #' \itemize{
