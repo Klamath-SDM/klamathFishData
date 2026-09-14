@@ -88,7 +88,11 @@
 #' from the
 #' \href{https://www.pcouncil.org/documents/2026/06/2026-run-klamath-river-fall-chinook-salmon-age-specific-escapement-river-harvest-and-run-size-estimates-2026-run-may-20-2026.pdf/}{Klamath River Technical Team Report 2026},
 #' obtained from the Pacific Fishery Management Council.
-#' @format A tibble with 1,854 rows and 13 columns
+#'
+#' Table 2 of ODFW Summary of field data collection efforts for Fall-run Chinook Salmon in the Oregon portion of the Mainstem Klamath River during the 2025 Season and
+#' Table 3 of ODFW Summary of field data collection efforts for fall-run Chinook Salmon in Spencer Creek, Oregon during the 2025 season
+#'
+#' @format A tibble with 1,858 rows and 13 columns
 #' \itemize{
 #'   \item \code{location}: River, hatchery, or basin where escapement is reported. ("bogus creek", "hoopa and yurok tributaries", "hoopa trinity tributaries", "iron gate hatchery", "klamath basin", "klamath river", "lower klamath river", "other klamath tributaries", "other klamath trinity tributaries", "other trinity tributaries", "salmon river", "scott river", "shasta river", "south fork trinity river", "trinity basin", "trinity river", "trinity river hatchery", "yurok klamath tributaries")
 #'   \item \code{year}: Return year of the escapement estimate/count (1978-2025)

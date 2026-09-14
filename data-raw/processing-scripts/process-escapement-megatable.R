@@ -162,6 +162,39 @@ salmon_spawner_escapement <- bind_rows(klamath_cdfw_population_processed,
          lifestage = case_when(lifestage == "adults" ~ "adult",
                                T ~ lifestage))
 
+# Adding data from the ODFW "Summary of field data collection efforts for fall-run Chinook Salmon
+# in Spencer Creek, Oregon during the 2025 season" Report and from
+# "Summary of field data collection efforts for Fall-run Chinook Salmon in the Oregon
+# portion of the Mainstem Klamath River during the 2025 Season" report
+
+salmon_spawner_escapement <- salmon_spawner_escapement |>
+  add_row(year = 2025,
+          location = "sprencer creek",
+          species = "fall chinook salmon",
+          origin = "wild",
+          lifestage = "adult",
+          estimate_type = "redd and video weir",
+          estimate = 1835,
+          lower_bounds_estimate = NA,
+          upper_bounds_estimate = NA,
+          estimation_method = NA,
+          is_complete_estimate = NA,
+          source = "ODFW Summary of field data collection efforts for fall-run
+          Chinook Salmon in Spencer Creek, Oregon during the 2025 season") |>
+  add_row(year = 2025,
+          location = "klamath river mainstem",
+          species = "fall chinook salmon",
+          origin = "wild",
+             lifestage = "adult",
+          estimate_type = "redd abundance",
+          estimate = 1468,
+          lower_bounds_estimate = NA,
+          upper_bounds_estimate = NA,
+          estimation_method = NA,
+          is_complete_estimate = NA,
+          source = "ODFW Report Summary of field data collection efforts for Fall-run Chinook Salmon in the Oregon
+          portion of the Mainstem Klamath River during the 2025 Season") #TODO check if we can add the source here, I'd be linked to google drive - public view
+
 # save clean data
 usethis::use_data(salmon_spawner_escapement, overwrite = TRUE)
 
