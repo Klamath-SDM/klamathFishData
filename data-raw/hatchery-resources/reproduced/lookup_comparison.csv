@@ -1,0 +1,238 @@
+fiscal_year,facility,age_curated,starting_count_curated,age_rebuilt,starting_count_rebuilt,source,series,status,starting_count_equal
+2019,UKLN,1,534,1,534,nphistory.xlsx,net pen,equal,TRUE
+2019,UKLS,2,480,2,480,nphistory.xlsx,net pen,equal,TRUE
+2020,A1,2,NA,NA,NA,NA,A,not derived,NA
+2020,A2,2,NA,NA,NA,NA,A,not derived,NA
+2020,A3,1/2/3,NA,2,2804,pond cycles,A,derived subset,NA
+2020,P11,1,NA,NA,NA,NA,P,not derived,NA
+2020,P12,1/3,NA,NA,NA,NA,P,not derived,NA
+2020,P13,1,NA,NA,NA,NA,P,not derived,NA
+2020,P14,1,NA,NA,NA,NA,P,not derived,NA
+2020,P15,1,NA,NA,NA,NA,P,not derived,NA
+2020,P5,1,NA,NA,NA,NA,P,not derived,NA
+2020,P8,1/2,NA,2,NA,pond cycles,P,derived subset,NA
+2020,P9,1,NA,1,NA,pond cycles,P,equal,NA
+2020,UKLN,1,220,1,220,nphistory.xlsx,net pen,equal,TRUE
+2021,A1,0,NA,0/1,6995,pond cycles,A,different,NA
+2021,A2,0/2,NA,0/2,2640,pond cycles,A,equal,NA
+2021,A3,2,NA,2,5120,pond cycles,A,equal,NA
+2021,A4,0,NA,0/1,6980,pond cycles,A,different,NA
+2021,B1,1,NA,1,529,pond cycles,B,equal,NA
+2021,B10,1,NA,1,532,pond cycles,B,equal,NA
+2021,B11,1,NA,1,531,pond cycles,B,equal,NA
+2021,B12,1,NA,1,533,pond cycles,B,equal,NA
+2021,B13,1,NA,1,533,pond cycles,B,equal,NA
+2021,B14,1,NA,1,533,pond cycles,B,equal,NA
+2021,B15,1/2,NA,1/2,97,pond cycles,B,equal,NA
+2021,B16,1,NA,1,532,pond cycles,B,equal,NA
+2021,B17,1,NA,1,532,pond cycles,B,equal,NA
+2021,B18,1,NA,1,532,pond cycles,B,equal,NA
+2021,B19,1,NA,1,533,pond cycles,B,equal,NA
+2021,B2,1,NA,1,1646,pond cycles,B,equal,NA
+2021,B20,1,NA,1,525,pond cycles,B,equal,NA
+2021,B21,1/2,NA,1/2,246,pond cycles,B,equal,NA
+2021,B22,1,NA,1,530,pond cycles,B,equal,NA
+2021,B23,1,NA,1,533,pond cycles,B,equal,NA
+2021,B24,1,NA,1,1689,pond cycles,B,equal,NA
+2021,B3,1,NA,1/other,677,pond cycles,B,different,NA
+2021,B4,1,NA,1,531,pond cycles,B,equal,NA
+2021,B5,1,NA,1,533,pond cycles,B,equal,NA
+2021,B6,1,NA,1,533,pond cycles,B,equal,NA
+2021,B7,1,NA,1,528,pond cycles,B,equal,NA
+2021,B8,1,NA,1,532,pond cycles,B,equal,NA
+2021,B9,1,NA,1,533,pond cycles,B,equal,NA
+2021,GERE,1/2,998,1/2,998,nphistory.xlsx,net pen,equal,TRUE
+2021,GERW,1/2,1481,1/2,1481,nphistory.xlsx,net pen,equal,TRUE
+2021,P0,2/4,NA,2/4,NA,pond cycles,P,equal,NA
+2021,P1,2/3/4,NA,3/4,NA,pond cycles,P,derived subset,NA
+2021,P10,0/2,NA,0,NA,pond cycles,P,derived subset,NA
+2021,P11,0/2,NA,0/2,497,pond cycles,P,equal,NA
+2021,P12,0,NA,0/2,499,pond cycles,P,different,NA
+2021,P13,0,NA,0/1/2,494,pond cycles,P,different,NA
+2021,P14,0/2,NA,0/1/2,496,pond cycles,P,different,NA
+2021,P15,0/2,NA,0/1/2,558,pond cycles,P,different,NA
+2021,P16,0/2,NA,0/2,350,pond cycles,P,equal,NA
+2021,P17,0/2,NA,0/2,350,pond cycles,P,equal,NA
+2021,P18,1,NA,1,833,pond cycles,P,equal,NA
+2021,P19,1,NA,1/4,25,pond cycles,P,different,NA
+2021,P2,0,NA,0,NA,pond cycles,P,equal,NA
+2021,P20,1/2,NA,1,NA,pond cycles,P,derived subset,NA
+2021,P21,1/2,NA,1,NA,pond cycles,P,derived subset,NA
+2021,P3,0/2,NA,0/2,600,pond cycles,P,equal,NA
+2021,P4,0,NA,0/1,800,pond cycles,P,different,NA
+2021,P5,0/2,NA,0,NA,pond cycles,P,derived subset,NA
+2021,P6,0/2,NA,0,NA,pond cycles,P,derived subset,NA
+2021,P7,0,NA,0,NA,pond cycles,P,equal,NA
+2021,UKLN,1/2,1000,1/2,1000,nphistory.xlsx,net pen,equal,TRUE
+2021,UKLS,1/2,1500,1/2,1500,nphistory.xlsx,net pen,equal,TRUE
+2022,A1,1/other,15000,other,NA,pond cycles,A,derived subset,NA
+2022,A4,0/1,10000,0,NA,pond cycles,A,derived subset,NA
+2022,B1,2,450,1/2,450,pond cycles,B,different,TRUE
+2022,B10,2,450,1/2,450,pond cycles,B,different,TRUE
+2022,B11,2,600,1/2,600,pond cycles,B,different,TRUE
+2022,B12,2,600,1/2,600,pond cycles,B,different,TRUE
+2022,B13,2,750,1/2,750,pond cycles,B,different,TRUE
+2022,B14,2,750,1/2,750,pond cycles,B,different,TRUE
+2022,B15,1/2,900,1/2,900,pond cycles,B,equal,TRUE
+2022,B16,1/2,900,1/2,900,pond cycles,B,equal,TRUE
+2022,B17,1/2,450,1/2,450,pond cycles,B,equal,TRUE
+2022,B18,1/2,450,1/2,450,pond cycles,B,equal,TRUE
+2022,B19,1/2,600,1/2,600,pond cycles,B,equal,TRUE
+2022,B2,2,450,1/2,450,pond cycles,B,different,TRUE
+2022,B20,1/2,750,1/2,750,pond cycles,B,equal,TRUE
+2022,B21,1/2,750,1/2,750,pond cycles,B,equal,TRUE
+2022,B22,1/2,600,1/2,600,pond cycles,B,equal,TRUE
+2022,B23,1/2,900,1/2,900,pond cycles,B,equal,TRUE
+2022,B24,1/2,900,1/2,900,pond cycles,B,equal,TRUE
+2022,B3,2,600,1/2,600,pond cycles,B,different,TRUE
+2022,B4,2,600,1/2,600,pond cycles,B,different,TRUE
+2022,B5,2,750,1/2,750,pond cycles,B,different,TRUE
+2022,B6,2,750,1/2,750,pond cycles,B,different,TRUE
+2022,B7,2,900,1/2,900,pond cycles,B,different,TRUE
+2022,B8,2,900,1/2,900,pond cycles,B,different,TRUE
+2022,B9,2,450,1/2,450,pond cycles,B,different,TRUE
+2022,P0,3/4,335,3/4,244,pond cycles,P,equal,FALSE
+2022,P1,4,354,4,254,pond cycles,P,equal,FALSE
+2022,P10,0/1,1500,0/1,1500,pond cycles,P,equal,TRUE
+2022,P11,0/1,901,0/1,901,pond cycles,P,equal,TRUE
+2022,P12,0/1,1207,0/1/2,1207,pond cycles,P,different,TRUE
+2022,P13,0/1,1502,0/1,1502,pond cycles,P,equal,TRUE
+2022,P14,0/1,604,0/1,604,pond cycles,P,equal,TRUE
+2022,P15,0/1,914,0/1,914,pond cycles,P,equal,TRUE
+2022,P16,0/1,1200,0/1,1200,pond cycles,P,equal,TRUE
+2022,P17,1,1501,1,1501,pond cycles,P,equal,TRUE
+2022,P18,2,1100,1/2,1100,pond cycles,P,different,TRUE
+2022,P19,2,1000,1/2,1000,pond cycles,P,different,TRUE
+2022,P2,1/3,603,1/3,603,pond cycles,P,equal,TRUE
+2022,P20,2,994,1/2,994,pond cycles,P,different,TRUE
+2022,P21,1/2,1100,1/2,1100,pond cycles,P,equal,TRUE
+2022,P3,1/3,1135,1/3,230,pond cycles,P,equal,FALSE
+2022,P4,1/2,1210,1/2,1210,pond cycles,P,equal,TRUE
+2022,P5,1/2,601,1/2,601,pond cycles,P,equal,TRUE
+2022,P6,1/2,1811,1/2,1811,pond cycles,P,equal,TRUE
+2022,P7,1/2,1555,1/2,1555,pond cycles,P,equal,TRUE
+2022,P8,1/4/other,262,1/4/other,262,pond cycles,P,equal,TRUE
+2022,P9,0/3,295,0/3,295,pond cycles,P,equal,TRUE
+2022,UKLE,1,1852,1,1852,nphistory.xlsx,net pen,equal,TRUE
+2022,UKLW,1,1999,1,1999,nphistory.xlsx,net pen,equal,TRUE
+2023,A1,3/4/other,16090,other,1090,pond cycles,A,derived subset,FALSE
+2023,A2,1,12500,1,18985,pond cycles,A,equal,FALSE
+2023,A3,1/2/other,NA,1/2,3076,pond cycles,A,derived subset,NA
+2023,A4,0/1,21053,0/1,11053,pond cycles,A,equal,FALSE
+2023,B1,2,NA,2,600,pond cycles,B,equal,NA
+2023,B10,2,NA,2,600,pond cycles,B,equal,NA
+2023,B11,2,NA,2,600,pond cycles,B,equal,NA
+2023,B12,2,NA,2,600,pond cycles,B,equal,NA
+2023,B13,2,NA,2,600,pond cycles,B,equal,NA
+2023,B14,2,NA,2,600,pond cycles,B,equal,NA
+2023,B15,2,NA,2,600,pond cycles,B,equal,NA
+2023,B16,2,NA,2,600,pond cycles,B,equal,NA
+2023,B17,2,NA,2,600,pond cycles,B,equal,NA
+2023,B18,2,NA,2,600,pond cycles,B,equal,NA
+2023,B19,2,NA,2,600,pond cycles,B,equal,NA
+2023,B2,2,NA,2,600,pond cycles,B,equal,NA
+2023,B20,2,NA,2,600,pond cycles,B,equal,NA
+2023,B21,2,NA,2,600,pond cycles,B,equal,NA
+2023,B22,2,NA,2,600,pond cycles,B,equal,NA
+2023,B23,2,NA,2,600,pond cycles,B,equal,NA
+2023,B24,2,NA,2,600,pond cycles,B,equal,NA
+2023,B3,2,NA,2,600,pond cycles,B,equal,NA
+2023,B4,2,NA,2,600,pond cycles,B,equal,NA
+2023,B5,2,NA,2,600,pond cycles,B,equal,NA
+2023,B6,2,NA,2,600,pond cycles,B,equal,NA
+2023,B7,2,NA,2,600,pond cycles,B,equal,NA
+2023,B8,2,NA,2,600,pond cycles,B,equal,NA
+2023,B9,2,NA,2,600,pond cycles,B,equal,NA
+2023,GERE,2,1005,2,1005,nphistory.xlsx,net pen,equal,TRUE
+2023,GERW,2,1036,2,1036,nphistory.xlsx,net pen,equal,TRUE
+2023,P0,4,87,4,87,pond cycles,P,equal,TRUE
+2023,P1,4,232,4,232,pond cycles,P,equal,TRUE
+2023,P10,1,686,1,686,pond cycles,P,equal,TRUE
+2023,P11,1,771,1,771,pond cycles,P,equal,TRUE
+2023,P12,1,708,1,708,pond cycles,P,equal,TRUE
+2023,P13,1,797,1,797,pond cycles,P,equal,TRUE
+2023,P14,1,685,1,685,pond cycles,P,equal,TRUE
+2023,P15,1,770,1,770,pond cycles,P,equal,TRUE
+2023,P16,1,708,1,708,pond cycles,P,equal,TRUE
+2023,P17,1/2,NA,1/2,1079,pond cycles,P,equal,NA
+2023,P18,0/1/2,NA,0/1/2,900,pond cycles,P,equal,NA
+2023,P19,0/1/2,NA,0/1/2,900,pond cycles,P,equal,NA
+2023,P2,4,160,4,160,pond cycles,P,equal,TRUE
+2023,P20,0/1/2,NA,0/1/2,900,pond cycles,P,equal,NA
+2023,P21,0/2/other,900,0/2,900,pond cycles,P,derived subset,TRUE
+2023,P3,4,152,4,152,pond cycles,P,equal,TRUE
+2023,P4,3/4,468,3/4,468,pond cycles,P,equal,TRUE
+2023,P5,3,470,3,470,pond cycles,P,equal,TRUE
+2023,P6,2/4/other,NA,2,922,pond cycles,P,derived subset,NA
+2023,P7,0/1/other,NA,1/other,1500,pond cycles,P,derived subset,NA
+2023,P8,1/4/other,NA,1/4,1500,pond cycles,P,derived subset,NA
+2023,P9,1,799,1,799,pond cycles,P,equal,TRUE
+2023,UKLE,2,1001,2,1001,nphistory.xlsx,net pen,equal,TRUE
+2023,UKLW,2,1005,2,1005,nphistory.xlsx,net pen,equal,TRUE
+2024,A1,other,16372,other,1372,pond cycles,A,equal,FALSE
+2024,A2,2,17074,2,4574,pond cycles,A,equal,FALSE
+2024,C1,0,NA,0,NA,pond cycles,C,equal,NA
+2024,C2,1,NA,1,NA,pond cycles,C,equal,NA
+2024,C4,other,NA,other,NA,pond cycles,C,equal,NA
+2024,C5,other,NA,other,NA,pond cycles,C,equal,NA
+2024,GERE,1/2,648,2,648,nphistory.xlsx,net pen,derived subset,TRUE
+2024,GERW,1/2,730,2,730,nphistory.xlsx,net pen,derived subset,TRUE
+2024,P0,1/4,NA,1/4,818,pond cycles,P,equal,NA
+2024,P1,4,103,4,103,pond cycles,P,equal,TRUE
+2024,P10,0/2,504,0/2,504,pond cycles,P,equal,TRUE
+2024,P11,0/2,503,0/2,503,pond cycles,P,equal,TRUE
+2024,P12,0/2,504,0/2,504,pond cycles,P,equal,TRUE
+2024,P13,0/1/2,505,0/1/2,505,pond cycles,P,equal,TRUE
+2024,P14,0/1/2,502,0/1/2,502,pond cycles,P,equal,TRUE
+2024,P15,2/other,504,2/other,504,pond cycles,P,equal,TRUE
+2024,P16,2/other,504,2/other,504,pond cycles,P,equal,TRUE
+2024,P17,2/other,911,2/other,911,pond cycles,P,equal,TRUE
+2024,P18,1,1500,1,1500,pond cycles,P,equal,TRUE
+2024,P19,1,628,1,628,pond cycles,P,equal,TRUE
+2024,P2,4,100,4,100,pond cycles,P,equal,TRUE
+2024,P20,1,423,1,423,pond cycles,P,equal,TRUE
+2024,P21,2,342,1/2,342,pond cycles,P,different,TRUE
+2024,P3,4,102,4,102,pond cycles,P,equal,TRUE
+2024,P4,4,100,4,100,pond cycles,P,equal,TRUE
+2024,P5,4,302,4,302,pond cycles,P,equal,TRUE
+2024,P6,3,311,3,311,pond cycles,P,equal,TRUE
+2024,P7,4,3631,4/other,3631,pond cycles,P,different,TRUE
+2024,P8,4,84,4,84,pond cycles,P,equal,TRUE
+2024,P9,2,501,2,501,pond cycles,P,equal,TRUE
+2025,B1,wild/other,NA,wild/other,909,pond cycles,B,equal,NA
+2025,B2,0/wild/other,NA,0/wild/other,1815,pond cycles,B,equal,NA
+2025,B3,0/wild,NA,0/wild,467,pond cycles,B,equal,NA
+2025,B4,0/wild/other,NA,0/wild/other,4112,pond cycles,B,equal,NA
+2025,C1,other,9510,1/other,9510,pond cycles,C,different,TRUE
+2025,C2,2/other,1345,2/other,1345,pond cycles,C,equal,TRUE
+2025,C3,1/wild,NA,1/wild,5401,pond cycles,C,equal,NA
+2025,C4,0,8926,0/other,14250,pond cycles,C,different,FALSE
+2025,C5,0/2/wild,908,0/wild/other,908,pond cycles,C,different,TRUE
+2025,C6,1/other,NA,1/other,4959,pond cycles,C,equal,NA
+2025,P0,2/other,127,2/4/other,127,pond cycles,P,different,TRUE
+2025,P1,3/other,86,3/4/other,86,pond cycles,P,different,TRUE
+2025,P10,2/other,3000,1/2/other,1767,pond cycles,P,different,FALSE
+2025,P11,2/other,3000,1/2/other,1669,pond cycles,P,different,FALSE
+2025,P12,1/other,3027,1/other,3027,pond cycles,P,equal,TRUE
+2025,P13,1/other,3012,1/other,640,pond cycles,P,equal,FALSE
+2025,P14,0,3031,0/1,1600,pond cycles,P,different,FALSE
+2025,P15,0,2446,0/other,1865,pond cycles,P,different,FALSE
+2025,P16,0/2,878,0/other,422,pond cycles,P,different,FALSE
+2025,P18,0,957,0/2,467,pond cycles,P,different,FALSE
+2025,P19,0,957,0/2,457,pond cycles,P,different,FALSE
+2025,P2,4/other,86,4/other,86,pond cycles,P,equal,TRUE
+2025,P20,0,957,0/2,492,pond cycles,P,different,FALSE
+2025,P3,4/other,91,4/other,91,pond cycles,P,equal,TRUE
+2025,P4,1/4,91,1/4,91,pond cycles,P,equal,TRUE
+2025,P5,1/4,262,1/4,132,pond cycles,P,equal,FALSE
+2025,P6,1/4,266,1/4,266,pond cycles,P,equal,TRUE
+2025,P7,1/4,85,1/4,53,pond cycles,P,equal,FALSE
+2025,P8,1/4,32,1/4,32,pond cycles,P,equal,TRUE
+2025,P9,1/other,401,1/3/other,401,pond cycles,P,different,TRUE
+2025,UKLE,other,NA,NA,NA,NA,net pen,not derived,NA
+2025,UKLW,other,NA,NA,NA,NA,net pen,not derived,NA
+2022,A2,NA,NA,0,NA,pond cycles,A,"derived, not in curated lookup",NA
+2022,A3,NA,NA,1,NA,pond cycles,A,"derived, not in curated lookup",NA
+2024,A3,NA,NA,2,4339,pond cycles,A,"derived, not in curated lookup",NA
+2024,A4,NA,NA,1,1096,pond cycles,A,"derived, not in curated lookup",NA
+2025,P17,NA,NA,other,486,pond cycles,P,"derived, not in curated lookup",NA

@@ -1,0 +1,1039 @@
+---
+title: "KFNFH Hatchery Data Integration"
+subtitle: "Merging the exploration objects with the package objects, adding new objects, and filling gaps"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    df_print: paged
+params:
+  save_data: true
+  rebuild_csvs: true
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+knitr::opts_knit$set(root.dir = here::here())
+
+library(tidyverse)
+library(janitor)
+library(lubridate)
+```
+
+# Purpose
+
+`data-raw/processing-scripts/process-hatchery-data.R` builds the package objects from the
+USFWS Klamath Falls National Fish Hatchery (KFNFH) annual report PDFs (FY2021-2024).
+`data-raw/hatchery_data_exploration.Rmd` explored additional hatchery data (FY2025 report,
+"Supporting Excel Tables" workbooks, narrative mortality events) and wrote preliminary CSVs
+to `data-raw/hatchery-resources/`. The two overlap in several places, which makes it unclear which object to use:
+
+| Package object (processing script) | Exploration object | Shared content |
+|---|---|---|
+| `KFNFH_historical_collection_release` | `collected_released` | Larvae collected and releases by fiscal year (Table 1) |
+| `KFNFH_pond_growout` | `production_harvest` | Pond stocking, harvest, growth and survival |
+| `KFNFH_LRS_ESS_incubation_hatch_2024` | `wild_lrs_family_groups` | Wild LRS spawning, eggs and hatch (Table 3) |
+
+This document integrates the two so that **each concept has exactly one package object**:
+
+| Step | What it does |
+|---|---|
+| 1. Merge overlaps | One object per overlapping concept: collection/release history, pond grow-out, incubation/hatch, plus FY2025 additions to adult collection and hatchery release. |
+| 2. Add new objects | Objects that only existed in the exploration: age/facility lookup, mortality events, monthly pond mortality, capacity, broodstock spawned. |
+| 4. One source for age | `KFNFH_age_facility_lookup` is the single source of fish age by facility and fiscal year. It is joined to every object that has a pond/facility. |
+| Gaps | Early rearing FY2023 and FY2025, FY2025 report tables (collection, adult collection, ponds, release, net pens), weight columns for FY2025 ponds. Remaining gaps are listed at the end. |
+
+The numbering follows the integration plan (there is no step 3).
+
+**Where values come from.** Every value is taken from the annual reports (PDF text and tables) or the
+hatchery Excel workbooks. The exploration CSVs in `data-raw/hatchery-resources/` were compiled by hand and
+are not reproducible, so they are **not** used as inputs: the script
+`data-raw/processing-scripts/process-hatchery-resources.R` rebuilds them from the workbooks and reports into
+`data-raw/hatchery-resources/reproduced/`, and this document reads those rebuilt files. The original ("curated")
+CSVs are only read to show, below, exactly where the rebuilt values differ. The one thing taken from a curated
+file is the descriptive text of the mortality events (cause, location, population), which exists only as the
+team's reading of the report narratives.
+
+**How to run.** Knit this document from the project root. It (1) rebuilds the CSVs with
+`process-hatchery-resources.R` (`params$rebuild_csvs`), (2) re-runs `process-hatchery-data.R`
+in a scratch environment *without saving* so the FY2021-2024 base objects are rebuilt from
+the cached PDF tables, (3) builds everything below from those base objects, the FY2025
+cached PDF tables and the rebuilt CSVs, and (4) if `params$save_data` is `TRUE`, writes the
+final objects to `data/`. Because it always starts from the script output, re-knitting is
+idempotent (rows are never appended twice).
+
+# Inputs
+
+## Rebuild the CSVs from the Excel files and the reports
+
+```{r rebuild-csvs}
+if (isTRUE(params$rebuild_csvs)) {
+  invisible(capture.output(suppressMessages(suppressWarnings(
+    source(here::here("data-raw/processing-scripts/process-hatchery-resources.R"), local = new.env())
+  ))))
+}
+```
+
+## Base objects (FY2021-2024) from the processing script
+
+The script is evaluated with its `usethis::use_data()` calls neutralised so nothing is
+written to `data/` at this stage.
+
+```{r base}
+script_lines <- readLines(here::here("data-raw/processing-scripts/process-hatchery-data.R"))
+script_lines <- sub("usethis::use_data\\(overwrite = T\\)", "invisible()", script_lines)
+
+base <- new.env(parent = globalenv())
+invisible(capture.output(
+  suppressMessages(suppressWarnings(eval(parse(text = script_lines), envir = base)))
+))
+
+tables_raw_2023 <- base$tables_raw_2023
+```
+
+## FY2025 report tables
+
+The FY2025 report (`FY25 KFNFH Annual Report.pdf`) is parsed the same way as the other
+reports and cached in `data-raw/pdf-tables/`. Table index in the extracted list:
+
+| FY2025 report table | Index | Content |
+|---|---|---|
+| Table 1 | 2 | Historical collections and releases |
+| Table 2 | 3 | Wild ESS LRS adults handled |
+| Table 3 | 4 | Family group crosses (handled via `family_groups.csv`) |
+| Table 4 | 5 | Broodstock spawned by capture year |
+| Table 7 | 8 | Historical larval catches and collection method |
+| Table 8 | 9 | Early rearing (larval culture units) |
+| Tables 10-12 | 11-13 | Pond performance |
+| Tables 13-14 | 14-15 | UKL and Gerber net pens |
+| Table 15 | 16 | Fish distributions and transfers |
+| Tables 16-17 | 17-18 | PIT tag detections (not imported, see gaps) |
+
+```{r fy25-tables}
+path_2025 <- here::here("data-raw", "pdf-tables", "kfnfh_2025_tables_raw.Rds")
+if (!file.exists(path_2025)) {
+  tabulapdf::extract_tables(
+    here::here("data-raw/hatchery-resources/FY25 KFNFH Annual Report.pdf"),
+    method = "stream", output = "tibble") |>
+    saveRDS(path_2025)
+}
+tables_raw_2025 <- readRDS(path_2025)
+length(tables_raw_2025)
+```
+
+## Rebuilt CSVs (and the curated ones, for comparison only)
+
+```{r csvs}
+hr <- function(f) here::here("data-raw", "hatchery-resources", "reproduced", f)    # rebuilt from Excel and reports
+curated <- function(f) here::here("data-raw", "hatchery-resources", f)             # hand-compiled, comparison only
+
+collected_released_csv  <- read_csv(hr("collected_released.csv"), show_col_types = FALSE)
+broodstock_spawned_csv  <- read_csv(hr("broodstock_spawned.csv"), show_col_types = FALSE)
+family_groups_csv       <- read_csv(hr("wild_lrs_family_groups.csv"), show_col_types = FALSE)
+production_harvest_csv  <- read_csv(hr("production_harvest_combined.csv"), show_col_types = FALSE)
+mortality_spreadsheets_csv <- read_csv(hr("mortality_spreadsheets_combined.csv"), show_col_types = FALSE)
+lookup_csv              <- read_csv(hr("usfws_sarp_age_facility_lookup.csv"), show_col_types = FALSE)
+capacity_csv            <- read_csv(hr("usfws_sarp_capacity.csv"), show_col_types = FALSE)
+mortality_events_csv    <- read_csv(hr("mortality_events.csv"), show_col_types = FALSE)
+mortality_events_summary_csv <- read_csv(hr("mortality_events_summary.csv"), show_col_types = FALSE)
+
+# curated versions, used only in the "Differences" sections
+lookup_curated <- read_csv(curated("usfws_sarp_age_facility_lookup.csv"), show_col_types = FALSE) |>
+  mutate(facility = str_to_upper(facility))
+capacity_curated <- read_csv(curated("usfws_sarp_capacity.csv"), show_col_types = FALSE)
+events_curated <- read_csv(curated("mortality_events.csv"), show_col_types = FALSE)
+names(events_curated) <- str_remove(names(events_curated), "^\ufeff")
+events_summary_curated <- read_csv(curated("mortality_events_summary.csv"), show_col_types = FALSE)
+```
+
+# Step 4 first: one source of fish age
+
+Step 4 is needed by several later steps, so it is built first.
+`KFNFH_age_facility_lookup` maps each facility (pond, tank or net pen) to the age group(s)
+reared there by fiscal year. The same facility code can carry a different age in another
+year, and some facilities held more than one age group (`"1/2/3"`).
+
+```{r lookup}
+KFNFH_age_facility_lookup <- lookup_csv |>
+  mutate(facility = str_to_upper(facility)) |>
+  rename(age_class = age) |>
+  mutate(hatchery_name = "KFNFH") |>
+  relocate(hatchery_name, .before = fiscal_year)
+
+# the join key must be unique or joins would duplicate rows
+stopifnot(!anyDuplicated(KFNFH_age_facility_lookup[c("fiscal_year", "facility")]))
+
+add_age <- function(data, facility_col = "pond") {
+  data |>
+    select(-any_of(c("age", "age_class", "starting_count"))) |>
+    left_join(KFNFH_age_facility_lookup |>
+                select(fiscal_year, facility, age_class, starting_count),
+              by = c("fiscal_year", setNames("facility", facility_col)))
+}
+```
+
+`age_class` replaces the exploration column name `age` because the values are classes such
+as `"1/2/3"` or `"wild"`, not a single age.
+
+### How the lookup is built, and how it differs from the curated lookup
+
+The rebuilt lookup comes from the workbooks and reports only:
+
+* **Net pens** (UKL and Gerber): `nphistory.xlsx`. Age is the operation year minus the capture year; `starting_count`
+  is the number of fish stocked.
+* **Ponds** (A, B, C and P series): every pond cycle in the Production Harvest workbooks and the annual report tables.
+  A cycle counts in the fiscal year it was stocked and in the fiscal year it was harvested. The age class is that fiscal
+  year minus the lot's collection year (4 means 4 or older); East Side Springs and mixed lots are `other`, wild and salvage
+  lots are `wild`. `starting_count` is the number of fish at the start of the first cycle harvested in the year.
+
+The **curated lookup** (the hand-built `usfws_sarp_age_facility_lookup.csv`) was built "using the information provided by the
+hatchery". It is not used here. Where the two differ, the rebuilt value (from the reports and workbooks) is the one in the package:
+
+```{r lookup-differences}
+lookup_comparison <- read_csv(hr("lookup_comparison.csv"), show_col_types = FALSE)
+
+lookup_summary <- lookup_comparison |>
+  summarise(curated_rows = sum(!is.na(age_curated)),
+            rebuilt_rows = sum(!is.na(age_rebuilt)),
+            same_age = sum(status == "equal"),
+            subset = sum(status == "derived subset"),
+            different = sum(status == "different"),
+            only_curated = sum(status == "not derived"),
+            only_rebuilt = sum(status == "derived, not in curated lookup"),
+            counts_both = sum(!is.na(starting_count_curated) & !is.na(starting_count_rebuilt)),
+            counts_same = sum(starting_count_equal, na.rm = TRUE),
+            counts_curated_only = sum(!is.na(starting_count_curated) & is.na(starting_count_rebuilt)),
+            counts_rebuilt_only = sum(is.na(starting_count_curated) & !is.na(starting_count_rebuilt)))
+
+lookup_comparison |>
+  count(series, status) |>
+  pivot_wider(names_from = status, values_from = n, values_fill = 0)
+```
+
+* The curated lookup has `r lookup_summary$curated_rows` facility-years and the rebuilt lookup `r lookup_summary$rebuilt_rows`.
+* **Same age class:** `r lookup_summary$same_age` facility-years.
+* **Rebuilt classes are a subset of the curated ones:** `r lookup_summary$subset`. The curated value lists an extra class
+  (for example `other`, `wild`, or a second age) for ponds that held more than one group; that extra class is not in the reports
+  or workbooks, so it is not in the rebuilt lookup.
+* **Different age class:** `r lookup_summary$different`. These are mostly the fiscal year a cycle that spans two fiscal years is
+  assigned to, and older cycles whose stock dates are missing.
+* **Only in the curated lookup:** `r lookup_summary$only_curated` facility-years, listed below (FY2020 ponds A1, A2, P5 and P11-P15, and the
+  Upper Klamath Lake pens UKLE and UKLW in FY2025, which were not operated). They have no cycle or pen record in the reports or workbooks, so they are not in the package lookup.
+* **Only in the rebuilt lookup:** `r lookup_summary$only_rebuilt` facility-years that the reports and workbooks show but the curated lookup lacks.
+* **Starting counts:** `r lookup_summary$counts_same` of `r lookup_summary$counts_both` counts present in both are equal;
+  `r lookup_summary$counts_rebuilt_only` counts exist only in the rebuilt lookup and `r lookup_summary$counts_curated_only` only in the curated one.
+
+Facility-years that are different, or only in one lookup:
+
+```{r lookup-differences-table}
+lookup_comparison |>
+  filter(status != "equal") |>
+  select(fiscal_year, facility, status, age_curated, age_rebuilt, starting_count_curated, starting_count_rebuilt) |>
+  arrange(status, fiscal_year, facility)
+```
+
+# Step 1: merge overlapping objects
+
+## 1a. Collection and release history
+
+`KFNFH_historical_collection_release` (report-based, FY2016-2024) and `collected_released`
+(exploration, FY2016-2025) describe the same table (Table 1 of each report). Each report
+reproduces the whole history with updated numbers, so the most recent report (FY2025,
+Table 1) is the source for the full series. The larval catch method comes from FY2025
+Table 7.
+
+```{r historical}
+parse_header_rows <- function(x) {
+  x <- clean_names(x)
+  new_names <- paste(names(x), x[1, ], sep = "_") |>
+    gsub("_NA", "", x = _) |>
+    make_clean_names()
+  x[-1, ] |> setNames(new_names)
+}
+
+table_1_2025 <- parse_header_rows(tables_raw_2025[[2]]) |>
+  filter(str_detect(fiscal_year, "^\\d{4}$")) |>
+  mutate(salvage_basis = str_extract(sl_or_tl_mm, "(?<=\\[)[A-Z]+(?=\\])"),
+         across(-c(fiscal_year, salvage_basis), ~ suppressWarnings(parse_number(.x))),
+         fiscal_year = as.numeric(fiscal_year))
+
+larval_catch_2025 <- tables_raw_2025[[8]] |>
+  clean_names() |>
+  transmute(fiscal_year = suppressWarnings(as.numeric(year_spring)),
+            larvae_collected_table_7 = suppressWarnings(parse_number(number_collected)),
+            primary_collection_method = primary_collection_method |>
+              str_squish() |>
+              str_replace("\\)\\s*/\\s*", ") / ")) |>
+  drop_na(fiscal_year)
+
+broodstock_cols <- collected_released_csv |>
+  select(fiscal_year, total_released, broodstock_on_station_raw,
+         broodstock_cohort_years, new_broodstock_reported, broodstock_on_station)
+
+KFNFH_historical_collection_release <- table_1_2025 |>
+  transmute(hatchery_name = "KFNFH",
+            fiscal_year,
+            larvae_collected_table_1 = larvae_collected,
+            sarp_release,
+            sarp_tl_mm = tl_4_mm,
+            fingerling_release,
+            fingerling_tl_mm = tl_6_mm,
+            fry_release,
+            fry_tl_mm = tl_8_mm,
+            salvage_release,
+            salvage_sl_mm = if_else(salvage_basis %in% "SL", sl_or_tl_mm, NA_real_),
+            salvage_tl_mm = if_else(salvage_basis %in% "TL", sl_or_tl_mm, NA_real_)) |>
+  left_join(larval_catch_2025, by = "fiscal_year") |>
+  left_join(broodstock_cols, by = "fiscal_year") |>
+  # FY2025 Table 1 and Table 7 disagree for FY2024 (30,142 vs 30,150); Table 7 is used, see below
+  mutate(larvae_collected = larvae_collected_table_7) |>
+  relocate(larvae_collected, .after = fiscal_year) |>
+  select(-larvae_collected_table_1, -larvae_collected_table_7)
+
+KFNFH_historical_collection_release
+```
+
+**Check against the FY2024-based package object** (before this merge). Only rows that differ are shown:
+
+```{r historical-check}
+compare_cols <- c("larvae_collected", "sarp_release", "sarp_tl_mm", "fingerling_release",
+                  "fry_release", "fry_tl_mm", "salvage_release", "salvage_sl_mm", "salvage_tl_mm")
+
+base$KFNFH_historical_collection_release |>
+  select(fiscal_year, any_of(compare_cols)) |>
+  pivot_longer(-fiscal_year, names_to = "variable", values_to = "fy2024_report") |>
+  inner_join(KFNFH_historical_collection_release |>
+               select(fiscal_year, any_of(compare_cols)) |>
+               pivot_longer(-fiscal_year, names_to = "variable", values_to = "fy2025_report"),
+             by = c("fiscal_year", "variable")) |>
+  filter(!(is.na(fy2024_report) & is.na(fy2025_report)),
+         is.na(fy2024_report) | is.na(fy2025_report) | fy2024_report != fy2025_report)
+```
+
+**Check against the exploration `collected_released.csv`:**
+
+```{r historical-check-csv}
+KFNFH_historical_collection_release |>
+  select(fiscal_year, any_of(compare_cols)) |>
+  pivot_longer(-fiscal_year, names_to = "variable", values_to = "merged") |>
+  inner_join(collected_released_csv |>
+               transmute(fiscal_year, larvae_collected, sarp_release, sarp_tl_mm,
+                         fingerling_release, fry_release, fry_tl_mm, salvage_release,
+                         salvage_sl_mm = if_else(salvage_length_unit %in% "SL", salvage_length, NA_real_),
+                         salvage_tl_mm = if_else(salvage_length_unit %in% "TL", salvage_length, NA_real_)) |>
+               pivot_longer(-fiscal_year, names_to = "variable", values_to = "csv"),
+             by = c("fiscal_year", "variable")) |>
+  filter(!(is.na(merged) & is.na(csv)), is.na(merged) | is.na(csv) | merged != csv)
+```
+
+FY2024 `larvae_collected` is **30,142** in FY2025 Table 1 (and was in `collected_released.csv` until it was
+corrected), but **30,150** in the FY2024 report (Tables 1 and 4, and the narrative), in FY2025 Table 7 of the
+FY2025 report itself, and in the hatchery's own workbooks (the cumulative "Total Collected To Date"
+in `2024 Larval Collection and Early Rearing Summary Data.xlsx` ends at 30,150). Three sources
+agree on 30,150, so **the merged object uses the Table 7 value (30,150) for all years** (it equals
+Table 1 in every other year). `collected_released.csv` was a copy of FY2025 Table 1 and has been corrected to 30,150, so the CSV check above
+now shows no differences. The same workbooks also confirm FY2023 (6,036) and FY2025 (70,049).
+
+## 1b. Pond grow-out
+
+`KFNFH_pond_growout` (report tables, FY2021-2024) and `production_harvest` (exploration,
+Production Harvest Data Sheet workbooks, FY2021-2025) describe the same pond cycles.
+They were compared before merging: the workbook rows for FY2021-2024 seasons match the report
+rows on pond and harvest date (start numbers are identical; end numbers and survival agree for
+~95% of rows), so they are **not** appended as a second copy.
+
+The merge therefore works like this:
+
+1. The report tables stay the primary source (they have the full set of columns, including weights).
+2. FY2025 is added from the FY2025 report pond tables (Tables 10-12) so FY2025 has the same
+   columns as earlier years.
+3. The workbook is used to validate the FY2025 rows, and any workbook row that is not
+   represented in the report tables is appended and flagged `source = "production_harvest_workbook"`.
+4. A pond cycle reported as still in progress in an earlier report (no harvest date) is replaced by the later,
+   completed record of the same pond and stocking date.
+
+### FY2025 report pond tables
+
+```{r pond-fy25}
+parse_pond_fy25 <- function(x, label) {
+  x <- x |> mutate(across(everything(), as.character))
+  names(x) <- c("pond_lot", "stocked", "blank", "start_number", "start_g_fish",
+                "start_wt_lb", "start_wt_g", "start_tl_mm", "harvest_date",
+                "end_number", "end_g_fish", "end_wt_lb", "end_wt_g", "end_tl_mm",
+                "days", "col16", "col17", "harvest_mortality_number", "survival_percent")
+  num <- function(v) suppressWarnings(as.numeric(str_remove_all(v, ",")))
+  x |>
+    mutate(stock_date = suppressWarnings(mdy(stocked))) |>
+    filter(!is.na(stock_date)) |>          # drops the two header rows and the lot summary rows
+    mutate(months_growth = str_squish(paste(replace_na(col16, ""), replace_na(col17, "")))) |>
+    transmute(
+      inventory_source = label,
+      pond = word(pond_lot, 1),
+      lot = str_squish(str_remove(pond_lot, "^\\S+")),
+      pond_stock_date = stock_date,
+      harvest_date = suppressWarnings(mdy(harvest_date)),
+      start_number = num(start_number),
+      start_g_fish = num(start_g_fish),
+      start_wt_lb = num(start_wt_lb),
+      start_wt_g = num(start_wt_g),
+      start_tl_mm = num(start_tl_mm),
+      end_number = num(end_number),
+      end_g_fish = num(end_g_fish),
+      end_wt_lb = num(end_wt_lb),
+      end_wt_g = num(end_wt_g),
+      end_tl_mm = num(end_tl_mm),
+      days = num(days),
+      months = num(word(months_growth, 1)),
+      growth_mm_day = num(word(months_growth, 2)),
+      harvest_mortality_number = num(harvest_mortality_number),
+      survival_percent = num(survival_percent))
+}
+
+pond_2025_report <- bind_rows(
+  parse_pond_fy25(tables_raw_2025[[11]], "FY2025 Table 10"),
+  parse_pond_fy25(tables_raw_2025[[12]], "FY2025 Table 11"),
+  parse_pond_fy25(tables_raw_2025[[13]], "FY2025 Table 12")) |>
+  mutate(hatchery_name = "KFNFH",
+         fiscal_year = 2025,
+         life_history = if_else(str_detect(lot, "ESS"), "ESS", "adfluvial"))
+
+pond_2025_report |> count(inventory_source)
+```
+
+### Compare with the workbook (validation)
+
+```{r pond-validate}
+ph <- production_harvest_csv |>
+  select(-any_of(c("age", "starting_count", "fiscal_year")))
+
+key_stock <- function(d, stock, pond = "pond") ifelse(is.na(d[[stock]]), NA, paste(d[[pond]], d[[stock]]))
+key_harv  <- function(d, harv, pond = "pond")  ifelse(is.na(d[[harv]]),  NA, paste(d[[pond]], d[[harv]]))
+
+# the workbook repeats in-progress cycles across seasons, so only completed cycles are compared
+fy25_check <- pond_2025_report |>
+  filter(!is.na(harvest_date)) |>
+  mutate(k = key_stock(pick(everything()), "pond_stock_date")) |>
+  inner_join(ph |> filter(!is.na(harvest_date)) |>
+               mutate(k = key_stock(pick(everything()), "stocked_date")) |>
+               select(k, season, wb_start = start_number, wb_end = end_number,
+                      wb_survival = survival_percent, wb_harvest = harvest_date,
+                      wb_morts = harvest_morts),
+             by = "k")
+
+tibble(completed_report_rows_fy25 = sum(!is.na(pond_2025_report$harvest_date)),
+       matched_to_workbook = nrow(fy25_check),
+       start_number_equal = mean(fy25_check$start_number == fy25_check$wb_start, na.rm = TRUE),
+       end_number_equal = mean(fy25_check$end_number == fy25_check$wb_end, na.rm = TRUE),
+       end_number_minus_morts_equal = mean(fy25_check$end_number - fy25_check$harvest_mortality_number == fy25_check$wb_end, na.rm = TRUE),
+       survival_within_0.5 = mean(abs(fy25_check$survival_percent - fy25_check$wb_survival) < 0.5, na.rm = TRUE))
+```
+
+For the completed FY2025 cycles, start numbers are identical and survival agrees. The FY2025 report's
+`End #` counts fish before harvest mortalities, while the workbook's `End #` is the live count, so
+`end_number - harvest_mortality_number` equals the workbook value for every matched row (the
+`end_number_minus_morts_equal` column above).
+
+### Combine
+
+```{r pond-combine}
+existing <- base$KFNFH_pond_growout |>
+  mutate(source = "annual_report_table",
+         weight_gain_lb = coalesce(weight_gain_lb, weigth_gain_lb)) |>  # typo column merged
+  select(-weigth_gain_lb)
+
+report_rows <- bind_rows(existing, pond_2025_report |> mutate(source = "annual_report_table"))
+
+# a cycle reported as in progress (no harvest date) is superseded by a later completed record
+report_rows <- report_rows |>
+  mutate(cycle_key = key_stock(pick(everything()), "pond_stock_date")) |>
+  group_by(cycle_key) |>
+  mutate(superseded = !is.na(cycle_key) & is.na(harvest_date) & n() > 1 & any(!is.na(harvest_date))) |>
+  ungroup()
+
+superseded_n <- sum(report_rows$superseded)
+report_rows <- report_rows |> filter(!superseded) |> select(-superseded)
+
+# workbook rows that are not in the report tables
+ph_new <- ph |>
+  mutate(k_stock = key_stock(pick(everything()), "stocked_date"),
+         k_harv = key_harv(pick(everything()), "harvest_date"))
+
+in_report <- ph_new$k_stock %in% report_rows$cycle_key |
+  ph_new$k_harv %in% key_harv(report_rows, "harvest_date")
+
+workbook_only <- ph_new[!in_report, ]
+
+workbook_only |> count(season)
+```
+
+```{r pond-final}
+fiscal_year_of <- function(d) year(d) + if_else(month(d) >= 10, 1, 0)
+
+workbook_rows <- workbook_only |>
+  transmute(hatchery_name = "KFNFH",
+            fiscal_year = fiscal_year_of(harvest_date),
+            inventory_source = paste("Production Harvest Data Sheet,", season),
+            life_history = if_else(str_detect(as.character(lot), "ESS"), "ESS", "adfluvial"),
+            pond, lot = as.character(lot),
+            pond_stock_date = stocked_date,
+            harvest_date,
+            start_number, start_tl_mm, end_number, end_tl_mm,
+            days = days_in_pond,
+            growth_mm_day,
+            harvest_mortality_number = harvest_morts,
+            survival_percent,
+            dispo_to = stocked_to,
+            source = "production_harvest_workbook")
+
+KFNFH_pond_growout <- bind_rows(report_rows |> select(-cycle_key), workbook_rows) |>
+  # some report tables list ponds by number only ("0", "1", ...); the lookup uses "P0", "P1"
+  mutate(pond = if_else(str_detect(pond, "^\\d+$"), paste0("P", pond), pond)) |> 
+  add_age("pond") |>
+  relocate(hatchery_name, fiscal_year, inventory_source, life_history, source, pond, lot) |>
+  arrange(fiscal_year, pond_stock_date, pond)
+
+cat("in-progress records superseded by a later completed record:", superseded_n, "\n")
+KFNFH_pond_growout |> count(fiscal_year, source)
+```
+
+`age_class` and `starting_count` are joined from the lookup (step 4). Rows with no match are
+ponds that are missing from the lookup itself:
+
+```{r pond-age-gaps}
+KFNFH_pond_growout |>
+  filter(is.na(age_class)) |>
+  count(fiscal_year, pond) |>
+  arrange(fiscal_year, pond)
+```
+
+## 1c. Incubation and hatch results
+
+`KFNFH_LRS_ESS_incubation_hatch_2024` (FY2024 Table 3 parsed from the PDF) and
+`wild_lrs_family_groups` (exploration, FY2024 and FY2025 Table 3) are the same table. The FY2024
+rows are identical in both (checked below), so the PDF-parsed FY2024 rows are kept, given the new
+columns from the CSV, and FY2025 is added. The object loses its `_2024` suffix.
+
+```{r incubation}
+fy24_csv <- family_groups_csv |> filter(fiscal_year == 2024)
+fy24_pdf <- base$KFNFH_LRS_ESS_incubation_hatch_2024
+
+stopifnot(nrow(fy24_csv) == nrow(fy24_pdf),
+          all(fy24_csv$female_id == fy24_pdf$female),
+          all(fy24_csv$total_eggs == fy24_pdf$total_eggs),
+          all(fy24_csv$spawning_date == fy24_pdf$spawning_date))
+
+incubation_2024 <- fy24_pdf |>
+  mutate(fiscal_year = 2024,
+         program = fy24_csv$program,
+         species = fy24_csv$species,
+         family_groups = fy24_csv$family_groups,
+         male_5 = NA_character_,
+         male_6 = NA_character_,
+         second_fry_count = NA_real_,
+         second_hatch_percent = NA_real_)
+
+incubation_2025 <- family_groups_csv |>
+  filter(fiscal_year == 2025) |>
+  transmute(fiscal_year, program, species,
+            spawning_date,
+            female = female_id,
+            male_1 = `Male ID 1`, male_2 = `Male ID 2`, male_3 = `Male ID 3`,
+            male_4 = `Male ID 4`, male_5 = `Male ID 5`, male_6 = `Male ID 6`,
+            family_groups,
+            incubator = incubation_vessel,
+            egg_volume_mL = egg_volume_ml,
+            eggs_per_mL = eggs_per_ml,
+            total_eggs,
+            total_fry = fry_count,
+            hatch_percent = hatch_rate_percent,
+            second_fry_count = `2nd Fry Count`,
+            second_hatch_percent = `2nd Hatch Rate (%)`,
+            hatch_date)
+
+KFNFH_LRS_ESS_incubation_hatch <- bind_rows(incubation_2024, incubation_2025) |>
+  mutate(hatchery_name = "KFNFH") |>
+  relocate(hatchery_name, fiscal_year, program, species, .before = spawning_date) |>
+  relocate(male_5, male_6, family_groups, .after = male_4)
+
+KFNFH_LRS_ESS_incubation_hatch |> count(fiscal_year)
+```
+
+## 1d. Adult collection and hatchery release, extended to FY2025
+
+These had no exploration counterpart, but the FY2025 report gives FY2025 versions of both tables.
+
+```{r adults}
+adults_2025 <- tables_raw_2025[[3]] |>
+  clean_names() |>
+  transmute(hatchery_name = "KFNFH",
+            fiscal_year = 2025,
+            date = mdy(date),
+            pit_tag_suffix = pit_tag,
+            pit_tag_last_5 = str_sub(pit_tag, -5, -1),
+            fin_clip_id_number = fin_clip,
+            sex = recode(sex, M = "Male", F = "Female"),
+            gamete_use = gamate_use,
+            fl_mm = as.numeric(fork_length),
+            spring_location,
+            family_groups)
+
+KFNFH_LRS_ESS_adult_collection <- bind_rows(
+  base$KFNFH_LRS_ESS_adult_collection |> mutate(across(any_of("fl_mm"), as.numeric)),
+  adults_2025) |>
+  mutate(fl_in = coalesce(fl_in, fl_mm / 25.4))
+
+KFNFH_LRS_ESS_adult_collection |> count(fiscal_year, sex)
+```
+
+```{r release}
+release_2025 <- tables_raw_2025[[16]] |>
+  clean_names() |>
+  rename(dispo_date = stock_date,
+         dispo_location = stocking_location,
+         number_per_lb = number_lb,
+         from_ponds = from_ponds_salvage_area) |>
+  mutate(dispo_date = na_if(as.character(dispo_date), ""),
+         date_anchor = dispo_date,
+         number_fish = number) |>
+  fill(date_anchor, .direction = "down") |>
+  mutate(dispo_date = coalesce(dispo_date, date_anchor)) |>
+  select(-date_anchor) |>
+  drop_na(dispo_location) |>       # drops the monthly and annual total rows
+  mutate(dispo_date = as.Date(dispo_date, format = "%m/%d/%Y"),
+         hatchery_name = "KFNFH",
+         fiscal_year = 2025) |>
+  select(-number) |>
+  relocate(number_fish, .after = lot) |>
+  relocate(hatchery_name, fiscal_year, .before = dispo_date)
+
+KFNFH_hatchery_release <- bind_rows(release_2025, base$KFNFH_hatchery_release) |>
+  arrange(desc(fiscal_year), dispo_date)
+
+KFNFH_hatchery_release |> group_by(fiscal_year) |> summarise(rows = n(), fish = sum(number_fish, na.rm = TRUE))
+```
+
+The FY2025 report states 26,454 fish distributed or transferred ("All Spp." overall total); the
+parsed rows sum to:
+
+```{r release-check}
+sum(release_2025$number_fish, na.rm = TRUE)
+```
+
+## 1e. Net pen survival, FY2025 status
+
+FY2025 Tables 13 and 14 repeat the full net pen history. The values match the existing object
+(checked below). The new information is that no production fish were available in later
+years, which is now recorded as explicit rows with a `note` so these are not mistaken for missing data.
+
+```{r pens}
+ukl_25 <- tables_raw_2025[[14]] |> slice(2:12) |>
+  transmute(operation_year = as.numeric(Operation), captured_year = as.numeric(...2),
+            pen_id = ...3, number_stocked = as.numeric(word(`Stock TL #`, 2)))
+
+base_ukl <- base$KFNFH_pen_survival |> filter(pen_type == "Net Pen", !is.na(pen_id))
+tibble(ukl_rows_in_fy2025_report = nrow(ukl_25),
+       rows_in_package = nrow(base_ukl),
+       stocked_numbers_equal = all(ukl_25$number_stocked == base_ukl$number_stocked))
+
+KFNFH_pen_survival <- base$KFNFH_pen_survival |>
+  mutate(note = if_else(pen_type == "Gerber Net Pen" & operation_year == 2022 & is.na(pen_id),
+                        "Low water - not operational", NA_character_)) |>
+  bind_rows(tribble(
+    ~hatchery_name, ~pen_type, ~operation_year, ~note,
+    "KFNFH", "Net Pen", 2024, "Experimental use only - no production fish stocked",
+    "KFNFH", "Net Pen", 2025, "No fish available - not operational",
+    "KFNFH", "Gerber Net Pen", 2025, "No fish available - not operational")) |>
+  arrange(pen_type, operation_year)
+
+KFNFH_pen_survival |> filter(!is.na(note))
+```
+
+## 1f. Early rearing: FY2023 and FY2025
+
+`KFNFH_adfluvial_early_rearing_2024` only held FY2024. FY2023 (Table 3) and FY2025 (Table 8)
+have the same content (larval culture-unit stocking, mortality and survival). The FY2021 and FY2022
+reports do not contain an equivalent table. The object loses its `_2024` suffix.
+
+```{r early-rearing}
+rearing_2023 <- tables_raw_2023[[4]] |>
+  slice(-(1:2)) |>
+  filter(!is.na(Collection)) |>            # drops the two header rows and the total row
+  transmute(date_raw = Collection,
+            date = mdy(Collection),
+            culture_unit = Culture,
+            collected = parse_number(Collected),
+            mortality = parse_number(`Observed...4`),
+            stocked = parse_number(Stocked),
+            survival_percent = as.numeric(Overall),
+            observed_mortality_percent = as.numeric(`Observed...7`),
+            unobserved_mortality_percent = as.numeric(Unobserved),
+            fiscal_year = 2023)
+
+rearing_2025 <- tables_raw_2025[[9]] |>
+  clean_names() |>
+  drop_na(date) |>                         # drops the total row
+  transmute(date_raw = date,
+            date = mdy(str_extract(date, "^\\d{1,2}/\\d{1,2}/\\d{4}")),
+            culture_unit,
+            collected = as.numeric(collected),
+            mortality = as.numeric(number_mortality),
+            stocked = as.numeric(number_stocked),
+            survival_percent = as.numeric(tank_survival_percent),
+            observed_mortality_percent = as.numeric(observed_mortality_percent),
+            unobserved_mortality_percent = as.numeric(unobserved_mortality_percent),
+            fiscal_year = 2025)
+
+KFNFH_adfluvial_early_rearing <- bind_rows(
+  rearing_2023,
+  base$KFNFH_adfluvial_early_rearing_2024 |>
+    mutate(date_raw = format(date, "%m/%d/%Y") |> str_remove_all("(?<=^|/)0")),
+  rearing_2025) |>
+  mutate(hatchery_name = "KFNFH",
+         restock = str_detect(culture_unit, regex("^restock", ignore_case = TRUE))) |>
+  relocate(hatchery_name, fiscal_year, date_raw, date, .before = culture_unit) |>
+  arrange(fiscal_year, date)
+
+KFNFH_adfluvial_early_rearing |>
+  group_by(fiscal_year) |>
+  summarise(rows = n(), collected = sum(collected),
+            collected_excl_restock = sum(collected[!restock]),
+            stocked = sum(stocked),
+            survival = round(100 * stocked / collected, 1))
+```
+
+`restock` flags rows whose culture unit is a "Restock" (larvae moved back into a tank that was already
+stocked). In FY2024 the five restock rows add up to 7,327 fish, which is exactly the difference between the
+sum of the `collected` column (37,477) and the 30,150 larvae actually collected; so **sum `collected` only
+over non-restock rows (or use `KFNFH_historical_collection_release$larvae_collected`) for collection totals**.
+In FY2025 the rows sum to the reported 70,049, which is also the cumulative collected total in the hatchery
+workbook, so those restock rows are fish collected that day, not re-counts.
+
+`date_raw` keeps the date text as reported because FY2025 (and some FY2023) entries span two days
+(`"5/8/2025 & 5/9/2025"`). `date` is the first date.
+
+Totals in the reports for comparison: FY2023 6,036 collected and 3,969 stocked (65.8%); FY2025
+70,049 collected and 65,847 stocked (94.0%). The FY2023 rows sum to 6,037 collected (the report's
+total row says 6,036), a one-fish difference inside the report.
+
+# Step 2: new objects from the exploration
+
+These only existed as exploration CSVs. They are added as package objects with the `KFNFH_` prefix
+and cleaned column names. The values come from the rebuilt CSVs (reports and Excel files), not from the hand-compiled ones.
+
+## 2a. Mortality events (from the report narratives)
+
+Identifying an event and describing it (period, location, category, cause, affected population, the loss as reported, the
+confidence class) is a reading of the report narratives and cannot be rebuilt from a table. Those text columns are the only values
+taken from the curated `mortality_events.csv`. Everything that can be checked against the reports or workbooks is rebuilt by
+`process-hatchery-resources.R`:
+
+* every event is tied to a phrase in the report that describes it (the script stops if a phrase is missing);
+* `percent_lost` and `n_mortality` are recomputed from the net pen records (`nphistory.xlsx`), the larval rearing tables and workbook,
+  and numbers in the report text;
+* `severity_tier` is recomputed from `percent_lost` with a fixed rule (over 70% Catastrophic, 30-70% Major, 10-30% Moderate,
+  under 10% Minor; no loss in a non-mortality event is a near-miss; no number is qualitative only).
+
+```{r mortality-events}
+pct <- function(x) suppressWarnings(parse_number(x))
+
+KFNFH_mortality_events <- mortality_events_csv |>
+  transmute(event_id = `Event ID`,
+            year = `Actual Year`,
+            period = `Date / Period`,
+            location = `Location / Pond-Tank-Pen`,
+            category = `Event Category`,
+            mortality_event = `Mortality Event? (Y/N)` == "Y",
+            cause_description = `Cause Description`,
+            population_affected = `Population Affected (denominator)`,
+            loss_as_reported = `Number/Percent Lost (as reported)`,
+            percent_lost = pct(`% Lost (best estimate, numeric)`),
+            confidence = Confidence,
+            severity_tier = `Severity Tier`) |>
+  mutate(hatchery_name = "KFNFH") |>
+  relocate(hatchery_name, .before = event_id)
+
+KFNFH_mortality_events_summary <- mortality_events_summary_csv |>
+  transmute(hatchery_name = "KFNFH",
+            event_id = id,
+            year,
+            category,
+            mortality_event = mortality_event == "Y",
+            percent_mortality = pct(percent_mortality),
+            n_mortality)
+
+stopifnot(all(KFNFH_mortality_events$event_id == KFNFH_mortality_events_summary$event_id))
+KFNFH_mortality_events |> count(severity_tier)
+```
+
+### Differences from the curated mortality events
+
+```{r mortality-differences}
+event_diffs <- KFNFH_mortality_events |>
+  select(event_id, percent_lost, severity_tier) |>
+  full_join(events_curated |>
+              transmute(event_id = `Event ID`,
+                        percent_lost_curated = pct(`% Lost (best estimate, numeric)`),
+                        severity_tier_curated = `Severity Tier`),
+            by = "event_id") |>
+  full_join(events_summary_curated |> select(event_id = id, n_mortality_curated = n_mortality) |>
+              left_join(KFNFH_mortality_events_summary |> select(event_id, n_mortality), by = "event_id"),
+            by = "event_id") |>
+  filter(!(percent_lost %in% percent_lost_curated | (is.na(percent_lost) & is.na(percent_lost_curated))) |
+           severity_tier != severity_tier_curated |
+           !(n_mortality %in% n_mortality_curated | (is.na(n_mortality) & is.na(n_mortality_curated))))
+event_diffs
+```
+
+The 28 events and their descriptive text are unchanged. `r nrow(event_diffs)` event differs from the curated file:
+
+* **E22** (August 2024 dissolved-oxygen crashes in ponds P12 and P13): the curated file gives a best-estimate loss of 45% and the tier
+  "Major". The FY2024 report only says "the acute loss of several thousand fish between both instances, as well as some chronic losses",
+  and the pond records cannot be turned into a combined loss (P13's May 2024 stocking of 3,012 fish was split before harvest). With no number in the
+  reports or workbooks, `percent_lost` is `NA` and the tier is "Qualitative only (unquantified)".
+
+All other losses, tiers and fish counts are reproduced exactly, using these sources:
+
+```{r mortality-sources}
+trace <- read_csv(hr("mortality_event_traceability.csv"), show_col_types = FALSE)
+KFNFH_mortality_events |>
+  select(event_id, year, category, percent_lost, severity_tier) |>
+  left_join(trace |> select(event_id, report, source), by = "event_id") |>
+  rename(described_in_report = report, loss_source = source)
+```
+
+A keyword search of the report text (a sentence with a mortality word and a cause word) is a first step toward finding events
+automatically, but it is weak: it flagged `r sum(trace$sentence_flagged)` of the 28 event sentences and guessed the curated
+category for `r sum(trace$category_agrees)`. The same search lists
+`r nrow(read_csv(hr("mortality_event_candidates_for_review.csv"), show_col_types = FALSE))` other mortality sentences in
+`data-raw/hatchery-resources/reproduced/mortality_event_candidates_for_review.csv` for review; none has been added as an event.
+
+## 2b. Monthly pond mortality (from the mortality spreadsheets)
+
+Age and starting count are re-joined from the lookup (step 4) so all objects use the same age
+definition. The FY2024 workbook covers 1 January to 22 September 2024 only (the October to December 2023 quarter and
+the last week of September 2024 are missing), so FY2024 totals are a partial year. The P-series pond matrices
+in the `FALL 2023 MORTALITY` and `SPRING 2024 MORTALITY` sheets of the Production Harvest Data Sheet workbooks
+cover November and December 2023 and could fill part of that gap.
+
+```{r mortality-monthly}
+KFNFH_mortality_pond_monthly <- mortality_spreadsheets_csv |>
+  mutate(hatchery_name = "KFNFH") |>
+  add_age("pond") |>
+  relocate(hatchery_name, .before = fiscal_year) |>
+  rename(record_type = type)
+
+KFNFH_mortality_pond_monthly |>
+  group_by(fiscal_year, record_type) |>
+  summarise(months = n_distinct(month, na.rm = TRUE), mortality = sum(mortality, na.rm = TRUE),
+            .groups = "drop")
+```
+
+**Differences from the curated version.** The mortality counts (month, pond, number dead) come straight from the three
+mortality workbooks and are identical to the curated file. Only `age_class` and `starting_count` differ, because they now come from
+the rebuilt lookup instead of the curated one:
+
+```{r mortality-monthly-differences}
+with_curated_age <- mortality_spreadsheets_csv |>
+  select(fiscal_year, pond, mortality, type) |>
+  mutate(row = row_number()) |>
+  left_join(lookup_curated |> select(fiscal_year, facility, age_curated = age, count_curated = starting_count),
+            by = c("fiscal_year", "pond" = "facility")) |>
+  left_join(lookup_comparison |> select(fiscal_year, facility, age_rebuilt, count_rebuilt = starting_count_rebuilt),
+            by = c("fiscal_year", "pond" = "facility"))
+
+age_diff_summary <- with_curated_age |>
+  summarise(rows = n(),
+            same_age_class = sum(age_curated == age_rebuilt, na.rm = TRUE),
+            different_age_class = sum(age_curated != age_rebuilt, na.rm = TRUE),
+            age_only_in_curated = sum(!is.na(age_curated) & is.na(age_rebuilt)),
+            age_only_in_rebuilt = sum(is.na(age_curated) & !is.na(age_rebuilt)))
+age_diff_summary
+```
+
+`r age_diff_summary$different_age_class` of the `r age_diff_summary$rows` monthly records get a different age class than the curated lookup
+would give (`r age_diff_summary$same_age_class` are the same). These are the facility-years described in the lookup differences above, mainly ponds where the curated lookup lists an extra class
+or assigns a cycle that spans two fiscal years to a different year.
+
+## 2c. Capacity
+
+```{r capacity}
+KFNFH_capacity <- capacity_csv |>
+  mutate(hatchery_name = "KFNFH") |>
+  relocate(hatchery_name, .before = fiscal_year)
+
+KFNFH_capacity
+```
+
+**Differences from the curated version.** Pond counts and acreage are identical (read from the facility description of each report).
+Indoor tank gallons are summed from the tank lists in the reports, which gives a different series from the curated file:
+
+```{r capacity-differences}
+KFNFH_capacity |>
+  select(fiscal_year, capacity_type, gallons_indoor) |>
+  left_join(capacity_curated |> select(fiscal_year, gallons_indoor_curated = gallons_indoor), by = "fiscal_year") |>
+  mutate(same = gallons_indoor == gallons_indoor_curated)
+```
+
+The curated file repeats the FY2025 total (16,395 gallons: the greenhouse plus the second indoor building) for FY2022-FY2024 and for the planned row.
+The FY2022-FY2024 reports list only the greenhouse tanks (the second indoor building is first described in the FY2025 report), so the package keeps the
+value each report supports: 10,360 (FY2021), 12,035 (FY2022), 12,755 (FY2023 and FY2024), 16,395 (FY2025). The planned build-out has no gallons in any report (`NA`).
+
+## 2d. Broodstock spawned
+
+The CSV is FY2025 Table 4 (broodstock spawned in spring 2025, by capture year and sex). It is
+verified against the parsed FY2025 table and given a fiscal year column.
+
+```{r broodstock}
+brood_2025 <- tables_raw_2025[[5]] |>
+  slice(-1) |>
+  transmute(capture_year_raw = `Capture`,
+            SNS_F = as.numeric(`...2`), SNS_M = as.numeric(`...4`),
+            LRS_F = as.numeric(`...5`), LRS_M = as.numeric(`...7`)) |>
+  pivot_longer(-capture_year_raw, names_to = c("species", "sex"), names_sep = "_") |>
+  pivot_wider(names_from = sex, values_from = value)
+
+KFNFH_broodstock_spawned <- broodstock_spawned_csv |>
+  transmute(hatchery_name = "KFNFH",
+            spawn_fiscal_year = 2025,
+            species,
+            capture_year,
+            capture_year_raw,
+            females_spawned, males_spawned, total_spawned)
+
+check_b <- brood_2025 |>
+  mutate(capture_year_raw = if_else(capture_year_raw == "N/A", "N/A (not recorded)", capture_year_raw)) |>
+  inner_join(KFNFH_broodstock_spawned, by = c("species", "capture_year_raw"))
+tibble(rows_csv = nrow(KFNFH_broodstock_spawned), rows_matched_to_pdf = nrow(check_b),
+       females_equal = all(check_b$F == check_b$females_spawned, na.rm = TRUE),
+       males_equal = all(check_b$M == check_b$males_spawned, na.rm = TRUE))
+```
+
+# Step 4 (continued): one age definition everywhere
+
+Every object with a pond or facility now takes `age_class` and `starting_count` from the lookup:
+
+```{r age-coverage}
+bind_rows(
+  KFNFH_pond_growout |> transmute(object = "KFNFH_pond_growout", fiscal_year, matched = !is.na(age_class)),
+  KFNFH_mortality_pond_monthly |> transmute(object = "KFNFH_mortality_pond_monthly", fiscal_year, matched = !is.na(age_class))) |>
+  group_by(object, fiscal_year) |>
+  summarise(rows = n(), with_age = sum(matched), share = round(with_age / rows, 2), .groups = "drop")
+```
+
+The lookup starts in FY2019 and is sparse before FY2021, so FY2021 and FY2022 have the lowest
+coverage. Filling those is listed under remaining gaps.
+
+# Final objects
+
+```{r final}
+final_objects <- c(
+  # merged or extended (existing names kept)
+  "KFNFH_historical_collection_release",
+  "KFNFH_pond_growout",
+  "KFNFH_LRS_ESS_adult_collection",
+  "KFNFH_hatchery_release",
+  "KFNFH_pen_survival",
+  # extended and renamed (the _2024 suffix is dropped)
+  "KFNFH_adfluvial_early_rearing",
+  "KFNFH_LRS_ESS_incubation_hatch",
+  # new
+  "KFNFH_age_facility_lookup",
+  "KFNFH_mortality_events",
+  "KFNFH_mortality_events_summary",
+  "KFNFH_mortality_pond_monthly",
+  "KFNFH_capacity",
+  "KFNFH_broodstock_spawned")
+
+tibble(object = final_objects,
+       rows = map_int(final_objects, ~ nrow(get(.x))),
+       cols = map_int(final_objects, ~ ncol(get(.x))))
+```
+
+`sucker_pit_tag_detection_2024` is unchanged (see remaining gaps).
+
+```{r save}
+if (isTRUE(params$save_data)) {
+  usethis::proj_set(here::here(), force = TRUE)
+  do.call(usethis::use_data, c(lapply(final_objects, as.name), list(overwrite = TRUE)))
+
+  # objects that were renamed: remove the old files so both names do not ship
+  stale <- here::here("data", c("KFNFH_adfluvial_early_rearing_2024.rda",
+                                "KFNFH_LRS_ESS_incubation_hatch_2024.rda"))
+  file.remove(stale[file.exists(stale)])
+}
+```
+
+# Description of each data object
+
+All values come from the annual reports (PDF) or the hatchery workbooks (Excel). The last column says where a package value differs from
+the hand-compiled ("curated") CSV that the exploration started from.
+
+```{r object-descriptions}
+descriptions <- tribble(
+  ~object, ~contents, ~source, ~years, ~differs_from_curated,
+  "KFNFH_historical_collection_release", "Larvae collected, SARP, fingerling, fry and salvage releases with lengths, collection method, total released, broodstock on station",
+    "FY2025 report Tables 1 and 7; broodstock from the report text; collection totals confirmed in `2025 Larval Collection and Early Rearing Summary Data (version 1).xlsx`", "FY2016-2025",
+    "FY2024 larvae collected is 30,150 (FY2024 report, FY2025 Table 7, workbook); FY2025 Table 1 and the old CSV said 30,142",
+  "KFNFH_hatchery_release", "Every distribution or transfer of fish: date, species, lot, number, weight, lengths, source pond, destination",
+    "FY2021-FY2025 report tables (FY2025 Table 15); FY2025 matches `FY25 Fish Distribution.xlsx`", "FY2021-2025", "none (no curated version)",
+  "KFNFH_LRS_ESS_adult_collection", "Wild adult Lost River suckers collected at East Side Springs: date, PIT tag, sex, gamete use, lengths, spring, family groups",
+    "FY2023-FY2025 report Table 2; FY2023-24 match the ESS metadata workbooks", "FY2023-2025", "none (no curated version)",
+  "KFNFH_LRS_ESS_incubation_hatch", "Spawning crosses per female and incubation vessel: parents, family groups, eggs, fry, hatch percent",
+    "FY2024 and FY2025 report Table 3; both years match the ESS metadata workbooks", "FY2024-2025", "none (rebuilt `wild_lrs_family_groups.csv` is identical)",
+  "KFNFH_adfluvial_early_rearing", "Larval culture-unit stocking: collected, mortality, stocked, survival, observed and unobserved mortality, `restock` flag",
+    "FY2023 Table 3, FY2024 Table 5, FY2025 Table 8; FY2024 identical to the early rearing workbook", "FY2023-2025", "none (no curated version)",
+  "KFNFH_pond_growout", "One row per pond cycle: dates, numbers, weights, lengths, growth, harvest mortality, survival, disposition, `age_class`, `starting_count`",
+    "FY2021-FY2025 report pond tables; FY2025 cycles validated against the Production Harvest workbook; age from `KFNFH_age_facility_lookup`", "FY2021-2025",
+    "`age_class` and `starting_count` come from the rebuilt lookup (see the lookup differences)",
+  "KFNFH_pen_survival", "Net pen survival and growth (Upper Klamath Lake and Gerber) with notes for years not operated",
+    "FY2024 Tables 9-10 and FY2025 Tables 13-14; identical to `nphistory.xlsx`", "Operation years 2019-2025", "none (no curated version)",
+  "sucker_pit_tag_detection_2024", "PIT-tag detections at monitoring sites", "FY2024 report Table 12", "FY2024", "none (no curated version)",
+  "KFNFH_age_facility_lookup", "Age class(es) and starting count of fish in each pond, tank or net pen by fiscal year",
+    "Net pens: `nphistory.xlsx`. Ponds: Production Harvest workbooks and the report pond tables (rule above)", "FY2019-2025",
+    "Rebuilt by rule; same age class for most facility-years but not all; no FY2020 ponds, unoperated FY2025 pens or extra age classes (see the lookup differences)",
+  "KFNFH_mortality_events", "28 events from the report narratives: category, location, cause, loss, confidence, severity tier",
+    "Descriptions: curated reading of the FY2021-2024 narratives, each tied to a phrase in the report. Loss: `nphistory.xlsx`, larval rearing tables and workbook, report text. Tier: fixed rule on the loss", "Events 2019-2024",
+    "Only E22 differs: no loss can be computed from the reports (curated 45%, tier Major), so it is unquantified",
+  "KFNFH_mortality_events_summary", "Simplified events: category, mortality yes/no, percent mortality, fish lost", "Same as `KFNFH_mortality_events`", "Events 2019-2024",
+    "Only E22 differs (percent mortality is `NA`)",
+  "KFNFH_mortality_pond_monthly", "Monthly pond mortality (and FY2023 harvest mortality) with age class",
+    "`Fiscal Year 23 WQ_Mortality reporting.xlsx`, `Copy of 2024_KFNFH_WQ.xlsx`, `KFNFH_WQ_FY2025_2 (version 1).xlsx`", "FY2023-2025 (FY2024 is 1 Jan-22 Sep only)",
+    "Counts identical; `age_class` and `starting_count` come from the rebuilt lookup",
+  "KFNFH_capacity", "Outdoor pond count and acreage, indoor tank gallons, current vs planned",
+    "Facility description of the FY2021-FY2025 reports (phrases checked against the report text); gallons summed from the tank lists", "FY2021-2025 plus planned build-out",
+    "Indoor gallons: the curated file carries 16,395 back to FY2022-24 and to the planned row; the reports support 12,035 (FY2022), 12,755 (FY2023-24), 16,395 (FY2025), none for the planned row",
+  "KFNFH_broodstock_spawned", "Captive broodstock spawned in spring 2025 by capture year, species and sex",
+    "`FY25CaptiveBroodSpawning_FINAL.xlsx` (sheet All PIT), identical to FY2025 Table 4", "Spawned in 2025", "none (identical)")
+
+descriptions |>
+  mutate(rows = map_int(object, ~ if (exists(.x)) nrow(get(.x)) else NA_integer_),
+         cols = map_int(object, ~ if (exists(.x)) ncol(get(.x)) else NA_integer_)) |>
+  relocate(rows, cols, .after = object)
+```
+
+`sucker_pit_tag_detection_2024` is built by `process-hatchery-data.R` and is not part of this document; its row and column counts are blank above.
+
+# Remaining gaps
+
+| Gap | Why it is still open | Next step |
+|---|---|---|
+| Early rearing FY2021 and FY2022 | The FY2021 and FY2022 reports have no culture-unit table | Ask USFWS for the larval tank records for those years |
+| FY2022 pond tables 3-4 | Embedded as images and OCR'd earlier; `inventory_source` is `NA` for those rows | Re-check against the source images |
+| FY2021 pond PIT tag study (Tables 5-7) and FY2022 historical PIT detections (Table 6) | Different table types, never imported | Decide if the model needs them |
+| PIT tag detections FY2025 (Tables 16-17) | Six sites, wide layout that does not match `sucker_pit_tag_detection_2024` | Extend `sucker_pit_tag_detection_2024` once the layout is agreed |
+| Weight gain and feed conversion | FY2025 start and end weights are now in `KFNFH_pond_growout` (from the report tables), but weight gain is not reported for FY2025 (left `NA`), and feed conversion is not extracted for any year | Compute weight gain from the start and end weights if needed; extract feed conversion from the workbooks (not in the repository) |
+| Mortality events for FY2025 | `KFNFH_mortality_events` was synthesized from the FY2021-2024 report narratives only; the FY2025 spike in the spreadsheets has no narrative | Review the FY2025 report narrative |
+| Mortality spreadsheets FY2024 Oct-Dec 2023 | Quarter not found | Ask USFWS |
+| Age lookup: FY2020 ponds (A1, A2, P5, P11-P15), unoperated FY2025 pens, extra age classes | Not in the reports or workbooks; the curated lookup has them but they are not used | Ask USFWS for the facility-by-age records |
+| Magnitudes for qualitative mortality events (including E22) | Most events have no number in the reports or workbooks | Ask USFWS or agree how to assign severity numerically |
+
+# Notes for the model
+
+* `KFNFH_pond_growout` is the stage-specific growth and survival table (mm/day, survival percent, by pond and season, FY2021-2025).
+* `KFNFH_mortality_events` and `KFNFH_mortality_pond_monthly` give event frequency/severity and routine mortality.
+* `KFNFH_capacity` bounds production; `KFNFH_historical_collection_release` and `KFNFH_hatchery_release` give inputs and outputs by year.
+* `age_class` has multi-age values (`"1/2/3"`) where a facility held several age groups in one year. Decide how to allocate mortality and growth in those cases before using it as a stage.
+
+```{r session, echo = FALSE}
+sessionInfo()
+```

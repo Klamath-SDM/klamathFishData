@@ -85,7 +85,7 @@ klamathFishData::KFNFH_historical_collection_release |>
 ```
 
 ```{r}
-early_rearing_pivot <- klamathFishData::KFNFH_adfluvial_early_rearing_2024 |>
+early_rearing_pivot <- klamathFishData::KFNFH_adfluvial_early_rearing |>
   transmute(cohort = paste(culture_unit, date) |> 
               as_factor(), 
             stocked, 
@@ -172,7 +172,7 @@ klamathFishData::KFNFH_hatchery_release |>
 ## East spring spawning population
 
 ```{r}
-klamathFishData::KFNFH_LRS_ESS_incubation_hatch_2024 |>
+klamathFishData::KFNFH_LRS_ESS_incubation_hatch |>
   group_by(female, spawning_date, hatch_date) |>
   summarize(across(c(total_eggs, total_fry), sum)) |>
   mutate(non_hatching = pmax(total_eggs - total_fry, 0)) |>

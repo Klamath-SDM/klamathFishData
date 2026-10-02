@@ -116,7 +116,7 @@ KFNFH_hatchery_release_2024 <- table_11_raw |>
 #### 2023 (Table 10) -----------------------------------------------------------
 
 table_10_2023 <- tables_raw_2023[[11]] |>
-  clean_names()
+  clean_names() |> glimpse()
 
 KFNFH_hatchery_release_2023 <- table_10_2023 |>
   rename(dispo_date = date,
@@ -250,6 +250,7 @@ KFNFH_historical_collection_release <- table_1 |>
          salvage_sl_mm = sl_or_tl_mm) |>
   slice(-n()) |> # removing the total
   mutate(fiscal_year = as.numeric(fiscal_year),
+         # TODO: check on these naming conventions
          salvage_tl_mm = case_when(salvage_sl_mm == 129 ~ salvage_sl_mm,
                                    salvage_sl_mm == 126 ~ salvage_sl_mm,
                                    TRUE ~ NA),
@@ -286,7 +287,7 @@ KFNFH_LRS_ESS_adult_collection_2024 <- table_2_raw |>
   relocate(pit_tag_last_5, .after = pit_tag_suffix) |>
   glimpse()
 
-KFNFH_LRS_ESS_adult_collection_2024 |> usethis::use_data(overwrite = T)
+# KFNFH_LRS_ESS_adult_collection_2024 |> usethis::use_data(overwrite = T)
 
 #### 2023 (Table 2) ------------------------------------------------------------
 

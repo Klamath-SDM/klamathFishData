@@ -1,0 +1,11 @@
+file,rows_existing,rows_rebuilt,cols_missing_in_rebuilt,cols_extra_in_rebuilt,cells_equal_pct,worst_column,not_reproducible
+mortality_spreadsheets_combined.csv,1516,1516,,,89,starting_count (53.8%),
+production_harvest_combined.csv,285,285,,,97.2,starting_count (70.5%),
+family_groups.csv,49,49,,,100,Fiscal Year (100%),
+wild_lrs_family_groups.csv,32,32,,,100,fiscal_year (100%),
+broodstock_spawned.csv,9,9,,,100,capture_year_raw (100%),
+collected_released.csv,10,10,,,100,fiscal_year (100%),
+usfws_sarp_capacity.csv,6,6,,,83.3,gallons_indoor (33.3%),indoor gallons FY2022-24 and planned (curated)
+usfws_sarp_age_facility_lookup.csv,232,227,,,62,starting_count (56.1%),"FY2020 ponds, unoperated FY2025 pens, extra age classes, some counts (curated)"
+mortality_events.csv,28,28,,,99.4,"% Lost (best estimate, numeric) (96.4%)",event descriptions (curated); numbers and tiers rebuilt
+mortality_events_summary.csv,28,28,,,99.3,percent_mortality (96.4%),event descriptions (curated); numbers and tiers rebuilt
