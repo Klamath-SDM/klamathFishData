@@ -227,3 +227,41 @@
 #'   }
 #' @source \href{Growth, Survival, and Cohort Formation of Juvenile Lost River (Deltistes luxatus) and Shortnose Suckers (Chasmistes brevirostris) in Upper Klamath Lake, Oregon, and Clear Lake Reservoir, California—2021–22 Monitoring Report}{https://doi.org/10.3133/ofr20241013}
 'sucker_juvenile_survival'
+
+#' @title Colonial Waterbird Colony Counts
+#' @name bird_colony_counts
+#' @description Annual peak colony counts of piscivorous colonial waterbirds
+#' (American White Pelican, Double-crested Cormorant and Caspian Tern) nesting
+#' at Upper Klamath Lake, Clear Lake Reservoir, Sheepy Lake and Tule Lake,
+#' 2009-2024. Counts were compiled from the published tables of two reports and
+#' are reported as in those tables. No values were estimated, smoothed or imputed.
+#' @format A tibble with 164 rows and 9 columns
+#' \itemize{
+#'   \item \code{year}: breeding season year (2009-2024)
+#'   \item \code{location}: nesting location (upper klamath lake, clear lake reservoir, sheepy lake, tule lake). Each location can include several nesting sites (for example, up to five islands in Upper Klamath Lake and up to four sites in Clear Lake Reservoir)
+#'   \item \code{species}: waterbird species (american white pelican, double-crested cormorant, caspian tern)
+#'   \item \code{count}: peak colony count. NA when no count is available; see \code{count_status}
+#'   \item \code{count_unit}: unit of \code{count} (individuals, pairs, unspecified). Four 2021 values are breeding pairs, not individuals, and should not be summed with individual counts. "unspecified" means the source table does not state the unit
+#'   \item \code{count_status}: whether a count exists (counted, present_not_counted, no_colony, not_available).
+#'   present_not_counted: breeding birds were present but counts were not available as part of the study (dash in Table S.1).
+#'   no_colony: no colony site existed that year (NC in Table S.1).
+#'   not_available: no count in the source (blank cell in Table S.1 or NA in Table A1). For Upper Klamath Lake 2021, birds were not at historical nesting sites at the June survey, but colonies appeared to be active and unsuccessful at fledging young
+#'   \item \code{colony_abandoned}: TRUE if birds attempted to nest but abandoned the site at some point during the breeding season (March-August), as marked with an asterisk in Table S.1. The count is still reported. Table A1 (2021-2024) does not use this marker, so these years are always FALSE
+#'   \item \code{count_method}: how the count was obtained (unspecified, osu_photo_count, osu_pair_count). osu_photo_count: individuals counted by one Real Time Research observer from photos provided by Oregon State University. osu_pair_count: breeding pairs (individuals in nesting posture) counted by Oregon State University
+#'   \item \code{source}: report and table each value was taken from
+#' }
+#' @note
+#' \itemize{
+#'   \item Counts for 2009-2014 are credited in Table S.1 to Evans et al. (2016).
+#'   \item There are no counts for Upper Klamath Lake or Clear Lake Reservoir in 2016 and 2017 (breeding birds were present but not counted).
+#'   \item Sheepy Lake and Tule Lake have no counts before 2018, and Tule Lake had no colony site in 2009 and 2010. Sheepy Lake is called "Sheep Lake" in Table S.1.
+#'   \item Count units and methods differ between 2021 and other years (see \code{count_unit} and \code{count_method}).
+#'   \item This dataset does not include years before 2009.
+#' }
+#' @source
+#' Evans et al. (2021). North American Journal of Fisheries Management.
+#' \href{https://doi.org/10.1002/nafm.10838}{doi:10.1002/nafm.10838}, Supplemental Table S.1 (2009-2020).
+#'
+#' Banet et al. (2025). Final report, September 23, 2025, "An Analysis of
+#' Predation Effects in 2024", Appendix A, Table A1 (2021-2024).
+"bird_colony_counts"
