@@ -25,7 +25,7 @@ A tibble with columns describing collection timing and fish attributes. Columns 
 }
 }
 \source{
-Klamath Falls National Fish Hatchery Annual Reports for Fiscal Years 2023-2025
+Klamath Falls National Fish Hatchery Annual Reports for Fiscal Years 2023-2025. FY2024 (43 fish) matches \code{METADATA FOR ALL ESS LRS FISH SPAWNED (version 1).xlsx} and FY2023 (29 fish) matches the "Genetics for All Fish" sheet of \code{FY25 METADATA FOR ALL ESS LRS FISH SPAWNED.xlsx}; the FY2025 records (69 fish) come from the report table only
 }
 \usage{
 KFNFH_LRS_ESS_adult_collection

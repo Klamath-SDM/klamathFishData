@@ -1,3 +1,7 @@
+# NOTE: this stand-alone script has been merged into process-hatchery-data.R (section "2. INPUTS FROM THE EXCEL
+# WORKBOOKS AND THE REPORTS" and the final build). It is kept unchanged for review and can be removed once the merged
+# script has been checked. Running either script writes the same files to data-raw/hatchery-resources/reproduced/.
+#
 # process-hatchery-resources.R ------------------------------------------------
 #
 # Rebuilds the CSVs in data-raw/hatchery-resources/ that the exploration Rmd

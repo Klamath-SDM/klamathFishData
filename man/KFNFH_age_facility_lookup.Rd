@@ -5,26 +5,30 @@
 \alias{KFNFH_age_facility_lookup}
 \title{Fish Age by Facility and Fiscal Year, KFNFH}
 \format{
-A tibble with 232 rows and 5 columns
+A tibble with 227 rows and 5 columns
 \itemize{
   \item \code{hatchery_name}: hatchery name (KFNFH)
   \item \code{fiscal_year}: fiscal year
-  \item \code{facility}: facility code (pond, tank or net pen, upper case)
-  \item \code{age_class}: age group(s) reared in the facility, as text. Multi-age facilities are listed together (e.g. "1/2/3"); "wild" and "other" also occur
-  \item \code{starting_count}: number of fish at the start of the year; many are missing because no numbers could be found. The count may change through the year
+  \item \code{facility}: facility code (pond or net pen, upper case)
+  \item \code{age_class}: age class(es) of the fish, as text; several classes are separated by "/" (e.g. "1/2"); "wild" and "other" also occur
+  \item \code{starting_count}: number of fish at the start of the year (see the description); \code{NA} when no record gives it
 }
 }
 \source{
-Built from information provided by USFWS (Klamath Falls National Fish Hatchery)
+Klamath Falls National Fish Hatchery workbooks \code{nphistory.xlsx} and the Production Harvest Data Sheet workbooks (FY2024 and FY2025), and the Annual Reports for Fiscal Years 2021-2025 (pond tables)
 }
 \usage{
 KFNFH_age_facility_lookup
 }
 \description{
-Maps each facility (pond, tank or net pen) at the Klamath Falls National Fish Hatchery (KFNFH)
-to the age group(s) of fish reared there, by fiscal year. USFWS does not maintain such a table, so it
-was built from information provided by USFWS. Facilities are re-purposed for different age classes across years,
-so the same facility code can carry a different age in another fiscal year. This is the single source of fish age
-used by \code{KFNFH_pond_growout} and \code{KFNFH_mortality_pond_monthly}.
+Age class(es) and starting count of the fish in each pond or net pen at the Klamath Falls National Fish Hatchery (KFNFH), by fiscal year.
+USFWS does not maintain such a table, so it is rebuilt from the reports and workbooks only:
+\itemize{
+  \item Net pens (UKL and Gerber): from the hatchery workbook \code{nphistory.xlsx}. Age is the operation year minus the capture year; \code{starting_count} is the number of fish stocked.
+  \item Ponds (A, B, C and P series): from every pond cycle in the Production Harvest Data Sheet workbooks and the annual report pond tables. A cycle counts in the fiscal year it was stocked and in the fiscal year it was harvested. The age class is that fiscal year minus the lot's collection year (4 means 4 or older); East Side Springs and mixed lots are "other", and wild and salvage lots are "wild". \code{starting_count} is the number of fish at the start of the first cycle harvested in the year.
+}
+This is the single source of fish age used by \code{KFNFH_pond_growout} and \code{KFNFH_mortality_pond_monthly}.
+
+**Differences from the hand-compiled lookup this replaces.** Of the 232 facility-years in the hand-compiled lookup, the rebuilt lookup gives the same age class for 161, a subset of the curated classes for 18 (the curated value lists an extra class such as "other", "wild" or a second age that is not in the reports or workbooks), and a different class for 43 (mostly the fiscal year assigned to a cycle that spans two years). Ten facility-years only in the hand-compiled lookup are not in the package (FY2020 ponds A1, A2, P5 and P11-P15, and the unoperated UKLE and UKLW pens in FY2025); five rebuilt facility-years are not in the hand-compiled lookup. Starting counts are equal for 106 of the 126 counts present in both.
 }
 \keyword{datasets}

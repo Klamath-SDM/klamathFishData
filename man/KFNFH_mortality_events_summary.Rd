@@ -5,7 +5,7 @@
 \alias{KFNFH_mortality_events_summary}
 \title{Hatchery Mortality Events Summary, KFNFH}
 \format{
-A tibble with 28 rows and 7 columns
+A tibble with 37 rows and 7 columns
 \itemize{
   \item \code{hatchery_name}: hatchery name (KFNFH)
   \item \code{event_id}: event identifier, matches \code{KFNFH_mortality_events}
@@ -24,6 +24,6 @@ KFNFH_mortality_events_summary
 }
 \description{
 Simplified version of \code{KFNFH_mortality_events}: one row per event with the category, whether it was a
-mortality event, the percent mortality and the number of fish lost where available. Most events have no quantity.
+mortality event, the percent mortality and the number of fish lost where available. Most events have no quantity. Computed the same way as \code{KFNFH_mortality_events}; event E22 has no percent mortality (see that object).
 }
 \keyword{datasets}

@@ -33,6 +33,7 @@ KFNFH_hatchery_release
 }
 \description{
 Summary of all fish distributions for repatriation or transfer from the Klamath Falls National Fish Hatchery during fiscal years 2021-2025. A "distribution" is considered a stocking or repatriation event, while a "transfer" involves moving fish for temporary holding.
+FY2025 matches the hatchery workbook \code{FY25 Fish Distribution.xlsx}; the FY2021 and FY2022 totals match \code{FY20-FY25 Pond Summaries and Fish Distributions.xlsx} (FY2023 is 48,377 here and 48,374 in that workbook).
 Corresponds to **Table 15** in the FY2025 KFNFH Annual Report, **Table 11** in the FY2024 report, **Table 10** in the FY2023 report, **Table 5** in the FY2022 report, and **Table 2** in the FY2021 report.
 }
 \keyword{datasets}

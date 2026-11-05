@@ -32,7 +32,7 @@ A tibble with one row per spawning female and incubation vessel
 }
 }
 \source{
-Klamath Falls National Fish Hatchery Annual Reports for Fiscal Years 2024 and 2025
+Klamath Falls National Fish Hatchery Annual Reports for Fiscal Years 2024 and 2025. The FY2025 females (18 crosses) match the "FY25 Tables Reorganized" sheet of \code{FY25 METADATA FOR ALL ESS LRS FISH SPAWNED.xlsx}; the FY2024 crosses match the "FY24 Tables Reorganized - MY" sheet of \code{METADATA FOR ALL ESS LRS FISH SPAWNED (version 1).xlsx}
 }
 \usage{
 KFNFH_LRS_ESS_incubation_hatch

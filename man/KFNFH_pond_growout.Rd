@@ -43,12 +43,12 @@ A tibble with rows for each pond for each inventory season.
   \item \code{short_tl_mm}: mean total length of the fish short of the target (mm)
   \item \code{brood_number}: number of fish kept as broodstock
   \item \code{brood_percent}: percent of harvested fish kept as broodstock
-  \item \code{age_class}: age class of the fish in the pond in that fiscal year, from \code{KFNFH_age_facility_lookup} (e.g. "1", "2", "1/2/3" where several age groups were held, "wild", "other"); \code{NA} where the pond is missing from the lookup
+  \item \code{age_class}: age class of the fish in the pond in that fiscal year, from \code{KFNFH_age_facility_lookup}, which is rebuilt from the reports and workbooks (e.g. "1", "2", "1/2" where several age groups were held, "wild", "other"); \code{NA} where the pond is not in the lookup
   \item \code{starting_count}: starting count of fish in the pond from \code{KFNFH_age_facility_lookup}
 }
 }
 \source{
-Klamath Falls National Fish Hatchery Annual Reports for Fiscal Years 2021-2025
+Klamath Falls National Fish Hatchery Annual Reports for Fiscal Years 2021-2025. Completed FY2025 cycles were validated against \code{FY2025 Production Harvest Data Sheet_20251107.xlsx}; the workbook's live end count equals \code{end_number} minus \code{harvest_mortality_number}
 }
 \usage{
 KFNFH_pond_growout

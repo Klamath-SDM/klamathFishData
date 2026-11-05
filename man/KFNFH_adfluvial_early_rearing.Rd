@@ -18,10 +18,11 @@ A tibble with one row per stocking of an individual culture unit
   \item \code{survival_percent}: percent survival relative to collected larvae
   \item \code{observed_mortality_percent}: percent observed mortality
   \item \code{unobserved_mortality_percent}: percent unobserved or inferred loss
+  \item \code{restock}: \code{TRUE} for "Restock" rows (larvae moved back into an already-stocked tank). In FY2024 these rows re-count 7,327 fish, so the \code{collected} column sums to 37,477 while 30,150 larvae were collected; sum \code{collected} over non-restock rows (or use \code{KFNFH_historical_collection_release}) for collection totals
 }
 }
 \source{
-Klamath Falls National Fish Hatchery Annual Reports for Fiscal Years 2023, 2024 and 2025
+Klamath Falls National Fish Hatchery Annual Reports for Fiscal Years 2023, 2024 and 2025. The FY2024 rows are identical to the hatchery workbook \code{2024 Larval Collection and Early Rearing Summary Data.xlsx} (sheet "Pond Performance Table 4 Report"); FY2023 and FY2025 totals agree with \code{2025 Larval Collection and Early Rearing Summary Data (version 1).xlsx}
 }
 \usage{
 KFNFH_adfluvial_early_rearing

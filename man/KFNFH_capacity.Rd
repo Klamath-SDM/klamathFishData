@@ -16,7 +16,7 @@ A tibble with 6 rows and 6 columns
 }
 }
 \source{
-Compiled from the Klamath Falls National Fish Hatchery annual reports
+Facility descriptions in the Klamath Falls National Fish Hatchery Annual Reports for Fiscal Years 2021-2025 (pond counts and acreage; the planned 33 ponds on 8.5 acres is in the FY2025 report) and the tank lists in the same reports (indoor gallons)
 }
 \usage{
 KFNFH_capacity
@@ -25,5 +25,10 @@ KFNFH_capacity
 Outdoor pond and indoor tank capacity at the Klamath Falls National Fish Hatchery (KFNFH) by fiscal year. Construction changed capacity
 over time, so the current (constrained) capacity and the planned full build-out capacity are recorded as separate rows
 (\code{capacity_type}) rather than choosing one.
+
+Pond counts and acreage come from the facility description of each report (each phrase is checked against the report text). Indoor gallons are
+summed from the tank lists in the reports: 10,360 (FY2021), 12,035 (FY2022), 12,755 (FY2023 and FY2024; the second indoor building is first described in
+the FY2025 report) and 16,395 (FY2025). **Difference from the hand-compiled table:** it repeated the FY2025 total (16,395) for FY2022-FY2024 and for the planned build-out; the
+reports support those values only for FY2025, and no report gives indoor gallons for the planned build-out (\code{NA}).
 }
 \keyword{datasets}

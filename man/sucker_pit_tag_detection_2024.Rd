@@ -27,6 +27,6 @@ Summary of PIT-tag detections from stationary monitoring locations
 used to assess post-release survival and persistence of hatchery
 and salvaged suckers in Upper Klamath Lake during fiscal year 2024.
 
-Corresponds to **Table 12** in the FY2024 KFNFH Annual Report.
+Corresponds to **Table 12** in the FY2024 KFNFH Annual Report. Calendar year 2025 detections (six sites) are in the FY2025 report (Tables 16-17) and in the hatchery workbook \code{monitor table.xlsx}; they are not yet in this object.
 }
 \keyword{datasets}

@@ -315,7 +315,7 @@
 #' Data are distinguished by originating report table using
 #' \code{inventory_source}.
 #'
-#' Combines **Tables 10-12** from the FY2025 KFNFH Annual Report, **Tables 6-8** from FY2024, **Tables 5-7** from FY2023, **Tables 2-4** from FY2022, and **Tables 3-4** from FY2021. A cycle reported as still in progress in one report (no harvest date) is replaced by its completed record from the later report, so a pond cycle appears once. The Production Harvest Data Sheet workbooks used in the exploration were compared with these tables and add no additional cycles. The fiscal year of a cycle is the report in which it was completed (or, if still in progress, the last report that lists it). FY2022 rows taken from report tables 3 and 4 (embedded as images) have no \code{inventory_source}.
+#' Combines **Tables 10-12** from the FY2025 KFNFH Annual Report, **Tables 6-8** from FY2024, **Tables 5-7** from FY2023, **Tables 2-4** from FY2022, and **Tables 3-4** from FY2021. A completed cycle that is listed in two consecutive reports (44 cycles) is kept once, with the later report's row. A cycle reported as still in progress in one report (no harvest date) is replaced by its completed record from the later report, so a pond cycle appears once. The Production Harvest Data Sheet workbooks used in the exploration were compared with these tables and add no additional cycles. The fiscal year of a cycle is the report in which it was completed (or, if still in progress, the last report that lists it). FY2022 rows taken from report tables 3 and 4 (embedded as images) have no \code{inventory_source}.
 #'
 #' @format A tibble with rows for each pond for each inventory season.
 #' \itemize{
@@ -445,9 +445,11 @@
 #' @title Hatchery Mortality Events from Report Narratives, KFNFH
 #' @name KFNFH_mortality_events
 #' @description
-#' Disease, water quality, weather, predation and other events described in the narratives of the FY2021-2024
+#' Disease, water quality, weather, predation and other events described in the narratives of the FY2021-2025
 #' Klamath Falls National Fish Hatchery (KFNFH) annual reports, with a category, a best-estimate percent lost and a
-#' severity tier. Most events are not quantified in the reports. The FY2025 report has not been reviewed.
+#' severity tier. Most events are not quantified in the reports. Events E01-E28 come from the FY2021-2024 reports;
+#' events E29-E37 come from the FY2025 report, with their losses taken from the FY2025 water quality and mortality
+#' workbook (\code{KFNFH_WQ_FY2025_2 (version 1).xlsx}, daily sheets and \code{Sheet1}) and the report text.
 #' See \code{KFNFH_mortality_events_summary} for a simplified version.
 #'
 #' Identifying an event and describing it (period, location, category, cause, population affected, loss as reported, confidence) is a
@@ -460,7 +462,7 @@
 #' 45\% loss and the tier Major. The FY2024 report only says "several thousand fish" were lost, so \code{percent_lost} is \code{NA} and the tier
 #' is "Qualitative only (unquantified)". All other losses and tiers are identical.
 #'
-#' @format A tibble with 28 rows and 13 columns
+#' @format A tibble with 37 rows and 16 columns
 #' \itemize{
 #'   \item \code{hatchery_name}: hatchery name (KFNFH)
 #'   \item \code{event_id}: event identifier (E01, E02, ...)
@@ -475,9 +477,12 @@
 #'   \item \code{percent_lost}: best-estimate percent lost (numeric); \code{NA} when not quantified
 #'   \item \code{confidence}: how well the loss is quantified (e.g. Quantified, Estimated, Qualitative only)
 #'   \item \code{severity_tier}: severity class (Catastrophic >70\% loss, Major 30-70\%, Moderate 10-30\%, Minor <10\%, Near-miss, Non-mortality, Qualitative only)
+#'   \item \code{report_year}: fiscal year of the annual report whose narrative describes the event
+#'   \item \code{report_phrase}: phrase copied from that report that describes the event (the script stops if it is not in the report)
+#'   \item \code{loss_source}: where \code{percent_lost} comes from (workbook and sheet, report table, or report text); \code{NA} when the loss is not quantified
 #' }
 #'
-#' @source Klamath Falls National Fish Hatchery Annual Reports for Fiscal Years 2021-2024 (narrative sections, event descriptions compiled by the package authors); losses from \code{nphistory.xlsx}, \code{2024 Larval Collection and Early Rearing Summary Data.xlsx}, the FY2023 report tables and the report text
+#' @source Klamath Falls National Fish Hatchery Annual Reports for Fiscal Years 2021-2025 (narrative sections, event descriptions compiled by the package authors); losses from \code{KFNFH_WQ_FY2025_2 (version 1).xlsx} (FY2025 events), \code{nphistory.xlsx}, \code{2024 Larval Collection and Early Rearing Summary Data.xlsx}, the FY2023 report tables and the report text
 "KFNFH_mortality_events"
 
 
@@ -487,7 +492,7 @@
 #' Simplified version of \code{KFNFH_mortality_events}: one row per event with the category, whether it was a
 #' mortality event, the percent mortality and the number of fish lost where available. Most events have no quantity. Computed the same way as \code{KFNFH_mortality_events}; event E22 has no percent mortality (see that object).
 #'
-#' @format A tibble with 28 rows and 7 columns
+#' @format A tibble with 37 rows and 7 columns
 #' \itemize{
 #'   \item \code{hatchery_name}: hatchery name (KFNFH)
 #'   \item \code{event_id}: event identifier, matches \code{KFNFH_mortality_events}

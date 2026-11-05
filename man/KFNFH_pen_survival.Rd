@@ -21,7 +21,7 @@ A tibble with rows corresponding to pen by year.
 }
 }
 \source{
-Klamath Falls National Fish Hatchery Annual Reports for Fiscal Years 2024 and 2025
+Klamath Falls National Fish Hatchery Annual Reports for Fiscal Years 2024 and 2025. All rows and notes are identical to the hatchery workbook \code{nphistory.xlsx} (sheets "UKL" and "Gerber")
 }
 \usage{
 KFNFH_pen_survival
