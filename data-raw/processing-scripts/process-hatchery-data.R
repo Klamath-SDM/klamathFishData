@@ -3,9 +3,8 @@
 # Builds the KFNFH hatchery data objects of the package from the annual report PDFs (FY2021-2025) and the
 # hatchery Excel workbooks. Sections:
 #
-#   1. PARSE PDF FILES and PROCESS TABLES: the report tables of each year (FY2021-2024) and the FY2025 tables.
-#      The code that built the first versions of the package objects is commented out where the final build
-#      below replaces it ("SUPERSEDED"), so it can be reviewed before it is removed.
+#   1. PARSE PDF FILES and PROCESS TABLES: the report tables of each year (FY2021-2024) and the FY2025 tables,
+#      as per-year objects and intermediate objects that the final build merges.
 #   2. INPUTS FROM THE EXCEL WORKBOOKS AND THE REPORTS: mortality spreadsheets, production harvest, spawning
 #      crosses, broodstock, the age/facility lookup, collections and releases, capacity, and the mortality events.
 #      Values are read from the reports and the Excel files. The only hand-compiled file used is
@@ -230,74 +229,13 @@ KFNFH_hatchery_release_2021 <- table_2_2021 |>
   mutate(lot = as.character(lot)) |>
   glimpse()
 
-# New (intermediate object used by the final build below):
+# Intermediate object used by the final build below:
 hatchery_release_2021_2024 <- bind_rows(
   KFNFH_hatchery_release_2024,
   KFNFH_hatchery_release_2023,
   KFNFH_hatchery_release_2022,
   KFNFH_hatchery_release_2021
 )
-
-# ### Historical Collections and Releases Summary ================================
-
-# # Collections and releases from the Klamath Falls National Fish Hatchery since
-# # its inception in2016, by federal fiscal years. This table is reproduced in
-# # each year's report with updated numbers, so only the most recent report needs
-# # to be imported.
-
-# #### 2024 Historical Collection and Release (Table 1) --------------------------
-
-# table_1_raw <- tables_raw_2024[[2]] |>
-#   clean_names() |>
-#   glimpse()
-
-# table_1 <- table_1_raw |>
-#   clean_names() |>
-#   (\(x) {
-#     new_names <- paste(names(x), x[1, ], sep = "_") |>
-#       gsub("_NA", "", x = _) |>
-#       make_clean_names()
-#     x[-1, ] |>
-#       setNames(new_names) |>
-#       mutate(across(-1, ~parse_number(.x)))
-#   })()
-
-# #### 2024 Larval Catch (Table 4) -----------------------------------------------
-
-# table_4_raw <- tables_raw_2024[[5]] |>
-#   glimpse()
-
-# table_4 <- table_4_raw |>
-#   clean_names() |>
-#   slice(-10) |>
-#   transmute(fiscal_year = as.numeric(year_spring),
-#          larvae_collected = readr::parse_number(number_collected),
-#          primary_collection_method) |>
-#   glimpse()
-
-# #### Join Tables ---------------------------------------------------------------
-
-# KFNFH_historical_collection_release <- table_1 |>
-#   rename(sarp_tl_mm = tl_4_mm,
-#          fingerling_tl_mm = tl_6_mm,
-#          fry_tl_mm = tl_8_mm,
-#          salvage_sl_mm = sl_or_tl_mm) |>
-#   slice(-n()) |> # removing the total
-#   mutate(fiscal_year = as.numeric(fiscal_year),
-#          # TODO: check on these naming conventions
-#          salvage_tl_mm = case_when(salvage_sl_mm == 129 ~ salvage_sl_mm,
-#                                    salvage_sl_mm == 126 ~ salvage_sl_mm,
-#                                    TRUE ~ NA),
-#          salvage_sl_mm = case_when(salvage_tl_mm == 129 ~ NA,
-#                                    salvage_tl_mm == 126 ~ NA,
-#                                    TRUE ~ salvage_sl_mm))|>
-#   mutate(hatchery_name = "KFNFH") |>
-#   relocate(hatchery_name, .before = fiscal_year) |>
-#   left_join(table_4, by = join_by(fiscal_year, larvae_collected)) |>
-#   glimpse()
-
-# # save data
-# KFNFH_historical_collection_release |> usethis::use_data(overwrite = T)
 
 ### Wild LRS Adults ============================================================
 
@@ -359,17 +297,7 @@ KFNFH_LRS_ESS_adult_collection_2023 <-
   select(-matches("^x.$")) |>
   glimpse()
 
-# [SUPERSEDED - kept for review, remove once checked] adult collection: FY2025 is added in FINAL OBJECTS below
-# #### Combined ------------------------------------------------------------------
-
-# KFNFH_LRS_ESS_adult_collection <- bind_rows(
-#   KFNFH_LRS_ESS_adult_collection_2024,
-#   KFNFH_LRS_ESS_adult_collection_2023
-# )
-
-# KFNFH_LRS_ESS_adult_collection |> usethis::use_data(overwrite = T)
-
-# New (intermediate object used by the final build below):
+# Intermediate object used by the final build below:
 adult_collection_2023_2024 <- bind_rows(
   KFNFH_LRS_ESS_adult_collection_2024,
   KFNFH_LRS_ESS_adult_collection_2023
@@ -394,11 +322,6 @@ KFNFH_LRS_ESS_incubation_hatch_2024 <- table_3_raw |>
   separate_wider_delim(male_male, delim = " ", names = c("male_3", "male_4")) |>
   glimpse()
 
-#### Concatenate ---------------------------------------------------------------
-
-# [SUPERSEDED - kept for review, remove once checked] incubation: the FY2024 + FY2025 object (KFNFH_LRS_ESS_incubation_hatch) is built in FINAL OBJECTS below
-# KFNFH_LRS_ESS_incubation_hatch_2024 |> usethis::use_data(overwrite = T)
-
 ### Rearing Performance ========================================================
 
 #### 2024 (Table 5) ------------------------------------------------------------
@@ -414,9 +337,6 @@ KFNFH_adfluvial_early_rearing_2024 <- table_5_raw |>
          fiscal_year = 2024) |>
   relocate(hatchery_name, fiscal_year, .before = date) |>
   glimpse()
-
-# [SUPERSEDED - kept for review, remove once checked] early rearing: the FY2023-2025 object (KFNFH_adfluvial_early_rearing) is built in FINAL OBJECTS below
-# KFNFH_adfluvial_early_rearing_2024 |> usethis::use_data(overwrite = T)
 
 ### Pond Monitoring ============================================================
 
@@ -713,18 +633,7 @@ KFNFH_pond_growout_2021 <-
          life_history = if_else(str_detect(lot, "ESS"), "ESS", "adfluvial")) |>
   relocate(hatchery_name, fiscal_year, inventory_source, life_history, .before = pond)
 
-# [SUPERSEDED - kept for review, remove once checked] pond grow-out: FY2025 cycles, the workbook check and the age lookup are added in FINAL OBJECTS below
-# #### Concatenate ---------------------------------------------------------------
-
-# KFNFH_pond_growout <- bind_rows(
-#   KFNFH_pond_growout_2024,
-#   KFNFH_pond_growout_2023,
-#   KFNFH_pond_growout_2022,
-#   KFNFH_pond_growout_2021)
-
-# KFNFH_pond_growout |> usethis::use_data(overwrite = T)
-
-# New (intermediate object used by the final build below):
+# Intermediate object used by the final build below:
 pond_growout_reports_2021_2024 <- bind_rows(
   KFNFH_pond_growout_2024,
   KFNFH_pond_growout_2023,
@@ -784,17 +693,7 @@ gerber_pen_survival <- table_10_raw |>
          number_harvested, survival_percentage) |>
   glimpse()
 
-# [SUPERSEDED - kept for review, remove once checked] net pen survival: the version with FY2025 status rows is built in FINAL OBJECTS below
-# KFNFH_pen_survival <-
-#   bind_rows("Net Pen" = pen_survival,
-#             "Gerber Net Pen" = gerber_pen_survival,
-#             .id = "pen_type") |>
-#   mutate(hatchery_name = "KFNFH") |>
-#   relocate(hatchery_name, .before = pen_type)
-
-# KFNFH_pen_survival |> usethis::use_data(overwrite = T)
-
-# New (intermediate object used by the final build below):
+# Intermediate object used by the final build below:
 pen_survival_reports_2024 <-
   bind_rows("Net Pen" = pen_survival,
             "Gerber Net Pen" = gerber_pen_survival,
