@@ -42,6 +42,6 @@ Egg incubation and hatch outcomes for wild Lost River suckers spawned from
 East Side Springs (ESS) adults at the Klamath Falls National Fish Hatchery
 during fiscal years 2024 and 2025.
 
-Corresponds to **Table 3** in the FY2024 and FY2025 KFNFH Annual Reports. FY2025 rows were compiled from the report (see \code{data-raw/hatchery_data_exploration.Rmd}).
+Corresponds to **Table 3** in the FY2024 and FY2025 KFNFH Annual Reports. FY2025 rows are from the ESS metadata workbook (the same table as the report).
 }
 \keyword{datasets}

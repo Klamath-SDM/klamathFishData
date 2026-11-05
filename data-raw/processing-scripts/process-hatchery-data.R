@@ -10,7 +10,7 @@
 #      crosses, broodstock, the age/facility lookup, collections and releases, capacity, and the mortality events.
 #      Values are read from the reports and the Excel files. The only hand-compiled file used is
 #      data-raw/hatchery-resources/mortality_events.csv, which holds the descriptions of the mortality events
-#      (the team's reading of the report narratives); every number in the events comes from the reports or workbooks.
+#      (a reading of the report narratives; the file records no author); every number in the events comes from the reports or workbooks.
 #   3. FINAL OBJECTS: merges the FY2021-2024 report tables with FY2025 and the section 2 inputs, and saves the
 #      package data objects.
 #
@@ -1495,7 +1495,7 @@ event_losses <- tribble(
   "E01", ukl(2019)$stocked, ukl(2019)$stocked - ukl(2019)$harvested, NA, "nphistory.xlsx (UKL 2019)",
   "E03", NA, NA, 100, "report text: all perished",
   "E04", NA, NA, 100, "report text: total losses",
-  "E07", NA, NA, 0, "report text: emergency harvest, no loss",
+  # E07 (Gerber net pen emergency harvest, 2,175 fish moved): the report gives no loss, so no percent is computed
   "E08", ukl(2021)$stocked, NA, 100 * (1 - ukl(2021)$harvested / ukl(2021)$stocked), "nphistory.xlsx (UKL 2021)",
   "E11", as_n(transport[1, 2]) + as_n(transport[1, 3]), as_n(transport[1, 3]), NA, "report text: 200+ lost in transport",
   "E12", ukl(2022)$stocked, ukl(2022)$stocked - ukl(2022)$harvested, NA, "nphistory.xlsx (UKL 2022)",
@@ -2012,6 +2012,11 @@ p10 <- production_harvest_input |> filter(pond == "P10", season == "Spring 2025"
 
 # E35, E36: early rearing totals (FY2025 report Table 8, total row)
 rearing_total_2025 <- tables_raw_2025[[9]] |> clean_names() |> filter(is.na(date))
+# first and last collection date of the FY2025 larval tanks (Table 8; two-day entries use the first date)
+rearing_dates_2025 <- tables_raw_2025[[9]] |> clean_names() |> drop_na(date) |>
+  transmute(date = mdy(str_extract(date, "^\\d{1,2}/\\d{1,2}/\\d{4}"))) |>
+  summarise(first = min(date), last = max(date))
+fmt_day <- function(d) format(d, "%d %b %Y")
 
 from_text <- function(pattern) str_match(report_2025_text, pattern)
 num_text <- function(x) as.numeric(str_remove_all(x, ","))
@@ -2035,7 +2040,9 @@ half_up <- function(x, digits = 0) floor(x * 10^digits + 0.5) / 10^digits
 
 events_2025 <- tribble(
   ~event_id, ~year, ~period, ~location, ~category, ~cause_description, ~population_affected, ~loss_as_reported, ~percent_lost, ~n_mortality, ~confidence, ~loss_source, ~anchor,
-  "E29", 2025, "Late Jul-Sep 2025 (C2 from 9 Jul; C1 from 19 Aug; Tier 1 ponds harvested early 10-11 Sep)",
+  "E29", 2025, sprintf("From %s (%s) and %s (%s); harvested early on %s (%s) and %s (%s)",
+                         fmt_day(c1_c2_first$first[1]), c1_c2_first$pond[1], fmt_day(c1_c2_first$first[2]), c1_c2_first$pond[2],
+                         fmt_day(harvest_2025$harvest_date[harvest_2025$pond == "C1"]), "C1", fmt_day(harvest_2025$harvest_date[harvest_2025$pond == "C2"]), "C2"),
     "Tier 1 ponds C1 and C2 (ESS2025 lot)", "other",
     "Unknown. Fish Health sampled in Jul, Aug and Sep and found no causative agent; the report suggests the fish stopped eating a new diet (palatability). Stratified ponds with low morning dissolved oxygen, no-feed and half-ration days are logged in the same weeks",
     sprintf("ESS2025 lot in C1 and C2: %s fish at the start (C1 %s, C2 %s)", format(sum(c1_c2$initial), big.mark = ","),
@@ -2054,7 +2061,7 @@ events_2025 <- tribble(
     "FY25 KFNFH Annual Report.pdf (text)", "dead fish, all with wounds to the caudal peduncle",
   "E31", 2024, "Mid-Oct 2024-early Jan 2025", "P-series ponds, broodstock lots (moved to ponds C5 and B3 in early January)", "predation",
     "River otters at the P-ponds (tracks and slides in the snow); trapping and an electric fence did not stop them",
-    "Wild and captive broodstock held in the P-series ponds",
+    "Broodstock held in the P-series ponds",
     sprintf("About %s fish lost, a %s%% loss, 'significantly higher than normal mortality ... in an entire year'; pond P2 had 74%% survival", otter[1, 2], otter[1, 3]),
     as.numeric(otter[1, 3]), as.numeric(otter[1, 2]), "Quantified", "FY25 KFNFH Annual Report.pdf (text)",
     "approximately 164 fish were lost, which was a 9.6% loss",
@@ -2064,7 +2071,7 @@ events_2025 <- tribble(
     sprintf("Inventory losses of nearly %s fingerlings from the 2024 lots; broodstock survival was 97%% between March and April (23 fish missing)", merganser[1, 2]),
     NA, num_text(merganser[1, 2]), "Qualitative only (number of fish lost given, number at risk not)",
     "FY25 KFNFH Annual Report.pdf (text)", "nearly 23,655 fingerlings from the 2024 lots which succumbed to the merganser predation",
-  "E33", 2025, "Winter-early spring 2025 (Nov 2024-Mar 2025 cycle)", "P-series ponds, especially pond P10", "disease",
+  "E33", 2025, sprintf("%s to %s (pond cycle)", fmt_day(p10$stocked_date), fmt_day(p10$harvest_date)), "P-series ponds, especially pond P10", "disease",
     "Cold-water bacterial infections, fin rot and fungal infections on moribund fish; Fish Health sampled, nothing determinate was identified; otters may have been vectors",
     sprintf("Lot ESS2023 in pond P10: %s fish at the start of the cycle", format(p10$start_number, big.mark = ",")),
     sprintf("Survival just under 70%% (workbook: %.1f%%)", p10$survival_percent),
@@ -2079,14 +2086,14 @@ events_2025 <- tribble(
     half_up(100 * sum(c6_event$morts, na.rm = TRUE) / c6_start, 1), sum(c6_event$morts, na.rm = TRUE), "Quantified (recorded deaths only)",
     "KFNFH_WQ_FY2025_2 (version 1).xlsx, sheet JulytoSept_WQ (Morts, Comments) and FY2025 Production Harvest Data Sheet_20251107.xlsx, sheet Fall 2025 (start number)",
     "11 dead fish were collected from pond C6",
-  "E35", 2025, "May-Jul 2025 (about 3 months of tank rearing)", "Salvage Building larval rearing tanks", "disease",
+  "E35", 2025, sprintf("%s to %s (larval collections into the tanks)", fmt_day(rearing_dates_2025$first), fmt_day(rearing_dates_2025$last)), "Salvage Building larval rearing tanks", "disease",
     "Costia infections during intensive tank rearing (a known issue when fry stay in tanks longer) and an unexplained loss of fry 45-60 days after collection",
     sprintf("Wild larval LRS/SNS from the Williamson River (%s collected)", format(num_text(rearing_total_2025$collected), big.mark = ",")),
     sprintf("%s observed fry deaths = %.1f%% of the stock (the report text says 3,652; Table 8 and its total row say %s)", format(num_text(rearing_total_2025$number_mortality), big.mark = ","),
             100 * num_text(rearing_total_2025$number_mortality) / num_text(rearing_total_2025$collected), format(num_text(rearing_total_2025$number_mortality), big.mark = ",")),
     half_up(100 * num_text(rearing_total_2025$number_mortality) / num_text(rearing_total_2025$collected), 1), num_text(rearing_total_2025$number_mortality), "Quantified (observed mortality only - see E36 for the unobserved loss)",
     "FY25 KFNFH Annual Report.pdf, Table 8 (total row)", "approximately 5.1% of the entire stock",
-  "E36", 2025, "May-Jul 2025 (same larval rearing period)", "Salvage Building tanks", "other",
+  "E36", 2025, sprintf("%s to %s (larval collections into the tanks)", fmt_day(rearing_dates_2025$first), fmt_day(rearing_dates_2025$last)), "Salvage Building tanks", "other",
     "Tank overflow events that let fry through the 400 um screens at night; bubble curtains were installed in FY2025 to reduce them",
     "Wild-caught larval suckers held in tanks (same stock as E35)",
     sprintf("Unobserved mortality = %.1f%% of the stock, 'much lower than in years past'", num_text(rearing_total_2025$unobserved_mortality_percent)),

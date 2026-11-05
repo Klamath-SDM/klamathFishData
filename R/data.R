@@ -146,7 +146,7 @@
 #' @title Historical Hatchery Collection and Releases, KFNFH
 #' @name KFNFH_historical_collection_release
 #' @description Collections and releases from the Klamath Falls National Fish Hatchery (KFNFH) since its inception in 2016. Data summarizes the annual inputs and outputs of the hatchery program by federal fiscal year (FY2016-2025), plus an approximate count of broodstock on station.
-#' Corresponds to **Table 1** and **Table 7** in the FY2025 KFNFH Annual Report. Each annual report reproduces the full history with updated values, so the most recent report is used for all years. Broodstock columns were compiled from the annual reports (see \code{data-raw/hatchery_data_exploration.Rmd}).
+#' Corresponds to **Table 1** and **Table 7** in the FY2025 KFNFH Annual Report. Each annual report reproduces the full history with updated values, so the most recent report is used for all years. Broodstock columns are from the report text.
 #' Note: FY2025 Table 1 gives 30,142 larvae collected in FY2024, while the FY2024 report (Tables 1 and 4), FY2025 Table 7 and the hatchery's larval collection workbook all give 30,150; 30,150 is used here. Annual collection totals (6,036 in FY2023, 30,150 in FY2024, 70,049 in FY2025) were also confirmed against the hatchery workbook \code{2025 Larval Collection and Early Rearing Summary Data (version 1).xlsx}.
 #' @format A tibble with 10 rows and 18 columns
 #' \itemize{
@@ -241,7 +241,7 @@
 #' East Side Springs (ESS) adults at the Klamath Falls National Fish Hatchery
 #' during fiscal years 2024 and 2025.
 #'
-#' Corresponds to **Table 3** in the FY2024 and FY2025 KFNFH Annual Reports. FY2025 rows were compiled from the report (see \code{data-raw/hatchery_data_exploration.Rmd}).
+#' Corresponds to **Table 3** in the FY2024 and FY2025 KFNFH Annual Reports. FY2025 rows are from the ESS metadata workbook (the same table as the report).
 #'
 #' @format A tibble with one row per spawning female and incubation vessel
 #' \itemize{
@@ -315,7 +315,7 @@
 #' Data are distinguished by originating report table using
 #' \code{inventory_source}.
 #'
-#' Combines **Tables 10-12** from the FY2025 KFNFH Annual Report, **Tables 6-8** from FY2024, **Tables 5-7** from FY2023, **Tables 2-4** from FY2022, and **Tables 3-4** from FY2021. A completed cycle that is listed in two consecutive reports (44 cycles) is kept once, with the later report's row. A cycle reported as still in progress in one report (no harvest date) is replaced by its completed record from the later report, so a pond cycle appears once. The Production Harvest Data Sheet workbooks used in the exploration were compared with these tables and add no additional cycles. The fiscal year of a cycle is the report in which it was completed (or, if still in progress, the last report that lists it). FY2022 rows taken from report tables 3 and 4 (embedded as images) have no \code{inventory_source}.
+#' Combines **Tables 10-12** from the FY2025 KFNFH Annual Report, **Tables 6-8** from FY2024, **Tables 5-7** from FY2023, **Tables 2-4** from FY2022, and **Tables 3-4** from FY2021. A completed cycle that is listed in two consecutive reports (44 cycles) is kept once, with the later report's row. A cycle reported as still in progress in one report (no harvest date) is replaced by its completed record from the later report, so a pond cycle appears once. The FY2025 Production Harvest Data Sheet workbook was compared with these tables and adds no additional cycles. The fiscal year of a cycle is the report in which it was completed (or, if still in progress, the last report that lists it). FY2022 rows taken from report tables 3 and 4 (embedded as images) have no \code{inventory_source}.
 #'
 #' @format A tibble with rows for each pond for each inventory season.
 #' \itemize{
@@ -427,8 +427,6 @@
 #' }
 #' This is the single source of fish age used by \code{KFNFH_pond_growout} and \code{KFNFH_mortality_pond_monthly}.
 #'
-#' **Differences from the hand-compiled lookup this replaces.** Of the 232 facility-years in the hand-compiled lookup, the rebuilt lookup gives the same age class for 161, a subset of the curated classes for 18 (the curated value lists an extra class such as "other", "wild" or a second age that is not in the reports or workbooks), and a different class for 43 (mostly the fiscal year assigned to a cycle that spans two years). Ten facility-years only in the hand-compiled lookup are not in the package (FY2020 ponds A1, A2, P5 and P11-P15, and the unoperated UKLE and UKLW pens in FY2025); five rebuilt facility-years are not in the hand-compiled lookup. Starting counts are equal for 106 of the 126 counts present in both.
-#'
 #' @format A tibble with 227 rows and 5 columns
 #' \itemize{
 #'   \item \code{hatchery_name}: hatchery name (KFNFH)
@@ -453,14 +451,13 @@
 #' See \code{KFNFH_mortality_events_summary} for a simplified version.
 #'
 #' Identifying an event and describing it (period, location, category, cause, population affected, loss as reported, confidence) is a
-#' reading of the report narratives and is the only part taken from the team's hand-compiled table; each event is tied to a phrase in
+#' reading of the report narratives (the numbers are computed, not read); each event is tied to a phrase in
 #' the report. \code{percent_lost} is recomputed from the net pen records (\code{nphistory.xlsx}), the larval rearing tables and workbook, and
 #' numbers in the report text, and \code{severity_tier} follows from it by a fixed rule (over 70\% Catastrophic, 30-70\% Major, 10-30\% Moderate,
 #' under 10\% Minor; no loss in a non-mortality event is a near-miss; no number is qualitative only).
 #'
-#' **Difference from the hand-compiled table:** event E22 (August 2024 dissolved-oxygen crashes in ponds P12 and P13) was given an estimated
-#' 45\% loss and the tier Major. The FY2024 report only says "several thousand fish" were lost, so \code{percent_lost} is \code{NA} and the tier
-#' is "Qualitative only (unquantified)". All other losses and tiers are identical.
+#' Event E22 (August 2024 dissolved-oxygen crashes in ponds P12 and P13) has no \code{percent_lost}: the FY2024 report only says "several thousand fish"
+#' were lost, so the tier is "Qualitative only (unquantified)".
 #'
 #' @format A tibble with 37 rows and 16 columns
 #' \itemize{
@@ -482,7 +479,7 @@
 #'   \item \code{loss_source}: where \code{percent_lost} comes from (workbook and sheet, report table, or report text); \code{NA} when the loss is not quantified
 #' }
 #'
-#' @source Klamath Falls National Fish Hatchery Annual Reports for Fiscal Years 2021-2025 (narrative sections, event descriptions compiled by the package authors); losses from \code{KFNFH_WQ_FY2025_2 (version 1).xlsx} (FY2025 events), \code{nphistory.xlsx}, \code{2024 Larval Collection and Early Rearing Summary Data.xlsx}, the FY2023 report tables and the report text
+#' @source Klamath Falls National Fish Hatchery Annual Reports for Fiscal Years 2021-2025 (narrative sections, event descriptions read from the hand-compiled file mortality_events.csv); losses from \code{KFNFH_WQ_FY2025_2 (version 1).xlsx} (FY2025 events), \code{nphistory.xlsx}, \code{2024 Larval Collection and Early Rearing Summary Data.xlsx}, the FY2023 report tables and the report text
 "KFNFH_mortality_events"
 
 
@@ -503,7 +500,7 @@
 #'   \item \code{n_mortality}: number of fish lost, where reported
 #' }
 #'
-#' @source Klamath Falls National Fish Hatchery Annual Reports for Fiscal Years 2021-2024, synthesized by the package authors
+#' @source Klamath Falls National Fish Hatchery Annual Reports for Fiscal Years 2021-2024, event descriptions read from the hand-compiled file mortality_events.csv
 "KFNFH_mortality_events_summary"
 
 
@@ -513,7 +510,7 @@
 #' Monthly mortality counts by pond from the hatchery's water quality and mortality logs for fiscal years 2023-2025,
 #' plus per-event mortality during harvest operations in FY2023. The records are at different levels of detail in each
 #' year (FY2023 is a pond by month table; FY2024 and FY2025 are daily per-pond logs summed to months).
-#' Counts come straight from the three workbooks; \code{age_class} and \code{starting_count} come from \code{KFNFH_age_facility_lookup}, so about 30\% of the records carry a different age class than the hand-compiled lookup would give (see that object).
+#' Counts come straight from the three workbooks; \code{age_class} and \code{starting_count} come from \code{KFNFH_age_facility_lookup}.
 #' FY2024 covers 1 January to 22 September 2024 only (the October-December 2023 quarter was not found), so FY2024 totals are a partial year. FY2023 includes all pond series (A, B and P) and is larger than the "Monthly with no harvest Morts" column of the source sheet, which covers the P-series only.
 #'
 #' @format A tibble with 1516 rows and 8 columns
@@ -541,8 +538,8 @@
 #'
 #' Pond counts and acreage come from the facility description of each report (each phrase is checked against the report text). Indoor gallons are
 #' summed from the tank lists in the reports: 10,360 (FY2021), 12,035 (FY2022), 12,755 (FY2023 and FY2024; the second indoor building is first described in
-#' the FY2025 report) and 16,395 (FY2025). **Difference from the hand-compiled table:** it repeated the FY2025 total (16,395) for FY2022-FY2024 and for the planned build-out; the
-#' reports support those values only for FY2025, and no report gives indoor gallons for the planned build-out (\code{NA}).
+#' the FY2025 report) and 16,395 (FY2025). The
+#' reports support the 16,395 total only for FY2025, and no report gives indoor gallons for the planned build-out (\code{NA}).
 #'
 #' @format A tibble with 6 rows and 6 columns
 #' \itemize{

@@ -28,7 +28,5 @@ USFWS does not maintain such a table, so it is rebuilt from the reports and work
   \item Ponds (A, B, C and P series): from every pond cycle in the Production Harvest Data Sheet workbooks and the annual report pond tables. A cycle counts in the fiscal year it was stocked and in the fiscal year it was harvested. The age class is that fiscal year minus the lot's collection year (4 means 4 or older); East Side Springs and mixed lots are "other", and wild and salvage lots are "wild". \code{starting_count} is the number of fish at the start of the first cycle harvested in the year.
 }
 This is the single source of fish age used by \code{KFNFH_pond_growout} and \code{KFNFH_mortality_pond_monthly}.
-
-**Differences from the hand-compiled lookup this replaces.** Of the 232 facility-years in the hand-compiled lookup, the rebuilt lookup gives the same age class for 161, a subset of the curated classes for 18 (the curated value lists an extra class such as "other", "wild" or a second age that is not in the reports or workbooks), and a different class for 43 (mostly the fiscal year assigned to a cycle that spans two years). Ten facility-years only in the hand-compiled lookup are not in the package (FY2020 ponds A1, A2, P5 and P11-P15, and the unoperated UKLE and UKLW pens in FY2025); five rebuilt facility-years are not in the hand-compiled lookup. Starting counts are equal for 106 of the 126 counts present in both.
 }
 \keyword{datasets}

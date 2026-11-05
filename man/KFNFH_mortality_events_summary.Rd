@@ -17,7 +17,7 @@ A tibble with 37 rows and 7 columns
 }
 }
 \source{
-Klamath Falls National Fish Hatchery Annual Reports for Fiscal Years 2021-2024, synthesized by the package authors
+Klamath Falls National Fish Hatchery Annual Reports for Fiscal Years 2021-2024, event descriptions read from the hand-compiled file mortality_events.csv
 }
 \usage{
 KFNFH_mortality_events_summary

@@ -27,7 +27,7 @@ KFNFH_mortality_pond_monthly
 Monthly mortality counts by pond from the hatchery's water quality and mortality logs for fiscal years 2023-2025,
 plus per-event mortality during harvest operations in FY2023. The records are at different levels of detail in each
 year (FY2023 is a pond by month table; FY2024 and FY2025 are daily per-pond logs summed to months).
-Counts come straight from the three workbooks; \code{age_class} and \code{starting_count} come from \code{KFNFH_age_facility_lookup}, so about 30\% of the records carry a different age class than the hand-compiled lookup would give (see that object).
+Counts come straight from the three workbooks; \code{age_class} and \code{starting_count} come from \code{KFNFH_age_facility_lookup}.
 FY2024 covers 1 January to 22 September 2024 only (the October-December 2023 quarter was not found), so FY2024 totals are a partial year. FY2023 includes all pond series (A, B and P) and is larger than the "Monthly with no harvest Morts" column of the source sheet, which covers the P-series only.
 }
 \keyword{datasets}

@@ -28,7 +28,7 @@ over time, so the current (constrained) capacity and the planned full build-out 
 
 Pond counts and acreage come from the facility description of each report (each phrase is checked against the report text). Indoor gallons are
 summed from the tank lists in the reports: 10,360 (FY2021), 12,035 (FY2022), 12,755 (FY2023 and FY2024; the second indoor building is first described in
-the FY2025 report) and 16,395 (FY2025). **Difference from the hand-compiled table:** it repeated the FY2025 total (16,395) for FY2022-FY2024 and for the planned build-out; the
-reports support those values only for FY2025, and no report gives indoor gallons for the planned build-out (\code{NA}).
+the FY2025 report) and 16,395 (FY2025). The
+reports support the 16,395 total only for FY2025, and no report gives indoor gallons for the planned build-out (\code{NA}).
 }
 \keyword{datasets}

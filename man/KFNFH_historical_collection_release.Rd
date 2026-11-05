@@ -35,7 +35,7 @@ KFNFH_historical_collection_release
 }
 \description{
 Collections and releases from the Klamath Falls National Fish Hatchery (KFNFH) since its inception in 2016. Data summarizes the annual inputs and outputs of the hatchery program by federal fiscal year (FY2016-2025), plus an approximate count of broodstock on station.
-Corresponds to **Table 1** and **Table 7** in the FY2025 KFNFH Annual Report. Each annual report reproduces the full history with updated values, so the most recent report is used for all years. Broodstock columns were compiled from the annual reports (see \code{data-raw/hatchery_data_exploration.Rmd}).
+Corresponds to **Table 1** and **Table 7** in the FY2025 KFNFH Annual Report. Each annual report reproduces the full history with updated values, so the most recent report is used for all years. Broodstock columns are from the report text.
 Note: FY2025 Table 1 gives 30,142 larvae collected in FY2024, while the FY2024 report (Tables 1 and 4), FY2025 Table 7 and the hatchery's larval collection workbook all give 30,150; 30,150 is used here. Annual collection totals (6,036 in FY2023, 30,150 in FY2024, 70,049 in FY2025) were also confirmed against the hatchery workbook \code{2025 Larval Collection and Early Rearing Summary Data (version 1).xlsx}.
 }
 \keyword{datasets}
