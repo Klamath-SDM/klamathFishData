@@ -17,13 +17,13 @@ A tibble with 37 rows and 7 columns
 }
 }
 \source{
-Klamath Falls National Fish Hatchery Annual Reports for Fiscal Years 2021-2024, event descriptions read from the hand-compiled file mortality_events.csv
+Klamath Falls National Fish Hatchery Annual Reports for Fiscal Years 2021-2025 (narrative sections and tables; see \code{KFNFH_mortality_events$citation})
 }
 \usage{
 KFNFH_mortality_events_summary
 }
 \description{
 Simplified version of \code{KFNFH_mortality_events}: one row per event with the category, whether it was a
-mortality event, the percent mortality and the number of fish lost where available. Most events have no quantity. Computed the same way as \code{KFNFH_mortality_events}; event E22 has no percent mortality (see that object).
+mortality event, the percent mortality and the number of fish lost where available. Most events have no quantity. Computed the same way as \code{KFNFH_mortality_events}; events without a loss in the report (such as E22, E11, E14 and E16) have no percent mortality (see that object).
 }
 \keyword{datasets}

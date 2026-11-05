@@ -7,9 +7,8 @@
 #      as per-year objects and intermediate objects that the final build merges.
 #   2. INPUTS FROM THE EXCEL WORKBOOKS AND THE REPORTS: mortality spreadsheets, production harvest, spawning
 #      crosses, broodstock, the age/facility lookup, collections and releases, capacity, and the mortality events.
-#      Values are read from the reports and the Excel files. The only hand-compiled file used is
-#      data-raw/hatchery-resources/mortality_events.csv, which holds the descriptions of the mortality events
-#      (a reading of the report narratives; the file records no author); every number in the events comes from the reports or workbooks.
+#      Values are read from the reports and the Excel files; the mortality events are written in this script from
+#      the report text, with the report and page each event comes from.
 #   3. FINAL OBJECTS: merges the FY2021-2024 report tables with FY2025 and the section 2 inputs, and saves the
 #      package data objects.
 #
@@ -1299,60 +1298,246 @@ usfws_sarp_capacity_input <- capacity_inventory |>
 
 ## 2c. MORTALITY EVENTS ########################################################
 # The events are the disease, water quality, weather, predation and other events described in the narrative sections
-# of the FY2021-2025 reports. Finding an event, naming its category and cause, and describing the affected
-# population is a reading of the report narrative, so the descriptions of events E01-E28 are read from
-# data-raw/hatchery-resources/mortality_events.csv and the descriptions of E29-E37 (FY2025) are written in the final
-# build below. Everything else comes from the reports and workbooks:
+# of the FY2021-2025 reports. Everything in an event comes from the reports or the workbooks:
 #
-#   2c.1 every event is tied to a phrase in the report that describes it (the script stops if a phrase is
-#        not found, so a mis-cited event cannot go unnoticed);
-#   2c.2 the loss (percent and number of fish) is computed from the net pen records (nphistory.xlsx),
-#        the larval rearing tables (workbook and report table) and numbers in the report text;
+#   2c.1 events E01-E28 (FY2021-2024) are written below from the report text, in wording that stays within what the
+#        report says (hedges such as "suspected" or "likely" are kept; nothing is added that the report does not say).
+#        `citation` gives the report and page each event is taken from, and `anchor` is a phrase in the report that
+#        describes the event (the script stops if the phrase is not found on a cited page);
+#   2c.2 the loss (percent and number of fish) is computed from the net pen records (nphistory.xlsx), the larval
+#        rearing tables (workbook) and numbers in the report text, and is left empty when the report gives
+#        no loss that belongs to the event;
 #   2c.3 the severity tier is computed from the loss with a fixed rule.
+# The descriptions of E29-E37 (FY2025) are written in the final build below.
 
-event_descriptions <- read_csv(file.path(resources_dir, "mortality_events.csv"), show_col_types = FALSE)
-names(event_descriptions) <- str_remove(names(event_descriptions), "^﻿")
 report_texts <- map(2021:2025, report_text) |> set_names(2021:2025)
 
-### 2c.1 Phrase in the report that describes each event ---------------------------
-# (report year, regular expression). `report` is the first report that describes the event.
+# text of each report page (the printed page number equals the PDF page number in these reports)
+report_pages <- function(year) {
+  pdftools::pdf_text(file.path(pdf_dir, reports[[as.character(year)]])) |>
+    str_replace_all(c("ﬁ" = "fi", "ﬀ" = "ff", "ﬃ" = "ffi", "ﬂ" = "fl")) |>
+    str_squish()
+}
 
-event_anchors <- tribble(
-  ~event_id, ~report, ~anchor,
-  "E01", 2023, "avian predators may have infiltrated the netting in 2019",
-  "E02", 2021, "marked increase in total ammonia levels",
-  "E03", 2021, "all perished during the anticipated hatch",
-  "E04", 2021, "total losses within days of hatch",
-  "E05", 2021, "unhatched Artemia cysts",
-  "E06", 2021, "Costia outbreak during the middle of June",
-  "E07", 2021, "emergency harvest of the Gerber Reservoir Net pen",
-  "E08", 2021, "only 606 fish were recovered",
-  "E09", 2022, "signs of tetany",
-  "E10", 2022, "necrosis of the gill lamellae",
-  "E11", 2022, "200\\+ fish lost during transport",
-  "E12", 2022, "fathead minnows, tui chub, and blue chub",
-  "E13", 2022, "low river flows led to ineffective catch rates",
-  "E14", 2023, "extreme gill hyperplasia",
-  "E15", 2023, "losing larval fish to tank overflow",
-  "E16", 2023, "mortality event in Tank C14",
-  "E17", 2023, "anoxic conditions forming",
-  "E18", 2023, "nearly half of the fish in pen escaped",
-  "E19", 2023, "73,869 eggs counted",
-  "E20", 2023, "ovulation rates of the females",
-  "E21", 2023, "lowest on record",
-  "E22", 2024, "acute loss of several thousand fish",
-  "E23", 2024, "Costia infections for the extended intensive rearing",
-  "E24", 2024, "cumulative human error",
-  "E25", 2024, "bacterial infection spread early in the holding period",
-  "E26", 2024, "data was lost in parts of June and August",
-  "E27", 2024, "cyanobacteria bloom was detected",
-  "E28", 2024, "three small \\(~30 mm\\) perch were found dead"
+### 2c.1 Events E01-E28 ---------------------------------------------------------------
+# report: first report (fiscal year) that describes the event; citation: report(s) and page(s) the event is
+# taken from; anchor: regular expression for a phrase on one of the cited pages of `report`.
+
+events_2021_2024 <- tribble(
+  ~event_id, ~year, ~period, ~location, ~category, ~mortality_event, ~cause_description, ~population_affected, ~loss_as_reported, ~confidence, ~report, ~citation, ~anchor,
+
+  "E01", 2019, "2019 growing season", "Upper Klamath Lake (UKL) net pens at Rattlesnake Point (UKLN and UKLS)", "predation", TRUE,
+    "Suspected (not confirmed): avian predators may have infiltrated the netting in 2019",
+    "Fish stocked in the first UKL net pens in 2019: UKLN 534, UKLS 480",
+    "UKLN 0 of 534 and UKLS 10 of 480 fish were harvested (0.0% and 2.1% survival)",
+    "Quantified", 2023, "FY2023 Annual Report, p. 21, 25; FY2024 Annual Report, p. 28",
+    "avian predators may have infiltrated the netting in 2019",
+
+  "E02", 2021, "Winter 2020/2021 production season (the report gives no dates for the mortality)", "Ponds receiving increased geothermal flows", "water_quality", TRUE,
+    "Geothermal flows to the ponds were increased to raise pond temperatures over 15 C and extend the growing season; the report notes a marked increase in total ammonia levels and subsequently chronic low levels of fish mortality",
+    "CY2019 fish going into the winter of 2020/2021: 7,664 fish (not counting 300 broodstock)",
+    "Not quantified (chronic low levels of mortality)",
+    "Qualitative only", 2021, "FY2021 Annual Report, p. 6",
+    "marked increase in total ammonia levels",
+
+  "E03", 2021, "Spawned the night of May 5 and the morning of May 6, 2021; the loss came during the anticipated hatch (date not given)", "KFNFH building, egg incubation in hatching jars", "other", TRUE,
+    "Suspected unstable incubation water temperature or excessive agitation in the hatching jars; the report later raised possible geothermal water chemistry (low hardness and alkalinity, dissolved metals)",
+    "Wild-spawned Shortnose Sucker eggs (one female, two males) incubated at the hatchery; the 6,000 fertilized eggs sent to the SNARRC had a hatch rate over 80% and are not part of this loss",
+    "All of the eggs incubated at the hatchery perished during the hatch",
+    "Quantified", 2021, "FY2021 Annual Report, p. 6, 13",
+    "all perished during the anticipated hatch",
+
+  "E04", 2021, "Spawned May 13, 2021; total losses within days of hatch (dates not given)", "KFNFH building, borrowed heath trays", "other", TRUE,
+    "Cause not known: the report says it was not likely temperature related despite tighter temperature control, and raises possible geothermal water chemistry (low hardness and alkalinity, dissolved metals)",
+    "Captively spawned Shortnose Sucker eggs (one CY2017 lot female, spawned after human chorionic gonadotrophin)",
+    "Weak hatch, then total losses within days of hatch",
+    "Quantified", 2021, "FY2021 Annual Report, p. 6, 13",
+    "total losses within days of hatch",
+
+  "E05", 2021, "Mid-May 2021", "Larval rearing tanks", "other", TRUE,
+    "Significant gut impaction from fry ingesting unhatched Artemia cysts in the early feeding diet, which resulted in significant mortalities of fry",
+    "Wild larval suckers collected in 2021 (106,710 collected)",
+    "Not separately quantified. Survival from collection to ponding for all causes was approximately 50.2% (53,518 of 106,710 fish ponded)",
+    "Qualitative only", 2021, "FY2021 Annual Report, p. 15",
+    "unhatched Artemia cysts",
+
+  "E06", 2021, "Middle of June 2021", "Larval fish at the hatchery (the report does not say where)", "disease", TRUE,
+    "Costia outbreak that resulted in a significant loss of fry",
+    "Wild larval suckers collected in 2021 (106,710 collected)",
+    "Not separately quantified. Survival from collection to ponding for all causes was approximately 50.2%",
+    "Qualitative only", 2021, "FY2021 Annual Report, p. 15",
+    "Costia outbreak during the middle of June",
+
+  "E07", 2021, "Mid-July 2021", "Gerber Reservoir net pen", "weather", FALSE,
+    "Drought: the report says the site would likely be dry by about early August, so staff made an emergency early harvest in mid-July and stocked the fish in refuge areas of Upper Klamath Lake",
+    "CY2019 and CY2020 year class suckers in the Gerber net pens (2,479 stocked)",
+    "2,175 of the 2,479 fish stocked were harvested (87.7%); the report does not say what happened to the rest",
+    "Not applicable (emergency harvest; no mortality described)", 2021, "FY2021 Annual Report, p. 7, 16, 17",
+    "emergency harvest of the Gerber Reservoir Net pen",
+
+  "E08", 2021, "Noted in early August 2021 (the report gives no dates for the water quality events)", "UKL net pens, north (UKLN) and south (UKLS)", "water_quality", TRUE,
+    "Large-scale mortality traced back to several consecutive water quality events: anoxic conditions for several consecutive nights, as seen at the USGS Rattlesnake Point station",
+    "Fish stocked in the UKL net pens: 2,500 (CY2019 250, CY2020 2,250); north pen 1,000, south pen 1,500",
+    "606 of 2,500 fish were recovered (24.2% survival); north pen 0.0% survival; south pen 40.4% (CY2019 58.0%, CY2020 38.4%) in the table. The text on p. 16 gives 34.8% and 23.1% for the south pen, which differ from the table",
+    "Quantified", 2021, "FY2021 Annual Report, p. 7, 16, 17",
+    "only 606 fish were recovered",
+
+  "E09", 2022, "August and September 2022; chronic mortality continued until the ponds started to cool in October", "Ponds A4 and A2", "other", TRUE,
+    "Cause unknown: the USFWS California-Nevada Fish Health Center found no signs of infectious agents; many fish showed tetany and lateral bruising",
+    "Fish collected in 2022 and held in ponds A4 and A2",
+    "Not quantified (significant and ongoing mortality)",
+    "Qualitative only", 2022, "FY2022 Annual Report, p. 8",
+    "signs of tetany",
+
+  "E10", 2022, "December 2022", "Pond P9 (one of the feed study ponds P9-P16)", "other", TRUE,
+    "A small mortality event; no signs of infectious agents were found; tetany was observed in several fish; some fish had necrosis of the gill lamellae, which the report attributes to complications with the winter thickening of the lamellae; the fish were treated with a salt bath",
+    "Fish collected in 2022 and held in pond P9",
+    "Not quantified (described as a small mortality event)",
+    "Qualitative only", 2022, "FY2022 Annual Report, p. 8",
+    "necrosis of the gill lamellae",
+
+  "E11", 2022, "April 8, 2022", "During transport across Agency Lake to the UKL West (UKLW) net pen", "weather", TRUE,
+    "High winds and large waves",
+    "Age-1 (2021 year class) suckers; UKLW was stocked 4/8/2022 with 1,999 fish",
+    "An estimated 200+ fish were lost during transport across Agency Lake (at least 200; the report gives no percent)",
+    "Number of fish lost only (percent not reported)", 2022, "FY2022 Annual Report, p. 14",
+    "200\\+ fish lost during transport",
+
+  "E12", 2022, "Stocked April 8, 2022 (UKLW) and April 15, 2022 (UKLE), harvested October 13-14, 2022; dissolved oxygen below 2 mg/L between 7/29/22 and 8/25/22", "UKLW and UKLE net pens near the mouth of Four Mile Canal, west side of Agency Lake", "water_quality", TRUE,
+    "Poor water quality: dissolved oxygen was 0.0 mg/L on several dates and dropped below 2 mg/L 20 times; heavy bycatch of fathead minnows, tui chub and blue chub may have limited the available food; the fish had poor growth and many were emaciated",
+    "Age-1 (2021 year class) suckers stocked: UKLW 1,999, UKLE 1,852 (3,851 fish)",
+    "UKLW 947 and UKLE 897 fish were harvested; 1,844 of 3,851 (47.9% survival), described as the highest net pen survival in program history",
+    "Quantified", 2022, "FY2022 Annual Report, p. 14",
+    "fathead minnows, tui chub, and blue chub",
+
+  "E13", 2022, "Early in the 2022 collection season", "Lower Williamson River", "other", FALSE,
+    "Low river flows led to ineffective catch rates with the traditional passive drift nets, so staff switched to active dip netting",
+    "Wild larval suckers (51,929 collected in 2022)",
+    "Not a mortality event: reduced catch rates with drift nets",
+    "Not applicable (collection efficiency, not mortality)", 2022, "FY2022 Annual Report, p. 7",
+    "low river flows led to ineffective catch rates",
+
+  "E14", 2022, "November 2022", "One of the razorback (RZB) diet fingerling ponds of the diet trial", "other", TRUE,
+    "Sporadic mortality began in one RZB pond; Fish Health Center sampling found extreme gill hyperplasia, little to no feeding, poor visceral fat stores and protein in the urine; the feed was not rancid and the report gives no cause",
+    "Fingerlings fed the Bozeman Razorback (RZB) diet in the 2022 diet trial",
+    "Not quantified (sporadic mortality). Survival of the whole RZB treatment at the end of the fingerling stage was 86% (STR 73%, JUN 87%, SHP 87%), which is not the loss from this event",
+    "Qualitative only", 2023, "FY2023 Annual Report, p. 32, 33",
+    "extreme gill hyperplasia",
+
+  "E15", 2022, "Larval stage of the diet trial, which started in May 2022", "Larval rearing tanks", "other", TRUE,
+    "Possible high water temperatures and loss of larval fish to tank overflow; the larval stage of the trial was ended early and no conclusions were drawn",
+    "Lost River and Shortnose Sucker larvae in the 4-diet trial",
+    "Not quantified (an increase in mortality)",
+    "Qualitative only", 2023, "FY2023 Annual Report, p. 32",
+    "losing larval fish to tank overflow",
+
+  "E16", 2023, "July 2-4, 2023", "Larval rearing tank C14", "other", TRUE,
+    "Not stated: the report calls it a fish health mortality event",
+    "Larval suckers collected 5/31/2023 into tank C14 (1,509 fish)",
+    "752 fish died in the event. The tank table for C14 shows 938 observed deaths and 19.7% overall survival for the whole tank, all causes, so the loss from the event alone is not a percent in the report",
+    "Number of fish lost only (percent not reported)", 2023, "FY2023 Annual Report, p. 12, 13",
+    "mortality event in Tank C14",
+
+  "E17", 2023, "Stocked April 13, 2023, harvested September 27, 2023; mortality greatest in July and August", "UKL West (UKLW) and East (UKLE) net pens near the mouth of Four Mile Canal, west side of Agency Lake", "water_quality", TRUE,
+    "Anoxic conditions developing in July, August and September contributed; fish at harvest were emaciated and had parasites, disease and petechial hemorrhaging; no diagnostics were done in the field, so the cause of the infections is not known",
+    "Age-1 (2021 year class) suckers stocked: UKLW 1,005, UKLE 1,001 (2,006 fish)",
+    "60 of 2,006 fish were harvested (3.0% survival)",
+    "Quantified", 2023, "FY2023 Annual Report, p. 21, 23, 25",
+    "anoxic conditions forming",
+
+  "E18", 2023, "Stocked April 21, 2023, harvested September 26, 2023", "Gerber Reservoir East net pen (GERE)", "equipment", FALSE,
+    "Two small holes (less than a foot or two in diameter) were found in the net at harvest; because very few mortalities were observed during the season, the report presumes nearly half of the fish escaped through the holes",
+    "Age-1 (2021 year class) suckers stocked in GERE (1,005 fish)",
+    "454 fish were harvested (45.2% apparent survival, against 96.5% in the GERW pen); 551 fish were not recovered. The FY2024 report says up to 437 Lost River and 114 Shortnose Suckers (551) likely escaped",
+    "Estimated (apparent loss; escape presumed, not confirmed)", 2023, "FY2023 Annual Report, p. 26, 27; FY2024 Annual Report, p. 29",
+    "nearly half of the fish in pen escaped",
+
+  "E19", 2023, "Eggs from spawning on April 21, April 28 and May 5, 2023", "KFNFH greenhouse, RAS Research Racks (egg incubation)", "water_quality", TRUE,
+    "The hatch rates were very low, likely due to water quality limitations of the geothermal water supply and unstable rearing temperatures in the greenhouse, which fluctuated as much as 5-6 C daily",
+    "Wild Lost River Sucker eggs (73,869 eggs counted and transferred to the KFNFH)",
+    "18,604 fry hatched of 73,869 eggs (about 25.2% hatching success)",
+    "Quantified", 2023, "FY2023 Annual Report, p. 10",
+    "73,869 eggs counted",
+
+  "E20", 2023, "Spawning attempt in late April and May 2023 (the report describes the sampling as three weeks on p. 10 and as two consecutive weeks on p. 11)", "CY2017 Shortnose Sucker broodstock pond", "other", FALSE,
+    "Reproductive failure: no females ovulated; males had low milt volume (<1-2 mL) and motility (<50%); the report says poor body condition from high rearing densities the prior year may have been a large factor",
+    "About 30 captive Shortnose Sucker broodstock (CY2017) sampled each time",
+    "Not a mortality event (no fish deaths reported)",
+    "Not applicable (reproductive failure, not mortality)", 2023, "FY2023 Annual Report, p. 10, 11",
+    "ovulation rates of the females",
+
+  "E21", 2023, "May 8 to June 12, 2023 (19 collection days)", "Lower Williamson River near Chiloquin, Oregon", "weather", FALSE,
+    "A late and colder than normal spring, a very wet winter and spring with increased flows and turbidity, sporadic water temperature fluctuations, and a low number of returning adults all contributed to a poor spawning year and low numbers of larvae",
+    "Wild larval suckers from the lower Williamson River",
+    "Not a mortality event: 6,036 larvae were collected (the lowest on record); drift netting captured fewer than 50 fish over several nights and dip netting was the primary method",
+    "Not applicable (collection efficiency, not mortality)", 2023, "FY2023 Annual Report, p. 3, 12",
+    "lowest on record",
+
+  "E22", 2024, "Mid to late August 2024", "Fingerling ponds; two noteworthy crashes in ponds P12 and P13", "water_quality", TRUE,
+    "Unusually cool water in mid to late August crashed the algae blooms in several fingerling ponds and caused lethal dissolved oxygen levels in the early mornings; the report says the loss was likely exacerbated by crowding, and that fish mortality in the summer months was much higher in FY24 than ever previously seen",
+    "Fish in ponds P12 and P13 (stocked 3,027 on 5/28/2024 and 3,012 on 5/20/2024)",
+    "Acute loss of several thousand fish between the two crashes, plus some chronic losses shortly after; the report gives no count or percent",
+    "Qualitative only", 2024, "FY2024 Annual Report, p. 19, 24",
+    "acute loss of several thousand fish",
+
+  "E23", 2024, "May 8 to late July 2024 (collections May 8 to June 10; nearly three months of tank rearing)", "Salvage Building rearing tanks", "disease", TRUE,
+    "Multiple health-related mortalities from Costia infections during the extended intensive rearing in tanks while staff awaited more pond space; the report does not say how many of the deaths were from Costia",
+    "Wild larval suckers from the lower Williamson River (30,150 collected)",
+    "2,876 fish with observed mortality (9.5% of the 30,150 collected)",
+    "Quantified (observed mortality only)", 2024, "FY2024 Annual Report, p. 15, 18",
+    "Costia infections for the extended intensive rearing",
+
+  "E24", 2024, "May 8 to late July 2024 (the same larval rearing period)", "Salvage Building rearing tanks", "other", TRUE,
+    "Unobserved (unaccounted for) loss; the report gives cumulative human error as the likely cause, increasing the longer fish are raised intensively in tanks",
+    "Wild larval suckers from the lower Williamson River (30,150 collected)",
+    "Unobserved mortality of 23.0% of the stock (fish collected that are neither observed deaths nor ponded)",
+    "Quantified", 2024, "FY2024 Annual Report, p. 15, 18",
+    "cumulative human error",
+
+  "E25", 2024, "Mid-September to early November 2024", "UKL net pen at Four Mile Canal, Agency Lake", "disease", TRUE,
+    "Bacterial infection spread early in the holding period, with multiple mortality events during tagging by USGS for the joint USGS/USFWS acoustic study; the report does not name the pathogen",
+    "Juvenile suckers held over from the Lower Klamath Refuge ponds, plus a supplemental stocking from KFNFH in late September 2024",
+    "Overall survival during the holding period was 45 percent",
+    "Quantified", 2024, "FY2024 Annual Report, p. 26, 28",
+    "bacterial infection spread early in the holding period",
+
+  "E26", 2024, "Sonde data gap June 25 to the morning of August 14, 2024; dissolved oxygen below 4 mg/L in late August", "Gerber Reservoir net pens (sonde in the west net pen)", "equipment", FALSE,
+    "The water quality sonde malfunctioned, leaving a gap in data collection from June 25 through the morning of August 14 (unfavorable conditions could have occurred unmonitored); in late August dissolved oxygen dropped below the 4 mg/L threshold for short periods (lowest 2.99 mg/L)",
+    "Shortnose Suckers of the 2022 cohort in the Gerber net pens (GERE and GERW)",
+    "No sucker mortality was observed; the pens were harvested 9/10/2024 with 96% survival (1,317 fish processed)",
+    "Quantified (observed mortality only)", 2024, "FY2024 Annual Report, p. 29, 30",
+    "gap in data collection from a sonde malfunction",
+
+  "E27", 2024, "A water sample on July 23, 2024 found the bloom; the brown water continued into August and through the harvest in mid-September", "Gerber Reservoir net pens", "water_quality", FALSE,
+    "Observers noted light brown water; the sample showed a cyanobacteria bloom and no toxins; the report does not link the bloom to mortality",
+    "Shortnose Suckers held in the Gerber net pens",
+    "No sucker mortality was observed; the pens were harvested 9/10/2024 with 96% survival (1,317 fish processed)",
+    "Quantified (observed mortality only)", 2024, "FY2024 Annual Report, p. 29, 30",
+    "cyanobacteria bloom was detected",
+
+  "E28", 2024, "July 27, 2024", "Gerber East net pen (GERE)", "other", FALSE,
+    "Three small (about 30 mm) perch were found dead with no obvious signs of disease; no mortality was observed thereafter",
+    "Three perch found dead in GERE",
+    "Three perch dead; no sucker mortality was observed",
+    "Not applicable (perch, not suckers)", 2024, "FY2024 Annual Report, p. 29",
+    "three small \\(~30 mm\\) perch were found dead"
 )
 
-anchor_check <- event_anchors |>
-  mutate(found = map2_lgl(report, anchor, ~ str_detect(report_texts[[as.character(.x)]], .y)))
+event_anchors <- events_2021_2024 |> select(event_id, report, anchor)
+
+# every event phrase must be in its report, on a page that the citation names
+cited_pages <- function(report, citation) {
+  part <- str_subset(str_split_1(citation, "; "), paste0("^FY", report))
+  as.integer(unlist(str_extract_all(str_remove(part, "^.*?p\\. "), "\\d+")))
+}
+pages_by_report <- map(2021:2024, report_pages) |> set_names(2021:2024)
+anchor_check <- events_2021_2024 |>
+  mutate(found = map2_lgl(report, anchor, ~ str_detect(report_texts[[as.character(.x)]], .y)),
+         on_cited_page = pmap_lgl(list(report, anchor, citation), function(r, a, ct) {
+           any(which(str_detect(pages_by_report[[as.character(r)]], a)) %in% cited_pages(r, ct))
+         }))
 stopifnot("every event must be found in its report" = all(anchor_check$found),
-          "every described event needs an anchor" = setequal(event_descriptions$`Event ID`, event_anchors$event_id))
+          "every event phrase must be on a page named in the citation" = all(anchor_check$on_cited_page))
 
 ### 2c.2 Loss from the data tables and the report text ----------------------------
 
@@ -1369,16 +1554,11 @@ gere_2023 <- read_text_sheet(xl("FY2025 Supporting Excel Tables", "nphistory.xls
   filter(`Operation Year` == "2023", `Pen ID` == "GERE") |>
   transmute(stocked = num(`# Stocked`), harvested = num(`# Harvested`))
 
-# larval rearing: FY2023 tank C14 (report table) and the FY2024 totals (workbook)
-tank_c14 <- load_pdf_tables(2023)[[4]] |> filter(Culture == "C14")
+# larval rearing: the FY2024 totals (workbook)
 larval_2024_total <- read_excel(xl("FY2024 Supporting Excel Tables",
                                    "2024 Larval Collection and Early Rearing Summary Data.xlsx"),
                                 sheet = "Pond Performance Table 4 Report") |>
   filter(is.na(Date))
-
-# FY2023 diet trial: survival of the Razorback (RZB) diet fingerlings, from the report table
-rzb_fingerling <- load_pdf_tables(2023)[[14]]
-rzb_survival <- parse_number(rzb_fingerling[[1]][str_detect(rzb_fingerling[[1]], "^Survival")])
 
 # numbers that are only in the report text
 eggs_2023  <- str_match(report_texts[["2023"]], "In total ([\\d,]+) eggs counted and transferred to the KFNFH and ([\\d,]+) fry were successfully hatched")
@@ -1396,10 +1576,12 @@ event_losses <- tribble(
   "E04", NA, NA, 100, "report text: total losses",
   # E07 (Gerber net pen emergency harvest, 2,175 fish moved): the report gives no loss, so no percent is computed
   "E08", ukl(2021)$stocked, NA, 100 * (1 - ukl(2021)$harvested / ukl(2021)$stocked), "nphistory.xlsx (UKL 2021)",
-  "E11", as_n(transport[1, 2]) + as_n(transport[1, 3]), as_n(transport[1, 3]), NA, "report text: 200+ lost in transport",
+  # E11: "an estimated 200+ fish lost": the number is a minimum and the report gives no percent
+  "E11", NA, as_n(transport[1, 3]), NA, "report text: estimated 200+ fish lost in transport",
   "E12", ukl(2022)$stocked, ukl(2022)$stocked - ukl(2022)$harvested, NA, "nphistory.xlsx (UKL 2022)",
-  "E14", NA, NA, 100 - rzb_survival, "FY2023 Table 14 (RZB fingerling survival)",
-  "E16", NA, as_n(c14_lost[1, 2]), 100 - num(tank_c14$Overall), "FY2023 table (tank C14 survival)",
+  # E14: the report gives survival of the whole RZB diet treatment, not the loss from this event, so no percent
+  # E16: the report gives the fish lost in the event (752) and survival of the whole tank, so no percent for the event
+  "E16", NA, as_n(c14_lost[1, 2]), NA, "report text: 752 fish died July 2-4",
   "E17", ukl(2023)$stocked, ukl(2023)$stocked - ukl(2023)$harvested, NA, "nphistory.xlsx (UKL 2023)",
   "E18", gere_2023$stocked, gere_2023$stocked - gere_2023$harvested, NA, "nphistory.xlsx (Gerber GERE 2023, apparent loss)",
   "E19", as_n(eggs_2023[1, 2]), as_n(eggs_2023[1, 2]) - as_n(eggs_2023[1, 3]), NA, "report text: eggs and fry",
@@ -1408,8 +1590,9 @@ event_losses <- tribble(
   "E23", num(larval_2024_total$Collected), num(larval_2024_total$Mortality), NA, "larval rearing workbook (FY2024 total)",
   "E24", NA, NA, num(larval_2024_total$`Unobserved Mortality (%)`), "larval rearing workbook (FY2024 total)",
   "E25", NA, NA, 100 - num(holding[1, 2]), "report text: 45 percent survival",
-  "E26", NA, NA, 0, "report text: no sucker mortality",
-  "E27", NA, NA, 0, "report text: no mortality attributed"
+  # E26 and E27: percent_lost 0 means no sucker mortality was observed (the report: "No sucker mortality was observed")
+  "E26", NA, NA, 0, "report text: no sucker mortality was observed (FY2024 p. 29)",
+  "E27", NA, NA, 0, "report text: no sucker mortality was observed (FY2024 p. 29)"
 ) |>
   mutate(percent_lost = round_half_up(coalesce(percent, 100 * lost / at_risk), 1),
          # fish lost are only reported for these events
@@ -1418,8 +1601,8 @@ event_losses <- tribble(
 ### 2c.3 Severity tier from the loss ---------------------------------------------
 severity_tier <- function(percent_lost, mortality_event) {
   case_when(
-    mortality_event == "N" & !is.na(percent_lost) & percent_lost == 0 ~ "Near-miss (no mortality observed)",
-    mortality_event == "N" ~ "Non-mortality (escape/collection/reproductive)",
+    !mortality_event & !is.na(percent_lost) & percent_lost == 0 ~ "Near-miss (no mortality observed)",
+    !mortality_event ~ "Non-mortality (escape/collection/reproductive)",
     is.na(percent_lost) ~ "Qualitative only (unquantified)",
     percent_lost > 70 ~ "Catastrophic (>70% loss)",
     percent_lost >= 30 ~ "Major (30-70% loss)",
@@ -1428,20 +1611,9 @@ severity_tier <- function(percent_lost, mortality_event) {
   )
 }
 
-mortality_events_input <- event_descriptions |>
-  left_join(event_losses |> select(event_id, percent_lost, n_mortality), by = c(`Event ID` = "event_id")) |>
-  mutate(`% Lost (best estimate, numeric)` = if_else(is.na(percent_lost), NA_character_, sprintf("%.1f%%", percent_lost)),
-         `Severity Tier` = severity_tier(percent_lost, `Mortality Event? (Y/N)`)) |>
-  select(-percent_lost, -n_mortality)
-
-mortality_events_summary_input <- mortality_events_input |>
-  left_join(event_losses |> select(event_id, percent_lost, n_mortality), by = c(`Event ID` = "event_id")) |>
-  transmute(id = `Event ID`,
-            year = `Actual Year`,
-            category = `Event Category`,
-            mortality_event = `Mortality Event? (Y/N)`,
-            percent_mortality = if_else(is.na(percent_lost), NA_character_, sprintf("%.2f%%", percent_lost)),
-            n_mortality)
+mortality_events_input <- events_2021_2024 |>
+  left_join(event_losses |> select(event_id, percent_lost, n_mortality, loss_source = source), by = "event_id") |>
+  mutate(severity_tier = severity_tier(percent_lost, mortality_event))
 
 
 
@@ -1832,32 +2004,14 @@ KFNFH_adfluvial_early_rearing |>
 
 ### Mortality events ============================================================
 
-pct <- function(x) suppressWarnings(parse_number(x))
-
 KFNFH_mortality_events <- mortality_events_input |>
-  transmute(event_id = `Event ID`,
-            year = `Actual Year`,
-            period = `Date / Period`,
-            location = `Location / Pond-Tank-Pen`,
-            category = `Event Category`,
-            mortality_event = `Mortality Event? (Y/N)` == "Y",
-            cause_description = `Cause Description`,
-            population_affected = `Population Affected (denominator)`,
-            loss_as_reported = `Number/Percent Lost (as reported)`,
-            percent_lost = pct(`% Lost (best estimate, numeric)`),
-            confidence = Confidence,
-            severity_tier = `Severity Tier`) |>
-  mutate(hatchery_name = "KFNFH") |>
-  relocate(hatchery_name, .before = event_id)
+  transmute(hatchery_name = "KFNFH", event_id, year, period, location, category, mortality_event,
+            cause_description, population_affected, loss_as_reported, percent_lost, confidence, severity_tier,
+            report_year = report, report_phrase = str_remove_all(anchor, "\\\\"), citation, loss_source)
 
-KFNFH_mortality_events_summary <- mortality_events_summary_input |>
-  transmute(hatchery_name = "KFNFH",
-            event_id = id,
-            year,
-            category,
-            mortality_event = mortality_event == "Y",
-            percent_mortality = pct(percent_mortality),
-            n_mortality)
+KFNFH_mortality_events_summary <- mortality_events_input |>
+  transmute(hatchery_name = "KFNFH", event_id, year, category, mortality_event,
+            percent_mortality = percent_lost, n_mortality)
 
 stopifnot(all(KFNFH_mortality_events$event_id == KFNFH_mortality_events_summary$event_id))
 
@@ -1924,17 +2078,6 @@ merganser <- from_text("nearly ([\\d,]+) fingerlings from the 2024 lots which su
 dieoff <- from_text("(\\d+) dead fish, all with wounds to the caudal peduncle")
 dieoff_2 <- from_text("dropped the Page \\d+ of \\d+ following day to (\\d+)|following day to (\\d+)")
 
-severity_tier_flag <- function(percent_lost, mortality_event) {
-  case_when(
-    !mortality_event & !is.na(percent_lost) & percent_lost == 0 ~ "Near-miss (no mortality observed)",
-    !mortality_event ~ "Non-mortality (escape/collection/reproductive)",
-    is.na(percent_lost) ~ "Qualitative only (unquantified)",
-    percent_lost > 70 ~ "Catastrophic (>70% loss)",
-    percent_lost >= 30 ~ "Major (30-70% loss)",
-    percent_lost >= 10 ~ "Moderate (10-30% loss)",
-    TRUE ~ "Minor (<10% loss)"
-  )
-}
 half_up <- function(x, digits = 0) floor(x * 10^digits + 0.5) / 10^digits
 
 events_2025 <- tribble(
@@ -2005,7 +2148,7 @@ events_2025 <- tribble(
     NA, NA, "Qualitative only", "FY25 KFNFH Annual Report.pdf (text)", "nearly total losses of the LRS fry within several weeks post hatch"
 ) |>
   mutate(mortality_event = TRUE,
-         severity_tier = severity_tier_flag(percent_lost, mortality_event),
+         severity_tier = severity_tier(percent_lost, mortality_event),
          report_year = 2025,
          hatchery_name = "KFNFH")
 
@@ -2013,15 +2156,21 @@ events_2025 <- tribble(
 stopifnot("every FY2025 event phrase must be in the FY2025 report" =
             all(str_detect(report_2025_text, fixed(events_2025$anchor))))
 
-# the report (fiscal year), the phrase in it that describes each event, and where the loss comes from
-event_citations <- event_anchors |>
-  transmute(event_id, report_year = report, report_phrase = str_remove_all(anchor, "\\\\")) |>
-  left_join(event_losses |> select(event_id, loss_source = source), by = "event_id")
+# FY2025 events: the report page that holds the phrase describing the event
+pages_2025 <- pdftools::pdf_text(here::here("data-raw/hatchery-resources/FY25 KFNFH Annual Report.pdf")) |>
+  str_replace_all(c("\uFB01" = "fi", "\uFB00" = "ff", "\uFB03" = "ffi", "\uFB02" = "fl")) |>
+  str_squish()
+events_2025 <- events_2025 |>
+  mutate(citation = map_chr(anchor, function(a) {
+    pg <- which(str_detect(pages_2025, fixed(a)))
+    stopifnot("every FY2025 event phrase must be on one report page" = length(pg) > 0)
+    paste0("FY2025 Annual Report, p. ", paste(pg, collapse = ", "))
+  }))
 
 KFNFH_mortality_events <- bind_rows(
-  KFNFH_mortality_events |> left_join(event_citations, by = "event_id"),
+  KFNFH_mortality_events,
   events_2025 |> mutate(report_phrase = str_remove_all(anchor, "\\\\")) |>
-    select(any_of(c(names(KFNFH_mortality_events), "report_year", "report_phrase", "loss_source")))
+    select(any_of(c(names(KFNFH_mortality_events), "report_year", "report_phrase", "citation", "loss_source")))
 )
 
 KFNFH_mortality_events_summary <- bind_rows(

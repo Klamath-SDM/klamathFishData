@@ -81,9 +81,8 @@ The hatchery data objects of the package are **built in `data-raw/processing-scr
 This document does not build anything: it loads the saved objects and explores them (a `glimpse()` and summaries of each), runs QC checks and plots
 on each one, describes each object, and holds a draft data dictionary.
 
-**Where values come from.** Every value is taken from the annual reports (PDF text and tables) or the hatchery Excel workbooks. The one hand-compiled file the
-script reads is `data-raw/hatchery-resources/mortality_events.csv`, for the descriptive text of events E01-E28 (cause, location, population), which exists only as the
-a reading of the report narratives (the file records no author); every number in the events comes from the reports or workbooks.
+**Where values come from.** Every value is taken from the annual reports (PDF text and tables) or the hatchery Excel workbooks. The mortality events are
+written in the script from the report text, and each event gives the report and page it comes from (`citation`).
 
 **How the objects are built.** `process-hatchery-data.R` has these sections:
 
@@ -100,10 +99,10 @@ choice between sources decides a value. They were made while building the object
 
 | Area | What was assumed or decided |
 |---|---|
-| Mortality events E01-E28: descriptions | Which events exist, their `category`, `mortality_event` (yes/no), cause, location, affected population, `loss_as_reported` and `confidence` are a reading of the FY2021-2024 narratives, taken as written from the file `mortality_events.csv` (the file records no author). Each event is tied to a phrase in the report, but the reading itself is not checked against a table. |
-| Mortality events: losses typed from the text | E03 and E04 are 100% ("all perished", "total losses within days of hatch"). E26 and E27 are 0% (no sucker mortality observed or attributed). E14 is 100 minus the 86% survival of the RZB fingerlings in the diet trial (Table 14), taking the trial survival as the event's loss. **E07 has no `percent_lost`:** the report only says the Gerber net pen was emergency-harvested and 2,175 fish were moved, so no loss is stated; with no percent and `mortality_event` = no, its tier is "Non-mortality". |
-| Mortality events: severity tier | Over 70% is Catastrophic, 30-70% Major, 10-30% Moderate, under 10% Minor; an event that is not a mortality event is "Near-miss" if its loss is 0 and "Non-mortality" otherwise; an event with no percent is "Qualitative only". These thresholds follow the tier labels in `mortality_events.csv`, not a report. |
-| Mortality events: fish lost (`n_mortality`) | Filled for E01, E11, E12 and E16 among E01-E28 (where the reports give the fish lost); counts that could be computed for others (for example E08, E17, E19) are left `NA`. For E29-E37 it is filled whenever a count exists. |
+| Mortality events E01-E28: descriptions | Each event is written from the FY2021-2024 report text, checked against the report pages named in `citation`. Wording keeps the report's hedges ("suspected", "likely", "may have") and leaves out details the report does not give (for example a pond's location when the report does not say where). The `category` is a label chosen from the report's description: events whose cause the report does not state or that the report does not call a disease are labelled `other` (E05, E09, E10, E14, E15, E16). `mortality_event` is no when the report describes no fish deaths (E07, E13, E18, E20, E21, E26, E27, E28). |
+| Mortality events: losses typed from the text | E03 and E04 are 100% ("all perished", "total losses within days of hatch"). E26 and E27 are 0%: the report says no sucker mortality was observed (it also gives 96% harvest survival for the Gerber pens), so 0% means no observed mortality. **No `percent_lost` (tier "Qualitative only") where the report gives no loss that belongs to the event:** E07 (2,175 of 2,479 fish harvested; the report does not say what happened to the rest), E11 ("an estimated 200+ fish lost" of 1,999 stocked; the number at risk is not clear), E14 (86% is survival of the whole RZB treatment, not the event) and E16 (752 fish died in the event; 19.7% is survival of the whole tank). E22 has none either ("several thousand fish"). Percentages computed from reported counts (E01, E08, E12, E17, E19, E23) and from reported survival (E25, 100 minus 45%) are arithmetic on reported numbers; E18's 54.8% is an apparent loss because the report presumes the missing fish escaped. |
+| Mortality events: severity tier | Over 70% is Catastrophic, 30-70% Major, 10-30% Moderate, under 10% Minor; an event that is not a mortality event is "Near-miss" if its loss is 0 and "Non-mortality" otherwise; an event with no percent is "Qualitative only". These thresholds are a choice (they are not in the reports). |
+| Mortality events: fish lost (`n_mortality`) | Filled for E01, E11 (200, the report's minimum), E12 and E16 (752) among E01-E28 (where the reports give the fish lost); counts that could be computed for others (for example E08, E17, E19) are left `NA`. For E29-E37 it is filled whenever a count exists. |
 | FY2025 events E29-E37 | The category, `mortality_event` and `confidence` labels and the wording of the description columns are mine, written from the FY2025 report. **E29:** the loss is the fish at the start minus (harvested + harvest-day deaths), the definition of the `Survival` column of `Sheet1`, and `Sheet1` is used rather than the Production Harvest workbook (they disagree on the harvested fish). **E33:** "just under 70% survival" is taken to be the P10 cycle in the Production Harvest workbook (sheet Spring 2025). **E34:** the event window runs from the first July day with 10 or more dead fish to the last day the staff note stratification; the loss is recorded deaths only, over the fish at the start in the Production Harvest workbook (sheet Fall 2025). **E35:** uses the Table 8 total of 3,562 deaths, not the 3,652 in the report text. **E30, E32, E37:** no number of fish at risk is given, so there is no percent. |
 | Pond grow-out | A completed cycle listed in two reports is kept once (the later report's row, 44 cycles); a cycle reported in progress is replaced by its completed record; `fiscal_year` is the year of the report that lists the cycle; numeric pond IDs ("0") become "P0"; `weight_gain_lb` merges a misspelled duplicate column; `life_history` is "ESS" when the lot name contains "ESS"; the FY2025 report tables are read by column position, with months and growth split from one text cell. |
 | Age lookup | All built by rules: net pens age = operation year minus capture year; ponds age class = fiscal year minus the lot's collection year (4 means 4 or older), East Side Springs and mixed lots "other", wild or salvage lots "wild"; a cycle counts in the fiscal year it was stocked and in the fiscal year it was harvested; `starting_count` is the fish at the start of the first cycle harvested in the year. |
@@ -312,16 +311,14 @@ total row says 6,036), a one-fish difference inside the report.
 
 # Mortality events (from the report narratives)
 
-Events E01-E28 come from the FY2021-2024 report narratives. Identifying an event and describing it (period, location, category, cause,
-affected population, the loss as reported, the confidence class) is a reading of the report narratives and cannot be taken from a table.
-Those text columns are the only values taken from the hand-compiled `mortality_events.csv`. Everything that can be checked against the reports or
-workbooks is computed in `process-hatchery-data.R`. Events E29-E37 come from the FY2025 report and are built there too, with their
-losses taken from the FY2025 water quality and mortality workbook (daily sheets and `Sheet1`).
+Events E01-E28 come from the FY2021-2024 report narratives and E29-E37 from the FY2025 report. Each event is written from the report text
+(`process-hatchery-data.R`, section 2c) and gives the report and page(s) it is taken from in `citation`; wording keeps the report's hedges and leaves out
+anything the report does not say. E29-E37 take their losses from the FY2025 water quality and mortality workbook (daily sheets and `Sheet1`), the Production Harvest workbook and the report text.
 
-* every event is tied to a phrase in the report that describes it (the script stops if a phrase is missing);
-* `percent_lost` and `n_mortality` are recomputed from the net pen records (`nphistory.xlsx`), the larval rearing tables and workbook,
-  and numbers in the report text;
-* `severity_tier` is recomputed from `percent_lost` with a fixed rule (over 70% Catastrophic, 30-70% Major, 10-30% Moderate,
+* every event is tied to a phrase in the report that describes it, and the phrase must be on a page named in `citation` (the script stops otherwise);
+* `percent_lost` and `n_mortality` are computed from the net pen records (`nphistory.xlsx`), the larval rearing workbook and numbers in the report text,
+  and are left `NA` when the report gives no loss that belongs to the event (see the assumptions table);
+* `severity_tier` is computed from `percent_lost` with a fixed rule (over 70% Catastrophic, 30-70% Major, 10-30% Moderate,
   under 10% Minor; no loss in a non-mortality event is a near-miss; no number is qualitative only).
 
 ```{r mortality-events}
@@ -384,16 +381,16 @@ for E29; the other workbook is shown for comparison.
 
 ## Sources of the losses
 
-Each event is tied to the phrase of the report that describes it (`report_phrase`, in the report of `report_year`), and its loss to the workbook, table or text
-in `loss_source`. The script stops if a phrase is not in the report, so an event cannot be mis-cited. Event E07 (Gerber net pen emergency harvest, 2021) has no
-`percent_lost` because the report states no loss, so its tier is "Non-mortality". Event E22 (August 2024 dissolved-oxygen crashes in ponds
+Each event is tied to the phrase of the report that describes it (`report_phrase`, in the report of `report_year`) and to the page(s) in `citation`, and its loss to the
+workbook, table or text in `loss_source`. The script stops if a phrase is not on a cited page, so an event cannot be mis-cited. Event E07 (Gerber net pen emergency harvest, 2021) has no
+`percent_lost` because the report states no loss, so its tier is "Non-mortality". Events E11, E14 and E16 have no `percent_lost` either: the report gives the fish lost for E11 (an estimated 200+) and E16 (752) but not a share of the fish at risk, and for E14 only the survival of the whole diet treatment. Event E22 (August 2024 dissolved-oxygen crashes in ponds
 P12 and P13) has no `percent_lost`: the FY2024 report only says "the acute loss of several thousand fish between both instances, as well as some chronic losses",
 and the pond records cannot be turned into a combined loss (P13's May 2024 stocking of 3,012 fish was split before harvest), so its tier is
 "Qualitative only (unquantified)".
 
 ```{r mortality-sources}
 KFNFH_mortality_events |>
-  select(event_id, year, category, percent_lost, severity_tier, report_year, report_phrase, loss_source)
+  select(event_id, year, category, percent_lost, severity_tier, citation, report_phrase, loss_source)
 ```
 
 # Monthly pond mortality (from the mortality spreadsheets)
@@ -781,6 +778,7 @@ qc(o, "one row per event_id", duplicated(ev$event_id))
 qc(o, "percent_lost between 0 and 100", ev$percent_lost < 0 | ev$percent_lost > 100)
 qc(o, "severity_tier follows percent_lost", ev$severity_tier != tier_rule)
 qc(o, "report_phrase present", is.na(ev$report_phrase))
+qc(o, "citation present and names the report of report_year", is.na(ev$citation) | !str_detect(ev$citation, paste0("FY", ev$report_year, " Annual Report")))
 qc(o, "loss_source present when percent_lost present", !is.na(ev$percent_lost) & is.na(ev$loss_source))
 qc(o, "event year 2019-2025 and not after its report", ev$year < 2019 | ev$year > ev$report_year)
 qc(o, "category is one of the six categories", !(ev$category %in% c("disease", "water_quality", "weather", "predation", "equipment", "other")))
@@ -1006,8 +1004,8 @@ descriptions <- tribble(
     "FY2024 Tables 9-10 and FY2025 Tables 13-14; identical to `nphistory.xlsx`", "Operation years 2019-2025",
   "KFNFH_age_facility_lookup", "Age class(es) and starting count of fish in each pond or net pen by fiscal year",
     "Net pens: `nphistory.xlsx`. Ponds: Production Harvest workbooks and the report pond tables (rule above)", "FY2019-2025",
-  "KFNFH_mortality_events", "37 events from the report narratives: category, location, cause, loss, confidence, severity tier, report year, report phrase and loss source",
-    "E01-E28: reading of the FY2021-2024 narratives, each tied to a phrase in the report (`report_phrase`); loss from `nphistory.xlsx`, larval rearing tables and workbook, report text. E29-E37: `FY25 KFNFH Annual Report.pdf`; loss from `KFNFH_WQ_FY2025_2 (version 1).xlsx` (daily sheets and Sheet1), the Production Harvest workbook, Table 8 and the report text. Tier: fixed rule on the loss", "Events 2019-2025",
+  "KFNFH_mortality_events", "37 events from the report narratives: category, location, cause, loss, confidence, severity tier, report year, report phrase, citation (report and page) and loss source",
+    "E01-E28: written from the FY2021-2024 report narratives and tables, each tied to a phrase in the report (`report_phrase`) and the report and page in `citation`; loss from `nphistory.xlsx`, larval rearing tables and workbook, report text. E29-E37: `FY25 KFNFH Annual Report.pdf`; loss from `KFNFH_WQ_FY2025_2 (version 1).xlsx` (daily sheets and Sheet1), the Production Harvest workbook, Table 8 and the report text. Tier: fixed rule on the loss", "Events 2019-2025",
   "KFNFH_mortality_events_summary", "Simplified events: category, mortality yes/no, percent mortality, fish lost", "Same as `KFNFH_mortality_events`", "Events 2019-2025",
   "KFNFH_mortality_pond_monthly", "Monthly pond mortality (and FY2023 harvest mortality) with age class",
     "`Fiscal Year 23 WQ_Mortality reporting.xlsx`, `Copy of 2024_KFNFH_WQ.xlsx`, `KFNFH_WQ_FY2025_2 (version 1).xlsx`", "FY2023-2025 (FY2024 is 1 Jan-22 Sep only)",
@@ -1099,6 +1097,7 @@ source_overrides <- tribble(
   "KFNFH_pen_survival", "note", "nphistory.xlsx, sheets UKL and Gerber (text in the stock columns)",
   "KFNFH_mortality_events", "report_year", "derived (report whose narrative describes the event)",
   "KFNFH_mortality_events", "report_phrase", "phrase copied from the report named by report_year (the sources of the events table)",
+  "KFNFH_mortality_events", "citation", "report and page(s) of the annual report PDFs that the event is taken from (the text of the row)",
   "KFNFH_mortality_events", "percent_lost", "see loss_source: nphistory.xlsx (sheets UKL, Gerber); 2024 Larval Collection and Early Rearing Summary Data.xlsx, sheet Pond Performance Table 4 Report; FY2023 report tables; report text; E29-E37: KFNFH_WQ_FY2025_2 (version 1).xlsx (Sheet1 and the daily sheets), FY2025 Production Harvest Data Sheet_20251107.xlsx, FY25 report Table 8",
   "KFNFH_mortality_events", "severity_tier", "derived from percent_lost by a fixed rule",
   "KFNFH_mortality_events", "loss_source", "see percent_lost",
@@ -1155,7 +1154,7 @@ for (o in dictionary_objects) {
 | Mortality events E29-E37 (FY2025) | Added from the FY2025 report, the WQ workbook and `Sheet1`. E30, E32 and E37 have no number at risk, and `Sheet1` and the Production Harvest workbook disagree on the C1/C2 harvest | Ask USFWS which harvest count is right and for the number of fish in the tanks after the September harvest |
 | Mortality spreadsheets FY2024 Oct-Dec 2023 | Quarter not found | Ask USFWS |
 | Age lookup: FY2020 ponds (A1, A2, P5, P11-P15), unoperated FY2025 pens, extra age classes | Not in the reports or workbooks | Ask USFWS for the facility-by-age records |
-| Magnitudes for qualitative mortality events (including E22) | Most events have no number in the reports or workbooks | Ask USFWS or agree how to assign severity numerically |
+| Magnitudes for qualitative mortality events (including E22, E11, E14 and E16) | Most events have no number in the reports or workbooks | Ask USFWS or agree how to assign severity numerically |
 
 # Notes for the model
 

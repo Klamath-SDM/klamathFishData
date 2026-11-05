@@ -151,6 +151,7 @@ KFNFH_mortality_events,confidence,character,"how well the loss is quantified (e.
 KFNFH_mortality_events,severity_tier,character,"severity class (Catastrophic >70% loss, Major 30-70%, Moderate 10-30%, Minor <10%, Near-miss, Non-mortality, Qualitative only)",derived from percent_lost by a fixed rule
 KFNFH_mortality_events,report_year,numeric,fiscal year of the annual report whose narrative describes the event,derived (report whose narrative describes the event)
 KFNFH_mortality_events,report_phrase,character,phrase copied from that report that describes the event (the script stops if it is not in the report),phrase copied from the report named by report_year (the sources of the events table)
+KFNFH_mortality_events,citation,character,"report(s) and page(s) the event is taken from (for example ""FY2021 Annual Report, p. 6, 13""); printed page numbers equal PDF page numbers",report and page(s) of the annual report PDFs that the event is taken from (the text of the row)
 KFNFH_mortality_events,loss_source,character,"where `percent_lost` comes from (workbook and sheet, report table, or report text); `NA` when the loss is not quantified",see percent_lost
 KFNFH_mortality_events_summary,hatchery_name,character,hatchery name (KFNFH),constant (KFNFH)
 KFNFH_mortality_events_summary,event_id,character,"event identifier, matches `KFNFH_mortality_events`",Derived from KFNFH_mortality_events (same sources)

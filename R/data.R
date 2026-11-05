@@ -450,16 +450,18 @@
 #' workbook (\code{KFNFH_WQ_FY2025_2 (version 1).xlsx}, daily sheets and \code{Sheet1}) and the report text.
 #' See \code{KFNFH_mortality_events_summary} for a simplified version.
 #'
-#' Identifying an event and describing it (period, location, category, cause, population affected, loss as reported, confidence) is a
-#' reading of the report narratives (the numbers are computed, not read); each event is tied to a phrase in
-#' the report. \code{percent_lost} is recomputed from the net pen records (\code{nphistory.xlsx}), the larval rearing tables and workbook, and
-#' numbers in the report text, and \code{severity_tier} follows from it by a fixed rule (over 70\% Catastrophic, 30-70\% Major, 10-30\% Moderate,
+#' Each event is written from the report text, in wording that stays within what the report says (hedges such as
+#' "suspected" or "likely" are kept, and nothing is added that the report does not say). \code{citation} gives the report and page
+#' each event is taken from, and \code{report_phrase} is a phrase from the report that describes it (the script stops if the phrase is not
+#' on a cited page). \code{percent_lost} is computed from the net pen records (\code{nphistory.xlsx}), the larval rearing workbook and
+#' numbers in the report text, and is \code{NA} when the report gives no loss that belongs to the event. \code{severity_tier} follows from it by a fixed rule (over 70\% Catastrophic, 30-70\% Major, 10-30\% Moderate,
 #' under 10\% Minor; no loss in a non-mortality event is a near-miss; no number is qualitative only).
 #'
-#' Event E22 (August 2024 dissolved-oxygen crashes in ponds P12 and P13) has no \code{percent_lost}: the FY2024 report only says "several thousand fish"
-#' were lost, so the tier is "Qualitative only (unquantified)".
+#' Events with no \code{percent_lost} and their tier "Qualitative only (unquantified)": E22 (the report says only "several thousand fish"), E11 (an estimated 200+ fish lost; the
+#' report gives no percent), E14 (the report gives survival for the whole diet treatment, not for the event) and E16 (the report gives 752 fish lost in the event and survival for
+#' the whole tank). For E26 and E27 \code{percent_lost} is 0 because the report says no sucker mortality was observed.
 #'
-#' @format A tibble with 37 rows and 16 columns
+#' @format A tibble with 37 rows and 17 columns
 #' \itemize{
 #'   \item \code{hatchery_name}: hatchery name (KFNFH)
 #'   \item \code{event_id}: event identifier (E01, E02, ...)
@@ -476,10 +478,11 @@
 #'   \item \code{severity_tier}: severity class (Catastrophic >70\% loss, Major 30-70\%, Moderate 10-30\%, Minor <10\%, Near-miss, Non-mortality, Qualitative only)
 #'   \item \code{report_year}: fiscal year of the annual report whose narrative describes the event
 #'   \item \code{report_phrase}: phrase copied from that report that describes the event (the script stops if it is not in the report)
+#'   \item \code{citation}: report(s) and page(s) the event is taken from (for example "FY2021 Annual Report, p. 6, 13"); printed page numbers equal PDF page numbers
 #'   \item \code{loss_source}: where \code{percent_lost} comes from (workbook and sheet, report table, or report text); \code{NA} when the loss is not quantified
 #' }
 #'
-#' @source Klamath Falls National Fish Hatchery Annual Reports for Fiscal Years 2021-2025 (narrative sections, event descriptions read from the hand-compiled file mortality_events.csv); losses from \code{KFNFH_WQ_FY2025_2 (version 1).xlsx} (FY2025 events), \code{nphistory.xlsx}, \code{2024 Larval Collection and Early Rearing Summary Data.xlsx}, the FY2023 report tables and the report text
+#' @source Klamath Falls National Fish Hatchery Annual Reports for Fiscal Years 2021-2025 (narrative sections and tables, pages in \code{citation}); losses from \code{KFNFH_WQ_FY2025_2 (version 1).xlsx} (FY2025 events), \code{nphistory.xlsx}, \code{2024 Larval Collection and Early Rearing Summary Data.xlsx}, the FY2023 report tables and the report text
 "KFNFH_mortality_events"
 
 
@@ -487,7 +490,7 @@
 #' @name KFNFH_mortality_events_summary
 #' @description
 #' Simplified version of \code{KFNFH_mortality_events}: one row per event with the category, whether it was a
-#' mortality event, the percent mortality and the number of fish lost where available. Most events have no quantity. Computed the same way as \code{KFNFH_mortality_events}; event E22 has no percent mortality (see that object).
+#' mortality event, the percent mortality and the number of fish lost where available. Most events have no quantity. Computed the same way as \code{KFNFH_mortality_events}; events without a loss in the report (such as E22, E11, E14 and E16) have no percent mortality (see that object).
 #'
 #' @format A tibble with 37 rows and 7 columns
 #' \itemize{
@@ -500,7 +503,7 @@
 #'   \item \code{n_mortality}: number of fish lost, where reported
 #' }
 #'
-#' @source Klamath Falls National Fish Hatchery Annual Reports for Fiscal Years 2021-2024, event descriptions read from the hand-compiled file mortality_events.csv
+#' @source Klamath Falls National Fish Hatchery Annual Reports for Fiscal Years 2021-2025 (narrative sections and tables; see \code{KFNFH_mortality_events$citation})
 "KFNFH_mortality_events_summary"
 
 
