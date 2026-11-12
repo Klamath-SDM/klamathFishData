@@ -15,7 +15,7 @@ A tibble with 342 rows and 15 columns
   \item \code{cycle_harvest_date}: date the cycle was harvested; \code{NA} where the source gives none
   \item \code{to_label}: destination as written (pond codes in upper case without leading zero)
   \item \code{to_facility}: pond code (A, B, C and P series) or net pen code (\code{GERE}, \code{GERW}) when the destination is one; \code{NA} otherwise
-  \item \code{to_type}: "pond", "net pen" (named net pen or "Net Pen" with no code), "other site" (any other named place, for example a refuge pond or another hatchery), "retained at the hatchery" (fish saved for telemetry tags), or "stocked, destination not named" (FY2021 report tables)
+  \item \code{to_type}: "pond" (a code of the A, B, C or P series; the source cells do not say whether a C code is a Tier-1 pond or an indoor tank), "net pen" (named net pen or "Net Pen" with no code), "other site" (any other named place, for example a refuge pond or another hatchery), "retained at the hatchery" (fish saved for telemetry tags), or "stocked, destination not named" (FY2021 report tables)
   \item \code{n_fish}: number of fish sent to this destination; \code{NA} when the text gives no number
   \item \code{move_date}: date of the move when the text gives a complete date; \code{NA} otherwise
   \item \code{date_text}: the date as written in the text (for example "10/25" when no year is given)

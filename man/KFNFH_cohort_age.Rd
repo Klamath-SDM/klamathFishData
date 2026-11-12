@@ -23,7 +23,7 @@ A tibble with 559 rows and 13 columns
 }
 }
 \source{
-Derived from \code{KFNFH_pond_growout}, \code{KFNFH_pen_survival} and \code{KFNFH_hatchery_release}
+The rows come from the annual report tables and workbooks behind three objects: pond cycles from the FY2021-FY2025 report pond tables and the Production Harvest Data Sheet workbooks (\code{KFNFH_pond_growout}); net pen groups from \code{nphistory.xlsx} and the FY2024-FY2025 net pen tables (\code{KFNFH_pen_survival}); releases from the FY2021-FY2025 distribution tables and FY25 Fish Distribution.xlsx (\code{KFNFH_hatchery_release}). The age classes are calculated from the lot or capture year.
 }
 \usage{
 KFNFH_cohort_age
