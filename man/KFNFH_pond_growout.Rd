@@ -43,8 +43,7 @@ A tibble with rows for each pond for each inventory season.
   \item \code{short_tl_mm}: mean total length of the fish short of the target (mm)
   \item \code{brood_number}: number of fish kept as broodstock
   \item \code{brood_percent}: percent of harvested fish kept as broodstock
-  \item \code{age_class}: age class of the fish in the pond in that fiscal year, from \code{KFNFH_age_facility_lookup}, which is rebuilt from the reports and workbooks (e.g. "1", "2", "1/2" where several age groups were held, "wild", "other"); \code{NA} where the pond is not in the lookup
-  \item \code{starting_count}: starting count of fish in the pond from \code{KFNFH_age_facility_lookup}
+  \item \code{age_class}: age class of the cycle's fish: the calendar year of the harvest date minus the year in the lot name, 4 meaning 4 or older, calculated the same way for every lot; a lot name with two years gives both (e.g. "2/4"); "wild" for wild and salvage lots; \code{NA} for a lot with no year and for a cycle still in progress (no harvest date)
 }
 }
 \source{

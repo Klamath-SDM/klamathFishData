@@ -355,8 +355,7 @@
 #'   \item \code{short_tl_mm}: mean total length of the fish short of the target (mm)
 #'   \item \code{brood_number}: number of fish kept as broodstock
 #'   \item \code{brood_percent}: percent of harvested fish kept as broodstock
-#'   \item \code{age_class}: age class of the fish in the pond in that fiscal year, from \code{KFNFH_age_facility_lookup}, which is rebuilt from the reports and workbooks (e.g. "1", "2", "1/2" where several age groups were held, "wild", "other"); \code{NA} where the pond is not in the lookup
-#'   \item \code{starting_count}: starting count of fish in the pond from \code{KFNFH_age_facility_lookup}
+#'   \item \code{age_class}: age class of the cycle's fish: the calendar year of the harvest date minus the year in the lot name, 4 meaning 4 or older, calculated the same way for every lot; a lot name with two years gives both (e.g. "2/4"); "wild" for wild and salvage lots; \code{NA} for a lot with no year and for a cycle still in progress (no harvest date)
 #' }
 #'
 #' @source Klamath Falls National Fish Hatchery Annual Reports for Fiscal Years 2021-2025. Completed FY2025 cycles were validated against \code{FY2025 Production Harvest Data Sheet_20251107.xlsx}; the workbook's live end count equals \code{end_number} minus \code{harvest_mortality_number}
@@ -416,28 +415,68 @@
 "sucker_pit_tag_detection_2024"
 
 
-#' @title Fish Age by Facility and Fiscal Year, KFNFH
-#' @name KFNFH_age_facility_lookup
+#' @title Where the Fish of a Pond Cycle Went, KFNFH
+#' @name KFNFH_fish_movements
 #' @description
-#' Age class(es) and starting count of the fish in each pond or net pen at the Klamath Falls National Fish Hatchery (KFNFH), by fiscal year.
-#' USFWS does not maintain such a table, so it is rebuilt from the reports and workbooks only:
-#' \itemize{
-#'   \item Net pens (UKL and Gerber): from the hatchery workbook \code{nphistory.xlsx}. Age is the operation year minus the capture year; \code{starting_count} is the number of fish stocked.
-#'   \item Ponds (A, B, C and P series): from every pond cycle in the Production Harvest Data Sheet workbooks and the annual report pond tables. A cycle counts in the fiscal year it was stocked and in the fiscal year it was harvested. The age class is that fiscal year minus the lot's collection year (4 means 4 or older); East Side Springs and mixed lots are "other", and wild and salvage lots are "wild". \code{starting_count} is the number of fish at the start of the first cycle harvested in the year.
-#' }
-#' This is the single source of fish age used by \code{KFNFH_pond_growout} and \code{KFNFH_mortality_pond_monthly}.
+#' One row per destination of the fish harvested from a pond cycle at the Klamath Falls National Fish Hatchery (KFNFH).
+#' The destinations are written as free text in the "Stocked To" column of the Production Harvest Data Sheet workbooks
+#' (FY2022 to FY2025; the Spring 2022 sheet calls it "Disposition") and in the disposition column of the FY2021 report tables.
+#' Each text is split into its destinations, for example \code{P10/454 on 3/9/25, P11/490 on 3/11/25} gives two rows.
+#' The text of the cell is kept in \code{source_text} and its workbook sheet and row, or report table, in \code{source}.
+#' A cell that gives no destination (for example "-") gives no row. Cycles with no text are not in this object.
 #'
-#' @format A tibble with 227 rows and 5 columns
+#' @format A tibble with 342 rows and 15 columns
 #' \itemize{
 #'   \item \code{hatchery_name}: hatchery name (KFNFH)
-#'   \item \code{fiscal_year}: fiscal year
-#'   \item \code{facility}: facility code (pond or net pen, upper case)
-#'   \item \code{age_class}: age class(es) of the fish, as text; several classes are separated by "/" (e.g. "1/2"); "wild" and "other" also occur
-#'   \item \code{starting_count}: number of fish at the start of the year (see the description); \code{NA} when no record gives it
+#'   \item \code{fiscal_year}: fiscal year of \code{move_date}, otherwise of the harvest date of the cycle, otherwise of the report table
+#'   \item \code{from_facility}: pond the fish came from
+#'   \item \code{lot}: lot of the cycle (the cohort)
+#'   \item \code{cycle_stock_date}: date the cycle was stocked; \code{NA} where the source gives none
+#'   \item \code{cycle_harvest_date}: date the cycle was harvested; \code{NA} where the source gives none
+#'   \item \code{to_label}: destination as written (pond codes in upper case without leading zero)
+#'   \item \code{to_facility}: pond code (A, B, C and P series) or net pen code (\code{GERE}, \code{GERW}) when the destination is one; \code{NA} otherwise
+#'   \item \code{to_type}: "pond" (a code of the A, B, C or P series; the source cells do not say whether a C code is a Tier-1 pond or an indoor tank), "net pen" (named net pen or "Net Pen" with no code), "other site" (any other named place, for example a refuge pond or another hatchery), "retained at the hatchery" (fish saved for telemetry tags), or "stocked, destination not named" (FY2021 report tables)
+#'   \item \code{n_fish}: number of fish sent to this destination; \code{NA} when the text gives no number
+#'   \item \code{move_date}: date of the move when the text gives a complete date; \code{NA} otherwise
+#'   \item \code{date_text}: the date as written in the text (for example "10/25" when no year is given)
+#'   \item \code{note}: words in the text about this destination (for example "partial harvest"); \code{NA} when none
+#'   \item \code{source}: workbook file, sheet and Excel row, or the report table, of the text
+#'   \item \code{source_text}: the whole text of the cell the row was split from
 #' }
+#' @source Production Harvest Data Sheet.xlsx (FY2024 supporting tables) sheets Spring 2022, SPRING 2023, FALL 2023 and SPRING 2024; FY2025 Production Harvest Data Sheet_20251107.xlsx sheets FALL 2024, Spring 2025 and Fall 2025; FY2021 KFNFH Annual Report tables 3-4
+"KFNFH_fish_movements"
+
+
+#' @title Age of Each Cohort by Pond, Net Pen and Release, KFNFH
+#' @name KFNFH_cohort_age
+#' @description
+#' The age class of each cohort (lot or capture year) at every pond cycle, net pen group and release at the Klamath Falls National Fish Hatchery (KFNFH).
+#' It stacks \code{KFNFH_pond_growout}, \code{KFNFH_pen_survival} and \code{KFNFH_hatchery_release}, so filtering on one
+#' \code{cohort} gives its stays and releases in date order. With \code{KFNFH_fish_movements} (which gives the pond a cycle's fish went to next)
+#' a cohort can be followed from pond to pond.
 #'
-#' @source Klamath Falls National Fish Hatchery workbooks \code{nphistory.xlsx} and the Production Harvest Data Sheet workbooks (FY2024 and FY2025), and the Annual Reports for Fiscal Years 2021-2025 (pond tables)
-"KFNFH_age_facility_lookup"
+#' The age class is the calendar year of the date minus the year in the cohort name, 4 meaning 4 or older (net pens, which have only an operation year, use it as the calendar year).
+#' \strong{Assumption:} it is calculated the same way for every cohort, including East Side Springs lots (for example ESS2023), and the year in the
+#' cohort name is taken as the collection year. Ages are whole calendar years, not days. The \code{fiscal_year} column is kept for joining to the other objects but is not used for age.
+#'
+#' @format A tibble with 559 rows and 13 columns
+#' \itemize{
+#'   \item \code{hatchery_name}: hatchery name (KFNFH)
+#'   \item \code{cohort}: lot of the pond cycle or release, or capture year of the net pen group, as written
+#'   \item \code{cohort_year}: the single year in the cohort name; \code{NA} for wild, salvage and mixed cohorts and names with several years
+#'   \item \code{stage}: "pond", "net pen" or "release"
+#'   \item \code{facility}: pond or net pen code; for releases the facility the fish came from, as written when it is not a pond or net pen code
+#'   \item \code{fiscal_year}: fiscal year the stay ended (ponds: harvest date, or the report year while in progress; net pens: operation year; releases: release year)
+#'   \item \code{start_date}: date stocked into the pond; \code{NA} for net pens and releases and where the source gives none
+#'   \item \code{end_date}: harvest date of the pond cycle or release date; \code{NA} for net pens
+#'   \item \code{age_at_start}: age class when the stay started (net pens: in the operation year); \code{NA} for releases and where there is no start date
+#'   \item \code{age_at_end}: age class when the stay ended (net pens: in the operation year; releases: in the release year); "wild" for wild and salvage lots; \code{NA} for a lot with no year
+#'   \item \code{start_number}: fish at the start (ponds: start number; net pens: number stocked)
+#'   \item \code{end_number}: fish at the end (ponds: end number; net pens: number harvested; releases: number of fish released)
+#'   \item \code{source}: table the row comes from
+#' }
+#' @source The rows come from the annual report tables and workbooks behind three objects: pond cycles from the FY2021-FY2025 report pond tables and the Production Harvest Data Sheet workbooks (\code{KFNFH_pond_growout}); net pen groups from \code{nphistory.xlsx} and the FY2024-FY2025 net pen tables (\code{KFNFH_pen_survival}); releases from the FY2021-FY2025 distribution tables and FY25 Fish Distribution.xlsx (\code{KFNFH_hatchery_release}). The age classes are calculated from the lot or capture year.
+"KFNFH_cohort_age"
 
 
 #' @title Hatchery Mortality Events from Report Narratives, KFNFH
@@ -513,10 +552,10 @@
 #' Monthly mortality counts by pond from the hatchery's water quality and mortality logs for fiscal years 2023-2025,
 #' plus per-event mortality during harvest operations in FY2023. The records are at different levels of detail in each
 #' year (FY2023 is a pond by month table; FY2024 and FY2025 are daily per-pond logs summed to months).
-#' Counts come straight from the three workbooks; \code{age_class} and \code{starting_count} come from \code{KFNFH_age_facility_lookup}.
+#' Counts come straight from the three workbooks; \code{age_class} comes from \code{KFNFH_cohort_age}: the age class(es) of the pond cycles in the pond that month.
 #' FY2024 covers 1 January to 22 September 2024 only (the October-December 2023 quarter was not found), so FY2024 totals are a partial year. FY2023 includes all pond series (A, B and P) and is larger than the "Monthly with no harvest Morts" column of the source sheet, which covers the P-series only.
 #'
-#' @format A tibble with 1516 rows and 8 columns
+#' @format A tibble with 1516 rows and 7 columns
 #' \itemize{
 #'   \item \code{hatchery_name}: hatchery name (KFNFH)
 #'   \item \code{fiscal_year}: fiscal year (2023-2025)
@@ -524,8 +563,7 @@
 #'   \item \code{pond}: pond or tank identifier
 #'   \item \code{mortality}: number of fish recorded dead
 #'   \item \code{record_type}: "pond" for routine pond mortality or "harvest" for mortality recorded during harvest operations
-#'   \item \code{age_class}: age class of the fish in the pond, from \code{KFNFH_age_facility_lookup}
-#'   \item \code{starting_count}: starting count of fish in the pond, from \code{KFNFH_age_facility_lookup}
+#'   \item \code{age_class}: age class(es) of the pond cycles (stocked on or before the end of the month and not yet harvested before its start) from \code{KFNFH_cohort_age}, with the age taken in the calendar year of the month; several classes are joined with "/" (e.g. "0/2"); \code{NA} where no cycle with a stock date was in the pond that month
 #' }
 #'
 #' @source Klamath Falls National Fish Hatchery mortality spreadsheets: Fiscal Year 23 WQ_Mortality reporting.xlsx, Copy of 2024_KFNFH_WQ.xlsx, KFNFH_WQ_FY2025_2 (version 1).xlsx

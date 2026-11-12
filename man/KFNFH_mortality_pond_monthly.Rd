@@ -5,7 +5,7 @@
 \alias{KFNFH_mortality_pond_monthly}
 \title{Monthly Pond Mortality, KFNFH}
 \format{
-A tibble with 1516 rows and 8 columns
+A tibble with 1516 rows and 7 columns
 \itemize{
   \item \code{hatchery_name}: hatchery name (KFNFH)
   \item \code{fiscal_year}: fiscal year (2023-2025)
@@ -13,8 +13,7 @@ A tibble with 1516 rows and 8 columns
   \item \code{pond}: pond or tank identifier
   \item \code{mortality}: number of fish recorded dead
   \item \code{record_type}: "pond" for routine pond mortality or "harvest" for mortality recorded during harvest operations
-  \item \code{age_class}: age class of the fish in the pond, from \code{KFNFH_age_facility_lookup}
-  \item \code{starting_count}: starting count of fish in the pond, from \code{KFNFH_age_facility_lookup}
+  \item \code{age_class}: age class(es) of the pond cycles (stocked on or before the end of the month and not yet harvested before its start) from \code{KFNFH_cohort_age}, with the age taken in the calendar year of the month; several classes are joined with "/" (e.g. "0/2"); \code{NA} where no cycle with a stock date was in the pond that month
 }
 }
 \source{
@@ -27,7 +26,7 @@ KFNFH_mortality_pond_monthly
 Monthly mortality counts by pond from the hatchery's water quality and mortality logs for fiscal years 2023-2025,
 plus per-event mortality during harvest operations in FY2023. The records are at different levels of detail in each
 year (FY2023 is a pond by month table; FY2024 and FY2025 are daily per-pond logs summed to months).
-Counts come straight from the three workbooks; \code{age_class} and \code{starting_count} come from \code{KFNFH_age_facility_lookup}.
+Counts come straight from the three workbooks; \code{age_class} comes from \code{KFNFH_cohort_age}: the age class(es) of the pond cycles in the pond that month.
 FY2024 covers 1 January to 22 September 2024 only (the October-December 2023 quarter was not found), so FY2024 totals are a partial year. FY2023 includes all pond series (A, B and P) and is larger than the "Monthly with no harvest Morts" column of the source sheet, which covers the P-series only.
 }
 \keyword{datasets}

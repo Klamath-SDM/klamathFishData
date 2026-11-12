@@ -1,0 +1,197 @@
+/* Klamath Basin Science Collaborative design system (klamapp, inst/design-system), applied to this vignette.
+   Tokens are copied from tokens/colors.css, typography.css, spacing.css and base.css so the vignette is self-contained.
+   Fonts are the system's Google Fonts (Newsreader, Archivo, IBM Plex Mono); the fallbacks are used offline. */
+@import url("https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300..700;1,6..72,300..600&family=Archivo:ital,wght@0,400..700;1,400..600&family=IBM+Plex+Mono:wght@400;500;600&display=swap");
+
+:root {
+  --basalt-900: #121716; --basalt-800: #1E2625; --basalt-700: #333E3B; --basalt-600: #4E5B57;
+  --basalt-500: #71807B; --basalt-400: #9BA8A2; --basalt-300: #C2CCC6; --basalt-200: #DEE5E0;
+  --basalt-100: #EDF1EC; --basalt-50: #F6F8F4; --paper: #FCFDFA;
+  --river-900: #07262C; --river-800: #0D3A42; --river-700: #134E58; --river-600: #1A6A76;
+  --river-500: #22808E; --river-400: #4FA1AD; --river-300: #8AC4CC; --river-200: #BFDFE3;
+  --river-100: #DDEDEF; --river-50: #EEF6F7;
+  --wheat-800: #6B4A0E; --wheat-500: #CE9A28; --wheat-50: #FDF8EC;
+  --sage-100: #E9ECE2;
+
+  --surface-page: var(--basalt-50);
+  --surface-card: var(--paper);
+  --surface-sunken: var(--basalt-100);
+  --text-strong: var(--basalt-900);
+  --text-body: var(--basalt-800);
+  --text-muted: var(--basalt-600);
+  --text-faint: var(--basalt-500);
+  --text-link: var(--river-600);
+  --text-link-hover: var(--river-800);
+  --border-hairline: var(--basalt-200);
+  --border-default: var(--basalt-300);
+
+  --font-display: "Newsreader", Georgia, "Times New Roman", serif;
+  --font-sans: "Archivo", "Helvetica Neue", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+
+/* ---- page ---- */
+body {
+  background: var(--surface-page);
+  color: var(--text-body);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.62;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 48px clamp(16px, 4vw, 48px) 80px;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+p { margin: 0 0 16px; text-wrap: pretty; }
+a { color: var(--text-link); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+a:hover { color: var(--text-link-hover); }
+::selection { background: var(--river-200); color: var(--river-900); }
+hr { border: none; border-top: 1px solid var(--border-hairline); margin: 32px 0; }
+ul, ol { padding-left: 1.4em; margin: 0 0 16px; }
+li { margin-bottom: 6px; }
+strong { font-weight: 600; color: var(--text-strong); }
+
+/* ---- title block: eyebrow, serif title, date in mono ---- */
+h1.title, .title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 42px;
+  line-height: 1.1;
+  letter-spacing: -0.018em;
+  color: var(--text-strong);
+  margin: 0 0 8px;
+  border: none;
+  padding: 0;
+}
+h1.title::before {
+  display: block;
+  content: "Klamath Basin Science Collaborative";
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-bottom: 12px;
+}
+h4.date, .date {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-faint);
+  margin: 0 0 32px;
+}
+
+/* ---- headings: serif sections with a 3px river rule, sans subsections ---- */
+h1:not(.title) {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 33px;
+  line-height: 1.16;
+  letter-spacing: -0.018em;
+  color: var(--text-strong);
+  margin: 56px 0 20px;
+  padding-bottom: 10px;
+  border-bottom: 3px solid var(--river-700);
+}
+h2 {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 21px;
+  line-height: 1.3;
+  color: var(--text-strong);
+  margin: 40px 0 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border-hairline);
+}
+h2 code { font-size: 0.82em; }
+h3 { font-size: 18px; font-weight: 600; line-height: 1.3; color: var(--text-strong); margin: 28px 0 8px; }
+
+/* ---- callout (design system Callout, caution tone: rule on top, no coloured side border) ---- */
+.callout {
+  background: var(--wheat-50);
+  border-top: 3px solid var(--wheat-500);
+  border-radius: 5px;
+  padding: 16px;
+  margin: 0 0 32px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--wheat-800);
+}
+.callout .callout-title { font-size: 12.5px; font-weight: 600; margin-bottom: 4px; color: var(--wheat-800); }
+.callout p { margin: 0; }
+
+/* ---- code ---- */
+code, kbd, pre { font-family: var(--font-mono); }
+code { font-size: 0.9em; color: var(--river-800); background: var(--river-50); border-radius: 3px; padding: 1px 4px; }
+pre {
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-hairline);
+  border-radius: 5px;
+  padding: 12px 16px;
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-x: auto;
+  margin: 0 0 20px;
+}
+pre code { background: none; padding: 0; color: var(--text-body); font-size: inherit; }
+pre.sourceCode { background: var(--surface-sunken); }
+pre:not(.sourceCode) { background: var(--paper); }   /* output blocks are lighter than the code */
+
+/* ---- tables: eyebrow headers, hairline rows, tabular figures ---- */
+table {
+  display: block;
+  overflow-x: auto;
+  max-width: 100%;
+  width: auto;
+  margin: 0 0 24px;
+  border: none;
+  border-collapse: collapse;
+  font-size: 14px;
+  line-height: 1.4;
+  background: var(--surface-card);
+}
+table thead { background: var(--surface-card); }
+table th {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  text-align: left;
+  padding: 10px 12px;
+  white-space: nowrap;
+  border: none;
+  border-bottom: 1px solid var(--border-default);
+}
+table td {
+  padding: 8px 12px;
+  border: none;
+  border-bottom: 1px solid var(--border-hairline);
+  font-variant-numeric: tabular-nums;
+  vertical-align: top;
+}
+table tr.even, table tr:nth-child(even) { background: transparent; }
+table th[align="right"], table td[align="right"],
+table th[style*="text-align: right"], table td[style*="text-align: right"] { text-align: right; }
+table td[align="right"], table td[style*="text-align: right"] { font-family: var(--font-mono); font-size: 13px; font-weight: 500; }
+table tbody tr:hover { background: var(--basalt-100); }
+
+/* ---- figures: card ground, hairline border, no shadow ---- */
+img, .figure img {
+  background: var(--surface-card);
+  border: 1px solid var(--border-hairline);
+  border-radius: 8px;
+  padding: 8px;
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 auto 24px;
+}
+p.caption, .caption, figcaption { font-size: 12.5px; color: var(--text-faint); margin: -12px 0 24px; text-align: left; }
+
+blockquote { border: none; background: var(--surface-sunken); border-radius: 5px; padding: 8px 16px; margin: 0 0 16px; color: var(--text-muted); }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }

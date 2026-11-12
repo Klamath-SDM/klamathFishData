@@ -3,6 +3,7 @@ title: "KFNFH Hatchery Data Overview"
 date: "`r Sys.Date()`"
 output:
   rmarkdown::html_vignette:
+    css: kfnfh-vignette.css
     fig_caption: yes
 vignette: >
   %\VignetteIndexEntry{KFNFH Hatchery Data Overview}
@@ -18,19 +19,47 @@ library(dplyr)
 library(tidyr)
 library(stringr)
 library(purrr)
+library(forcats)
 library(ggplot2)
+library(ggalluvial)
 library(knitr)
 
-theme_set(theme_minimal(base_size = 11))
+# Klamath Basin Science Collaborative design system: categorical series in a fixed order (viz-1 to viz-6),
+# hairline gridlines, basalt text on the card ground
+viz <- c("#1A6A76", "#B24425", "#45632B", "#AE7C18", "#4E5B57", "#8AC4CC")
+age_colours <- c("0" = "#DDEDEF", "1" = "#8AC4CC", "2" = "#22808E", "3" = "#134E58", "4" = "#07262C", "wild" = "#A9B29E")
+options(ggplot2.discrete.fill = list(viz), ggplot2.discrete.colour = list(viz))
+
+theme_set(
+  theme_minimal(base_size = 11) +
+    theme(text = element_text(colour = "#333E3B"),
+          plot.background = element_rect(fill = "#FCFDFA", colour = NA),
+          panel.grid.major = element_line(colour = "#DEE5E0", linewidth = 0.3),
+          panel.grid.minor = element_blank(),
+          axis.text = element_text(colour = "#4E5B57"),
+          axis.title = element_text(colour = "#4E5B57"),
+          strip.text = element_text(face = "bold", colour = "#121716"),
+          plot.title = element_text(face = "bold", size = 11, colour = "#121716"),
+          plot.caption = element_text(colour = "#71807B", hjust = 0),
+          legend.position = "bottom",
+          legend.title = element_text(colour = "#4E5B57")))
+
+# a table with thousands separators on counts, but none on years (fiscal_year, year, cohort_year, first_fy, ...)
+tbl <- function(x) {
+  x |>
+    mutate(across(matches("(^|_)(year|fy)$"), as.character)) |>
+    kable(format.args = list(big.mark = ","))
+}
 
 # first rows of an object as a small table (first n columns so it fits the page)
 peek <- function(x, cols = 6, rows = 5) {
-  x |> select(1:min(cols, ncol(x))) |> head(rows) |> kable(format.args = list(big.mark = ","))
+  x |> select(1:min(cols, ncol(x))) |> head(rows) |> tbl()
 }
 ```
 
-<div style="border-left: 6px solid #d9822b; background: #fdf3e7; padding: 0.7em 1em; margin: 1em 0;">
-**&#9888; Preliminary data.** All data aggregations are preliminary and need to be QC'd by KFNFH.
+<div class="callout">
+<div class="callout-title">Preliminary data</div>
+<p>All data aggregations are preliminary and need to be QC'd by KFNFH.</p>
 </div>
 
 # Purpose
@@ -51,14 +80,15 @@ The objects are built by `data-raw/processing-scripts/process-hatchery-data.R`. 
 ```{r overview-table}
 objects <- c("KFNFH_historical_collection_release", "KFNFH_hatchery_release", "KFNFH_LRS_ESS_adult_collection",
              "KFNFH_LRS_ESS_incubation_hatch", "KFNFH_adfluvial_early_rearing", "KFNFH_pond_growout",
-             "KFNFH_pen_survival", "KFNFH_age_facility_lookup", "KFNFH_mortality_events",
+             "KFNFH_pen_survival", "KFNFH_fish_movements",
+             "KFNFH_cohort_age", "KFNFH_mortality_events",
              "KFNFH_mortality_events_summary", "KFNFH_mortality_pond_monthly", "KFNFH_capacity",
              "KFNFH_broodstock_spawned")
 
 tibble(object = objects,
        rows = map_int(objects, ~ nrow(get(.x))),
        columns = map_int(objects, ~ ncol(get(.x)))) |>
-  kable(format.args = list(big.mark = ","))
+  tbl()
 ```
 
 # How the data fit together
@@ -72,8 +102,8 @@ knitr::include_graphics("kfnfh-data-workflow.svg")
 
 # Facilities overview
 
-This section uses `KFNFH_capacity` (how much rearing space each year) and `KFNFH_age_facility_lookup` (which pond or net pen held
-which age class of fish each year).
+This section uses `KFNFH_capacity` (how much rearing space each year) and `KFNFH_cohort_age` (which pond or net pen held which
+cohort, and its age class, each year).
 
 ## Station layout
 
@@ -86,22 +116,37 @@ What the reports say about the facilities:
   FY2025 report.
 * **Net pens.** Fish are also grown out in net pens in Upper Klamath Lake (`UKL` pens) and at Gerber Reservoir (`GER` pens).
 
-The B-series and C-series names are those used in the report pond and culture-unit tables.
+**Facility names.** The same letters name different facilities, so the data need these definitions:
+
+* **A-series (A1 to A4):** four 0.25-acre outdoor ponds, demolished early in FY2024 (FY2024 report, p. 7).
+* **P-series (P0 to P21):** 22 0.03-acre outdoor ponds (FY2024 report, p. 7; FY2025 report, p. 8).
+* **Old B-series (B1 to B24):** 24 0.03-acre outdoor ponds, taken offline early in FY2023 and demolished for construction (FY2023 report, p. 7).
+* **New Tier-1 ponds:** six 0.25-acre C-ponds (C1 to C6) and four 0.125-acre B-ponds (B1 to B4), all outdoor. They had limited use in FY2024 and were fully available in FY2025
+  (FY2024 report, p. 9; FY2025 report, p. 8). The names B1 to B4 were therefore used by two different sets of ponds, one before and one after the construction.
+  The data tell them apart only by date.
+* **Indoor tanks (culture units):** in `KFNFH_adfluvial_early_rearing` the C-names (for example C3 to C14, and units labelled "Salvage Building") are indoor tanks,
+  not ponds, for example "Tank C14" in FY2023 (FY2023 report, p. 12). The tanks are in the greenhouse and in the Salvage Building (FY2025 report, p. 8).
+  A "C1" in the early rearing table is a tank, while a "C1" in the pond tables (`KFNFH_pond_growout`, FY2025) is a Tier-1 outdoor pond.
 
 ```{r facility-series}
-KFNFH_age_facility_lookup |>
+KFNFH_cohort_age |>
+  filter(stage %in% c("pond", "net pen"), str_detect(facility, "^([ABCP]\\d+|UKL[A-Z]|GER[A-Z])$")) |>
   mutate(series = case_when(str_detect(facility, "^UKL") ~ "Upper Klamath Lake net pens",
                             str_detect(facility, "^GER") ~ "Gerber net pens",
-                            TRUE ~ paste0(str_sub(facility, 1, 1), "-series ponds/units"))) |>
+                            TRUE ~ paste0(str_sub(facility, 1, 1), "-series ponds"))) |>
   group_by(series) |>
   summarise(facilities = n_distinct(facility),
             first_fy = min(fiscal_year),
             last_fy = max(fiscal_year),
             examples = paste(head(str_sort(unique(facility), numeric = TRUE), 4), collapse = ", ")) |>
-  kable()
+  tbl()
 ```
 
 ## Capacity over time
+
+```{r capacity-glimpse}
+glimpse(KFNFH_capacity, width = 80)
+```
 
 ```{r capacity-plot, fig.height = 3.2}
 KFNFH_capacity |>
@@ -118,21 +163,36 @@ KFNFH_capacity |>
 
 ## Which facility held which age class
 
-Each square is one facility in one fiscal year, coloured by the youngest age class listed for that facility
-(`KFNFH_age_facility_lookup$age_class`; for example "0/1" is shown as 0). Age classes are the fiscal year minus the collection year of the lot.
-Facility-years with no record have no square.
+Each square is one facility in one calendar year, coloured by the youngest age class among the cohorts it held. A pond cycle or net pen group is
+counted in every calendar year from the one it was stocked to the one it ended (`KFNFH_cohort_age`; cycles with no stock date count in their end year only, and cycles still in progress in their stock year).
+Age classes are the calendar year minus the year in the lot name, calculated the same way for every lot (**assumption:** that year is the collection year).
+Facility-years with no record have no square. Only the A, B, C and P series ponds and the net pens are shown; other sites in the pond tables (refuge ponds and similar) are left out.
 
 ```{r occupancy, fig.height = 8, fig.width = 6.5}
-occ <- KFNFH_age_facility_lookup |>
-  mutate(youngest = str_extract(age_class, "^[0-9]|^wild|^other"),
-         youngest = factor(youngest, levels = c("0", "1", "2", "3", "4", "wild", "other")),
+cal_year <- function(d) as.integer(format(d, "%Y"))
+
+occ <- KFNFH_cohort_age |>
+  filter(stage %in% c("pond", "net pen"), str_detect(facility, "^([ABCP]\\d+|UKL[A-Z]|GER[A-Z])$")) |>
+  mutate(year_end = coalesce(cal_year(end_date), cal_year(start_date), fiscal_year),
+         year_start = coalesce(cal_year(start_date), year_end),
+         fy = map2(year_start, year_end, seq)) |>
+  unnest(fy) |>
+  mutate(age = case_when(!is.na(cohort_year) ~ as.character(pmax(pmin(fy - cohort_year, 4), 0)),
+                         str_detect(cohort, regex("wild|salv", ignore_case = TRUE)) ~ "wild",
+                         TRUE ~ NA_character_)) |>
+  filter(!is.na(age)) |>
+  mutate(rank = if_else(age == "wild", 5, as.numeric(age))) |>
+  group_by(fy, facility) |>
+  slice_min(rank, n = 1, with_ties = FALSE) |>
+  ungroup() |>
+  mutate(youngest = factor(age, levels = c("0", "1", "2", "3", "4", "wild")),
          facility = factor(facility, levels = rev(str_sort(unique(facility), numeric = TRUE))))
 
-ggplot(occ, aes(factor(fiscal_year), facility, fill = youngest)) +
+ggplot(occ, aes(factor(fy), facility, fill = youngest)) +
   geom_tile(colour = "white") +
-  scale_fill_viridis_d(na.value = "grey85", drop = FALSE) +
-  labs(x = "Fiscal year", y = NULL, fill = "Youngest\nage class",
-       title = "Facility occupancy by fiscal year") +
+  scale_fill_manual(values = age_colours, na.value = "#E9ECE2", drop = FALSE) +
+  labs(x = "Calendar year", y = NULL, fill = "Youngest\nage class",
+       title = "Facility occupancy by calendar year") +
   theme(panel.grid = element_blank(), axis.text.y = element_text(size = 6))
 ```
 
@@ -147,6 +207,10 @@ Larvae collected and fish released by type (SARP, fingerling, fry, salvage) for 
 
 ```{r hist-peek}
 peek(KFNFH_historical_collection_release, cols = 6)
+```
+
+```{r hist-glimpse}
+glimpse(KFNFH_historical_collection_release, width = 80)
 ```
 
 ```{r hist-plot}
@@ -168,7 +232,11 @@ Every distribution or transfer of fish (date, species, lot, number, size, source
 **Source:** FY2025 Table 15 of the annual report, which matches `FY25 Fish Distribution.xlsx`. FY2025 only in this draft.
 
 ```{r rel-peek}
-KFNFH_hatchery_release |> select(dispo_date, species, lot, number_fish, from_ponds, dispo_location) |> head(5) |> kable(format.args = list(big.mark = ","))
+KFNFH_hatchery_release |> select(dispo_date, species, lot, number_fish, from_ponds, dispo_location) |> head(5) |> tbl()
+```
+
+```{r rel-glimpse}
+glimpse(KFNFH_hatchery_release, width = 80)
 ```
 
 ```{r rel-plot}
@@ -189,7 +257,11 @@ Wild adult Lost River suckers collected at East Side Springs: date, PIT tag, sex
 **Source:** Table 2 of the FY2023 to FY2025 reports; FY2023 and FY2024 match the East Side Springs metadata workbooks.
 
 ```{r ess-peek}
-KFNFH_LRS_ESS_adult_collection |> select(fiscal_year, date, sex, gamete_use, fl_mm, spring_location) |> head(5) |> kable()
+KFNFH_LRS_ESS_adult_collection |> select(fiscal_year, date, sex, gamete_use, fl_mm, spring_location) |> head(5) |> tbl()
+```
+
+```{r ess-glimpse}
+glimpse(KFNFH_LRS_ESS_adult_collection, width = 80)
 ```
 
 ```{r ess-plot}
@@ -207,15 +279,20 @@ Spawning crosses per female and incubation vessel: parents, family groups, eggs,
 **Source:** Table 3 of the FY2024 and FY2025 reports; both years match the East Side Springs metadata workbooks.
 
 ```{r inc-peek}
-KFNFH_LRS_ESS_incubation_hatch |> select(fiscal_year, spawning_date, incubator, total_eggs, total_fry, hatch_percent) |> head(5) |> kable(format.args = list(big.mark = ","))
+KFNFH_LRS_ESS_incubation_hatch |> select(fiscal_year, spawning_date, incubator, total_eggs, total_fry, hatch_percent) |> head(5) |> tbl()
+```
+
+```{r inc-glimpse}
+glimpse(KFNFH_LRS_ESS_incubation_hatch, width = 80)
 ```
 
 ```{r inc-plot}
-ggplot(KFNFH_LRS_ESS_incubation_hatch, aes(hatch_percent)) +
-  geom_histogram(binwidth = 10, boundary = 0, fill = "grey40", colour = "white") +
-  facet_wrap(~ fiscal_year, ncol = 1) +
-  labs(x = "Hatch (%)", y = "Incubation vessels", title = "Hatch percent by incubation vessel",
-       caption = "Values above 100% are as reported.")
+ggplot(KFNFH_LRS_ESS_incubation_hatch, aes(factor(fiscal_year), hatch_percent)) +
+  geom_boxplot(width = 0.45, fill = "#DDEDEF", colour = "#1A6A76", outlier.shape = NA) +
+  geom_jitter(width = 0.1, height = 0, size = 1.6, alpha = 0.7, colour = "#4E5B57") +
+  geom_hline(yintercept = 100, linetype = "dashed", colour = "#71807B") +
+  labs(x = "Fiscal year", y = "Hatch (%)", title = "Hatch percent by incubation vessel",
+       caption = str_wrap("Each point is one incubation vessel; the box is the median and quartiles. The dashed line is 100%: values above it are as reported (egg numbers are estimated).", 95))
 ```
 
 ## `KFNFH_adfluvial_early_rearing`
@@ -225,7 +302,11 @@ Larval stocking into culture units (tanks): number collected, mortality, number 
 **Source:** FY2023 Table 3, FY2024 Table 5 and FY2025 Table 8; FY2024 is identical to the early rearing workbook.
 
 ```{r early-peek}
-KFNFH_adfluvial_early_rearing |> select(fiscal_year, date, culture_unit, collected, stocked, survival_percent) |> head(5) |> kable()
+KFNFH_adfluvial_early_rearing |> select(fiscal_year, date, culture_unit, collected, stocked, survival_percent) |> head(5) |> tbl()
+```
+
+```{r early-glimpse}
+glimpse(KFNFH_adfluvial_early_rearing, width = 80)
 ```
 
 ```{r early-plot}
@@ -245,7 +326,11 @@ Captive broodstock spawned in spring 2025 by capture year, species and sex.
 **Source:** `FY25CaptiveBroodSpawning_FINAL.xlsx` (sheet All PIT), identical to FY2025 Table 4.
 
 ```{r brood-peek}
-KFNFH_broodstock_spawned |> select(species, capture_year, females_spawned, males_spawned, total_spawned) |> kable()
+KFNFH_broodstock_spawned |> select(species, capture_year, females_spawned, males_spawned, total_spawned) |> tbl()
+```
+
+```{r brood-glimpse}
+glimpse(KFNFH_broodstock_spawned, width = 80)
 ```
 
 ```{r brood-plot}
@@ -263,26 +348,28 @@ KFNFH_broodstock_spawned |>
 
 ## `KFNFH_pond_growout`
 
-One row per pond cycle: dates, numbers, weights, lengths, growth, harvest mortality, survival, disposition, `age_class` and `starting_count`.
+One row per pond cycle: dates, numbers, weights, lengths, growth, harvest mortality, survival, disposition and `age_class`.
 
 **Source:** pond tables of the FY2021 to FY2025 annual reports; FY2025 cycles are checked against the Production Harvest workbook.
 A cycle listed in two consecutive reports is kept once (the later report's row).
 
 ```{r pond-peek}
-KFNFH_pond_growout |> select(fiscal_year, pond, lot, start_number, end_number, survival_percent) |> head(5) |> kable(format.args = list(big.mark = ","))
+KFNFH_pond_growout |> select(fiscal_year, pond, lot, start_number, end_number, survival_percent) |> head(5) |> tbl()
+```
+
+```{r pond-glimpse}
+glimpse(KFNFH_pond_growout, width = 80)
 ```
 
 ```{r pond-plot}
 KFNFH_pond_growout |>
-  filter(start_number > 0, end_number > 0) |>
-  ggplot(aes(start_number, end_number, colour = factor(fiscal_year))) +
-  geom_abline(slope = 1, intercept = 0, linetype = "dashed", colour = "grey60") +
-  geom_point(alpha = 0.7) +
-  scale_x_log10(labels = scales::label_comma()) +
-  scale_y_log10(labels = scales::label_comma()) +
-  labs(x = "Fish at start of cycle", y = "Fish at harvest", colour = "Fiscal year",
-       title = "Pond cycles: start and end numbers (log scales, dashed line: no change)",
-       caption = "Points above the line are cycles where more fish were counted at harvest than at the start, as reported.")
+  filter(!is.na(survival_percent), !is.na(harvest_date)) |>
+  ggplot(aes(factor(fiscal_year), survival_percent)) +
+  geom_boxplot(width = 0.5, fill = "#DDEDEF", colour = "#1A6A76", outlier.shape = NA) +
+  geom_jitter(width = 0.12, height = 0, size = 1.2, alpha = 0.5, colour = "#4E5B57") +
+  geom_hline(yintercept = 100, linetype = "dashed", colour = "#71807B") +
+  labs(x = "Fiscal year", y = "Survival (%)", title = "Pond cycle survival by fiscal year",
+       caption = str_wrap("Each point is one harvested pond cycle (cycles still in progress are not shown); the box is the median and quartiles. Values above the dashed 100% line are cycles with more fish at harvest than at the start, as reported.", 95))
 ```
 
 ## `KFNFH_pen_survival`
@@ -292,7 +379,11 @@ Net pen survival and growth in Upper Klamath Lake and at Gerber Reservoir, with 
 **Source:** FY2024 Tables 9 and 10 and FY2025 Tables 13 and 14; identical to `nphistory.xlsx`. Operation years 2019 to 2025.
 
 ```{r pen-peek}
-KFNFH_pen_survival |> select(pen_type, operation_year, pen_id, number_stocked, number_harvested, survival_percentage) |> head(5) |> kable()
+KFNFH_pen_survival |> select(pen_type, operation_year, pen_id, number_stocked, number_harvested, survival_percentage) |> head(5) |> tbl()
+```
+
+```{r pen-glimpse}
+glimpse(KFNFH_pen_survival, width = 80)
 ```
 
 ```{r pen-plot}
@@ -305,14 +396,121 @@ KFNFH_pen_survival |>
   labs(x = "Operation year", y = "Survival (%)", colour = "Pen", title = "Net pen survival")
 ```
 
-## `KFNFH_age_facility_lookup`
+# Following the fish: movements and age
 
-Age class and starting count of the fish in each pond or net pen by fiscal year (plotted in the facilities overview above).
+## `KFNFH_fish_movements`
 
-**Source:** net pens from `nphistory.xlsx`; ponds from the Production Harvest workbooks and the report pond tables. FY2019 to FY2025.
+Where the fish harvested from a pond cycle went: one row per destination (another pond, a net pen, or another site), with the number of fish
+when the source gives it.
 
-```{r lookup-peek}
-peek(KFNFH_age_facility_lookup, cols = 5)
+**Source:** the free-text "Stocked To" column of the Production Harvest Data Sheet workbooks (FY2022 to FY2025; the Spring 2022 sheet calls it
+"Disposition") and the disposition column of the FY2021 report tables. Each text is split into destinations by rules; the original text, sheet and row are kept
+in `source_text` and `source`. Cycles with no text are not in this object.
+
+```{r move-peek}
+KFNFH_fish_movements |> select(fiscal_year, from_facility, lot, to_label, to_type, n_fish) |> filter(!is.na(n_fish)) |> head(5) |> tbl()
+```
+
+```{r move-glimpse}
+glimpse(KFNFH_fish_movements, width = 80)
+```
+
+```{r move-plot}
+KFNFH_fish_movements |>
+  filter(!is.na(n_fish)) |>
+  group_by(fiscal_year, to_type) |>
+  summarise(fish = sum(n_fish), .groups = "drop") |>
+  ggplot(aes(factor(fiscal_year), fish, fill = to_type)) +
+  geom_col(position = position_dodge2(preserve = "single")) +
+  scale_y_continuous(labels = scales::label_comma()) +
+  labs(x = "Fiscal year", y = "Fish moved", fill = NULL, title = "Fish moved out of pond cycles, by destination",
+       caption = "Only destinations with a number of fish. Fiscal years are of the move date or the harvest date.")
+```
+
+The flow diagram below adds up the fish moved from each group of ponds (A, B, C and P series) to where they went. A pond destination is shown by its
+series, a named place (a refuge, another hatchery or the Williamson River) by its name, and the five named places with the most fish are shown
+individually (the rest are "Other sites"). The names are as written in the source cells, with capitalisation made the same.
+
+```{r move-alluvial, fig.width = 7, fig.height = 6.5}
+series_label <- function(code) {
+  if_else(str_detect(code, "^[ABCP]\\d+$"), paste0(str_sub(code, 1, 1), "-series ponds"), "Other ponds")
+}
+site_label <- function(x) {
+  x |> str_squish() |> str_to_title() |> str_replace("^Beattygap$", "Beatty Gap")
+}
+
+movements_counted <- KFNFH_fish_movements |> filter(!is.na(n_fish), n_fish > 0)
+flows <- movements_counted |>
+  mutate(site = site_label(to_label))
+
+top_sites <- flows |>
+  filter(to_type == "other site") |>
+  count(site, wt = n_fish, sort = TRUE) |>
+  slice_head(n = 5) |>
+  pull(site)
+
+flows <- flows |>
+  mutate(from = series_label(from_facility),
+         to = case_when(to_type == "pond" ~ series_label(to_facility),
+                        to_type == "net pen" ~ "Net pens",
+                        to_type == "retained at the hatchery" ~ "Held at the hatchery",
+                        to_type == "stocked, destination not named" ~ "Stocked, destination not named",
+                        site %in% top_sites ~ site,
+                        TRUE ~ "Other sites")) |>
+  count(from, to, wt = n_fish, name = "fish") |>
+  mutate(from = fct_reorder(from, fish, .fun = sum, .desc = TRUE),
+         to = fct_reorder(to, fish, .fun = sum, .desc = TRUE))
+
+small <- sum(flows$fish) * 0.04      # strata with fewer fish than this are labelled outside the box
+
+ggplot(flows, aes(axis1 = from, axis2 = to, y = fish)) +
+  geom_alluvium(aes(fill = from), width = 0.42, alpha = 0.8, knot.pos = 0.4) +
+  geom_stratum(width = 0.42, fill = "#FCFDFA", colour = "#4E5B57") +
+  # names inside the boxes that are tall enough, outside (with a line) for the small ones
+  geom_text(stat = "stratum", aes(label = if_else(after_stat(count) >= small, str_wrap(as.character(after_stat(stratum)), 20), NA_character_)),
+            size = 3, colour = "#121716") +
+  ggrepel::geom_text_repel(stat = "stratum",
+                           aes(label = if_else(after_stat(count) < small & after_stat(x) == 1, as.character(after_stat(stratum)), NA_character_)),
+                           nudge_x = -0.45, direction = "y", hjust = 1, size = 3, colour = "#121716",
+                           segment.colour = "#71807B", min.segment.length = 0, box.padding = 0.15) +
+  ggrepel::geom_text_repel(stat = "stratum",
+                           aes(label = if_else(after_stat(count) < small & after_stat(x) == 2, as.character(after_stat(stratum)), NA_character_)),
+                           nudge_x = 0.45, direction = "y", hjust = 0, size = 3, colour = "#121716",
+                           segment.colour = "#71807B", min.segment.length = 0, box.padding = 0.15) +
+  scale_x_discrete(limits = c("Moved from", "Moved to"), expand = c(0.3, 0.3)) +
+  scale_y_continuous(labels = scales::label_comma()) +
+  guides(fill = guide_legend(nrow = 2)) +
+  labs(x = NULL, y = "Fish", fill = "Moved from",
+       title = "Where the fish of pond cycles went",
+       caption = paste0("Only destinations with a number of fish (", nrow(movements_counted), " of ", nrow(KFNFH_fish_movements), " rows). Band width is the number of fish."))
+```
+
+## `KFNFH_cohort_age`
+
+The age class of each cohort (lot or capture year) at every pond cycle, net pen group and release. Filtering on one `cohort` gives its stays in date order.
+The age class is the calendar year of the date minus the year in the cohort name, 4 meaning 4 or older. **Assumption:** this is calculated the same
+way for every cohort, including East Side Springs lots, and the year in the name is taken as the collection year. Ages are whole calendar years, not days; the `fiscal_year` column is kept but is not used for age.
+
+**Source:** the rows come from the report tables and workbooks behind three objects: the FY2021 to FY2025 pond tables and Production Harvest workbooks (`KFNFH_pond_growout`), `nphistory.xlsx` and the FY2024 and FY2025 net pen tables (`KFNFH_pen_survival`), and the FY2021 to FY2025 distribution tables and `FY25 Fish Distribution.xlsx` (`KFNFH_hatchery_release`). The age classes are calculated from the lot or capture year.
+
+```{r cohort-peek}
+KFNFH_cohort_age |> filter(cohort == "2021", stage == "pond") |> select(cohort, stage, facility, start_date, end_date, age_at_start, age_at_end) |> head(5) |> tbl()
+```
+
+```{r cohort-glimpse}
+glimpse(KFNFH_cohort_age, width = 80)
+```
+
+```{r cohort-plot}
+KFNFH_cohort_age |>
+  filter(stage == "release", !is.na(age_at_end), !is.na(end_number)) |>
+  group_by(fiscal_year, age_at_end) |>
+  summarise(fish = sum(end_number), .groups = "drop") |>
+  ggplot(aes(factor(fiscal_year), fish, fill = age_at_end)) +
+  geom_col(position = position_dodge2(preserve = "single")) +
+  scale_y_continuous(labels = scales::label_comma()) +
+  labs(x = "Fiscal year", y = "Fish released", fill = "Age class", title = "Fish released by age class",
+       caption = "Releases with no year in the lot name (mixed) are not shown; 4 means 4 or older.")
 ```
 
 # Mortality
@@ -327,7 +525,12 @@ from `nphistory.xlsx`, the larval rearing tables and workbook, `KFNFH_WQ_FY2025_
 Events whose report gives no loss have no percent.
 
 ```{r mort-peek}
-KFNFH_mortality_events |> select(event_id, year, category, percent_lost, severity_tier, citation) |> head(5) |> kable()
+KFNFH_mortality_events |> select(event_id, year, category, percent_lost, severity_tier, citation) |> head(5) |> tbl()
+```
+
+```{r mort-glimpse}
+glimpse(KFNFH_mortality_events, width = 80)
+glimpse(KFNFH_mortality_events_summary, width = 80)
 ```
 
 ```{r mort-plot}
@@ -348,19 +551,25 @@ Monthly pond mortality (and FY2023 harvest mortality) with age class.
 **Source:** `Fiscal Year 23 WQ_Mortality reporting.xlsx`, `Copy of 2024_KFNFH_WQ.xlsx` and `KFNFH_WQ_FY2025_2 (version 1).xlsx`. FY2024 covers 1 January to 22 September only.
 
 ```{r pm-peek}
-KFNFH_mortality_pond_monthly |> select(fiscal_year, month, pond, mortality, record_type, age_class) |> head(5) |> kable()
+KFNFH_mortality_pond_monthly |> select(fiscal_year, month, pond, mortality, record_type, age_class) |> head(5) |> tbl()
 ```
 
-```{r pm-plot}
+```{r pm-glimpse}
+glimpse(KFNFH_mortality_pond_monthly, width = 80)
+```
+
+```{r pm-plot, fig.height = 6.5}
 KFNFH_mortality_pond_monthly |>
-  mutate(month = factor(month, levels = month.abb[c(10:12, 1:9)])) |>
-  group_by(fiscal_year, month) |>
+  filter(record_type == "pond", !is.na(month)) |>
+  group_by(fiscal_year, month, pond) |>
   summarise(mortality = sum(mortality, na.rm = TRUE), .groups = "drop") |>
-  ggplot(aes(month, mortality, colour = factor(fiscal_year), group = fiscal_year)) +
-  geom_line() + geom_point() +
-  scale_y_continuous(labels = scales::label_comma()) +
-  labs(x = NULL, y = "Fish recorded dead", colour = "Fiscal year",
-       title = "Monthly pond mortality",
-       caption = "FY2024 is a partial year.")
+  mutate(month = factor(month, levels = month.abb[c(10:12, 1:9)])) |>
+  ggplot(aes(month, mortality)) +
+  geom_boxplot(width = 0.55, fill = "#DDEDEF", colour = "#1A6A76", outlier.size = 0.8, outlier.colour = "#4E5B57") +
+  scale_y_continuous(transform = scales::pseudo_log_trans(base = 10), breaks = c(0, 1, 10, 100, 1000, 10000),
+                     labels = scales::label_comma()) +
+  facet_wrap(~ fiscal_year, ncol = 1) +
+  labs(x = NULL, y = "Fish recorded dead per pond (log scale)", title = "Pond mortality by month",
+       caption = str_wrap("Each box is the ponds in that month (median and quartiles). FY2024 is a partial year; harvest mortality records are not shown.", 95))
 ```
 

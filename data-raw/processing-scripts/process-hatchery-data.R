@@ -6,7 +6,7 @@
 #   1. PARSE PDF FILES and PROCESS TABLES: the report tables of each year (FY2021-2024) and the FY2025 tables,
 #      as per-year objects and intermediate objects that the final build merges.
 #   2. INPUTS FROM THE EXCEL WORKBOOKS AND THE REPORTS: mortality spreadsheets, production harvest, spawning
-#      crosses, broodstock, the age/facility lookup, collections and releases, capacity, and the mortality events.
+#      crosses, broodstock, fish movements and cohort age, collections and releases, capacity, and the mortality events.
 #      Values are read from the reports and the Excel files; the mortality events are written in this script from
 #      the report text, with the report and page each event comes from.
 #   3. FINAL OBJECTS: merges the FY2021-2024 report tables with FY2025 and the section 2 inputs, and saves the
@@ -837,7 +837,6 @@ harvest_fy2023 <- harvest_fy2023_wide[(harvest_header_row + 1):nrow(harvest_fy20
             type = "harvest") |>
   select(fiscal_year, month, pond, mortality, type)
 
-# the lookup is joined below, after the lookup section, so it can be switched
 
 ### 2a.2 Production harvest ================
 # One sheet per stocking season. Column layout drifts between seasons, so columns
@@ -855,6 +854,7 @@ read_production_harvest <- function(path, sheet, season) {
   raw <- read_excel(path, sheet = sheet, col_types = "text")
 
   tibble(
+    sheet_row = seq_len(nrow(raw)) + 1,                                   # Excel row (row 1 is the header)
     pond = extract_col(raw, "^Pond$"),
     lot = extract_col(raw, "^Lot$"),
     stocked_date_raw = extract_col(raw, "^Stocked? Date$"),
@@ -867,10 +867,11 @@ read_production_harvest <- function(path, sheet, season) {
     growth_mm_day_raw = extract_col(raw, "^Daily Growth Rate \\(mm\\)$|^Growth \\(mm/day\\)$"),
     harvest_morts_raw = extract_col(raw, "^Harv(est)? Morts$"),
     survival_percent_raw = extract_col(raw, "^Survival$"),
-    stocked_to = extract_col(raw, "^Stocked ?[Tt]o(/#)?$")
+    stocked_to = extract_col(raw, "^Stocked ?[Tt]o(/#)?$|^Disposition OUT OF ORDER$")   # Spring 2022 calls it Disposition
   ) |>
     filter(!is.na(pond), pond != "Pond") |>
     transmute(
+      source_file = basename(path), source_sheet = sheet, source_row = sheet_row,
       season = season,
       season_type = str_extract(season, "^[A-Za-z]+"),
       season_year = as.numeric(str_extract(season, "\\d{4}")),
@@ -1106,69 +1107,34 @@ broodstock_spawned_input <- brood_block |>
   arrange(desc(species), capture_year_raw) |>
   arrange(match(species, c("SNS", "LRS")))
 
-### 2a.5 Age / facility lookup =================================
-# Rule: one row per facility and fiscal year, `age` = the age class(es) of the fish held there.
-#  * Net pens (nphistory.xlsx): age = operation year - capture year, starting_count = fish stocked.
-#  * Ponds: every pond cycle (Production Harvest workbooks first, then the annual report tables for
-#    cycles that are not in the workbooks) counts in the fiscal year it was stocked and in the fiscal year it
-#    was harvested. The age class is that fiscal year minus the lot's collection year (4 = 4 or older);
-#    East Side Springs and mixed lots are "other" and wild or salvage lots are "wild". starting_count is the
-#    number of fish at the start of the first cycle harvested in the year.
-#    These are the age classes the reports and workbooks support. The hand-compiled lookup this replaces
-#    (data-raw/hatchery-resources/usfws_sarp_age_facility_lookup.csv) lists extra classes for ponds
-#    that held more than one group in a year, and some other age conventions, from information provided by the
-#    hatchery that is not in the workbooks or the reports (see data-raw/hatchery_data_integration.Rmd).
+### 2a.5 Age rule =================================
+# The age class of a cohort is the same everywhere (pond cycles, net pens, releases, monthly mortality):
+# the calendar year of the date minus the year in the lot name or capture year, 4 = 4 or older. A net pen group has only an
+# operation year, which is used as the calendar year. The fiscal year columns of the objects are kept but are not used for age.
 
-net_pen_lookup <- function() {
-  path <- xl("FY2025 Supporting Excel Tables", "nphistory.xlsx")
-  map(c("UKL", "Gerber"), ~ read_text_sheet(path, .x)) |>
-    list_rbind() |>
-    transmute(fiscal_year = num(`Operation Year`),
-              capture_year = num(`Fish CY`),
-              facility = str_to_upper(`Pen ID`),
-              starting_count = num(`# Stocked`)) |>
-    filter(!is.na(facility)) |>
-    mutate(age_num = fiscal_year - capture_year) |>
-    group_by(fiscal_year, facility) |>
-    summarise(age = paste(sort(unique(pmin(age_num, 4))), collapse = "/"),
-              starting_count = sum(starting_count), .groups = "drop")
+# Age classes of one facility-year written on one line: numbers, then "wild"; NA when none is known
+collapse_age_classes <- function(x) {
+  x <- unique(na.omit(unlist(str_split(x, "/"))))
+  na_if(paste(c(sort(x[str_detect(x, "^\\d$")]), x[x == "wild"]), collapse = "/"), "")
 }
 
-# Age classes are written in a fixed order: numbers, then "wild", then "other"
-order_age_classes <- function(x) {
-  x <- unique(x)
-  paste(c(sort(x[str_detect(x, "^\\d$")]), x[x == "wild"], x[x == "other"]), collapse = "/")
+# ASSUMPTION: the age class is calculated the same way for every lot: calendar year minus the year in the lot name
+# (4 = 4 or older). This includes East Side Springs lots ("ESS2023"), whose year is assumed to be the collection
+# year like any other lot. A lot name with several years ("2018-2021", "2021/2019") gets one age per year named.
+# Wild and salvage lots are "wild". A lot with no year (e.g. "MIX") has no age class (NA).
+lot_years <- function(lot) {
+  y <- num(str_extract_all(lot, "\\d{4}|(?<!\\d)\\d{2}(?!\\d)")[[1]])
+  if_else(y < 100, y + 2000, y)
 }
-
-pond_cycle_ages <- function(cycles) {
-  cycles <- cycles |>
-    filter(str_detect(pond, "^[ABCP]\\d+$")) |>             # outdoor ponds in the lookup (not the refuge ponds)
-    mutate(fy_stocked = fiscal_year_of(stocked_date),
-           fy_harvested = fiscal_year_of(harvest_date),
-           lot_year = num(str_extract(lot, "\\d{4}")),
-           lot_kind = case_when(str_detect(lot, regex("wild|salv", ignore_case = TRUE)) ~ "wild",
-                                str_detect(lot, "ESS|SNS|MIX|/|-") | is.na(lot_year) ~ "other",
-                                TRUE ~ "year"))
-  age_class <- function(fy, lot_year, lot_kind) {
-    if_else(lot_kind == "year", as.character(pmin(fy - lot_year, 4)), lot_kind)
-  }
-  # a cycle counts where it was stocked and where it was harvested
-  in_stock_year <- cycles |> filter(!is.na(fy_stocked)) |>
-    transmute(fiscal_year = fy_stocked, facility = pond, stocked_date, harvest_date, start_number,
-              age_class = age_class(fy_stocked, lot_year, lot_kind))
-  in_harvest_year <- cycles |> filter(!is.na(fy_harvested), is.na(fy_stocked) | fy_harvested != fy_stocked) |>
-    transmute(fiscal_year = fy_harvested, facility = pond, stocked_date, harvest_date, start_number,
-              age_class = age_class(fy_harvested, lot_year, lot_kind))
-
-  ages <- bind_rows(in_stock_year, in_harvest_year) |>
-    group_by(fiscal_year, facility) |>
-    summarise(age = order_age_classes(age_class), .groups = "drop")
-  counts <- cycles |>
-    filter(!is.na(fy_harvested), !is.na(start_number)) |>
-    group_by(fiscal_year = fy_harvested, facility = pond) |>
-    arrange(coalesce(stocked_date, harvest_date), .by_group = TRUE) |>
-    summarise(starting_count = first(start_number), .groups = "drop")
-  left_join(ages, counts, by = c("fiscal_year", "facility"))
+cycle_age_class <- function(yr, lot) {                         # yr = calendar year of the date
+  map2_chr(yr, lot, function(fy, lot) {
+    if (is.na(lot) || is.na(fy)) return(NA_character_)
+    if (str_detect(lot, regex("wild|salv", ignore_case = TRUE))) return("wild")
+    y <- lot_years(lot)
+    if (length(y) == 0) return(NA_character_)
+    stopifnot("lot year is after the year of the date" = all(fy >= y))
+    paste(sort(unique(pmin(fy - y, 4))), collapse = "/")
+  })
 }
 
 ## 2b. FROM THE PDF REPORTS #####################################################
@@ -1617,27 +1583,11 @@ mortality_events_input <- events_2021_2024 |>
 
 
 
-## LOOKUP, MORTALITY SPREADSHEETS AND PRODUCTION HARVEST ########################
-# FY2021 pond cycles (and stock dates the workbooks lack) come from the report tables built above.
+## MORTALITY SPREADSHEETS AND PRODUCTION HARVEST ##################################
 
-lookup_input <- bind_rows(
-  net_pen_lookup() |> mutate(source = "nphistory.xlsx"),
-  pond_cycle_ages(bind_rows(
-    production_harvest_raw |> select(pond, lot, stocked_date, harvest_date, start_number),
-    pond_growout_reports_2021_2024 |>
-      select(pond, lot, stocked_date = pond_stock_date, harvest_date, start_number)) |>
-      distinct(pond, stocked_date, harvest_date, .keep_all = TRUE)) |>
-    mutate(source = "pond cycles")
-) |>
-  arrange(fiscal_year, facility)
+mortality_spreadsheets_input <- bind_rows(mortality_fy2023, mortality_fy2024, mortality_fy2025, harvest_fy2023)
 
-mortality_spreadsheets_input <- bind_rows(mortality_fy2023, mortality_fy2024, mortality_fy2025, harvest_fy2023) |>
-  left_join(lookup_input |> select(fiscal_year, facility, age, starting_count),
-            by = c("fiscal_year", "pond" = "facility"))
-
-production_harvest_input <- production_harvest_raw |>
-  left_join(lookup_input |> select(fiscal_year, facility, age, starting_count),
-            by = c("fiscal_year", "pond" = "facility"))
+production_harvest_input <- production_harvest_raw
 
 
 
@@ -1646,28 +1596,6 @@ production_harvest_input <- production_harvest_raw |>
 # Merges the FY2021-2024 report tables with the FY2025 report tables and the workbook inputs above, and saves the
 # package data objects. The intermediate objects (hatchery_release_2021_2024, pond_growout_reports_2021_2024, ...)
 # come from the PROCESS TABLES sections at the top of this script.
-
-### Age / facility lookup ======================================================
-# One source of fish age by facility and fiscal year, joined to every object that has a pond or facility.
-
-KFNFH_age_facility_lookup <- lookup_input |>
-  select(fiscal_year, facility, age, starting_count) |>
-  mutate(facility = str_to_upper(facility)) |>
-  rename(age_class = age) |>
-  mutate(hatchery_name = "KFNFH") |>
-  relocate(hatchery_name, .before = fiscal_year)
-
-# the join key must be unique or joins would duplicate rows
-stopifnot(!anyDuplicated(KFNFH_age_facility_lookup[c("fiscal_year", "facility")]))
-
-add_age <- function(data, facility_col = "pond") {
-  data |>
-    select(-any_of(c("age", "age_class", "starting_count"))) |>
-    left_join(KFNFH_age_facility_lookup |>
-                select(fiscal_year, facility, age_class, starting_count),
-              by = c("fiscal_year", setNames("facility", facility_col)))
-}
-
 
 ### Collection and release history ==================================================
 
@@ -1833,9 +1761,10 @@ workbook_rows <- workbook_only |>
             source = "production_harvest_workbook")
 
 KFNFH_pond_growout <- bind_rows(report_rows |> select(-cycle_key), workbook_rows) |>
-  # some report tables list ponds by number only ("0", "1", ...); the lookup uses "P0", "P1"
+  # some report tables list ponds by number only ("0", "1", ...); the pond codes are "P0", "P1"
   mutate(pond = if_else(str_detect(pond, "^\\d+$"), paste0("P", pond), pond)) |>
-  add_age("pond") |>
+  # each cycle's own age class: the calendar year it was harvested minus the lot year (NA while the cycle is in progress)
+  mutate(age_class = cycle_age_class(year(harvest_date), lot)) |>
   relocate(hatchery_name, fiscal_year, inventory_source, life_history, source, pond, lot) |>
   arrange(fiscal_year, pond_stock_date, pond)
 
@@ -2186,7 +2115,6 @@ stopifnot(all(KFNFH_mortality_events$event_id == KFNFH_mortality_events_summary$
 
 KFNFH_mortality_pond_monthly <- mortality_spreadsheets_input |>
   mutate(hatchery_name = "KFNFH") |>
-  add_age("pond") |>
   relocate(hatchery_name, .before = fiscal_year) |>
   rename(record_type = type)
 
@@ -2205,6 +2133,185 @@ KFNFH_broodstock_spawned <- broodstock_spawned_input |>
             females_spawned, males_spawned, total_spawned)
 
 
+### Fish movements (the "Stocked To" text) and cohort age =========================
+# The Production Harvest workbooks say in one free-text cell where the fish of a cycle went ("P10/454 on 3/9/25, P11/490 on 3/11/25").
+# The FY2021 report tables have the same information in their disposition column. Both are split here into one row per destination.
+# Cohort age: every pond cycle, net pen group and release is tied to its cohort (the lot or capture year) and given the age class
+# at the start and end of the stay (calendar year of the date minus the cohort year, 4 = 4 or older).
+
+# destination of one parsed piece: a pond (A, B, C, P series), a net pen, or another named place
+classify_destination <- function(label) {
+  lab <- str_squish(label)
+  up <- str_to_upper(lab)
+  code <- str_match(up, "^([ABCP])0*(\\d{1,2})$")
+  tibble(
+    to_label = if_else(!is.na(code[, 1]), paste0(code[, 2], as.integer(code[, 3])), lab),
+    to_facility = case_when(!is.na(code[, 1]) ~ paste0(code[, 2], as.integer(code[, 3])),
+                            up == "GERBER EAST" ~ "GERE",
+                            up == "GERBER WEST" ~ "GERW",
+                            TRUE ~ NA_character_),
+    to_type = case_when(!is.na(code[, 1]) ~ "pond",
+                        str_detect(up, "NET ?PEN|^GERBER (EAST|WEST)$") ~ "net pen",
+                        str_detect(up, "^SAVED") ~ "retained at the hatchery",
+                        str_detect(up, "STOCKED \\(DESTINATION NOT NAMED\\)") ~ "stocked, destination not named",
+                        TRUE ~ "other site"))
+}
+
+move_date <- function(txt) {                                  # "m/d/yy", "m/d/yyyy"; "m/d" has no year -> NA
+  parts <- str_match(txt, "^(\\d{1,2})/(\\d{1,2})(?:/(\\d{2,4}))?$")
+  yr <- num(parts[, 4]); yr <- if_else(!is.na(yr) & yr < 100, yr + 2000, yr)
+  as.Date(if_else(is.na(yr), NA_character_, sprintf("%04d-%02d-%02d", as.integer(yr), as.integer(parts[, 2]), as.integer(parts[, 3]))))
+}
+
+# one workbook cell -> one row per destination (n_fish and move_date when the cell gives them)
+parse_stocked_to_workbook <- function(x) {
+  x <- str_squish(x) |> str_replace_all("(?<=\\d),(?=\\d{3}(?!\\d))", "")
+  none <- tibble(label = character(), n = numeric(), date_text = character(), note = character())
+  if (str_detect(x, "^Did PIT tag")) {                         # restocked after a PIT-tag scan (Spring 2022)
+    dt <- str_extract(x, "\\d{1,2}/\\d{1,2}/\\d{4}")
+    one <- str_match(x, "restocked ([ABCP]\\d+)\\b.*? with (\\d+) fish")
+    if (!is.na(one[1, 1])) return(tibble(label = one[1, 2], n = num(one[1, 3]), date_text = dt, note = "restocked after PIT-tag scan"))
+    many <- str_match_all(x, "\\(([ABCP]\\d+), (\\d+) ?fish")[[1]]
+    return(tibble(label = many[, 2], n = num(many[, 3]), date_text = dt, note = "restocked after PIT-tag scan"))
+  }
+  x <- str_remove_all(x, regex(";? ?(batch weight|hand counted)", ignore_case = TRUE))
+  segs <- str_split(x, "\\s*(?:;|/(?=\\s*[A-Za-z])|,(?=\\s*[A-Za-z0-9(]))\\s*")[[1]] |> str_squish()
+  segs <- segs[segs != "" & segs != "-"]
+  map(segs, function(s) {
+    note <- NA_character_
+    if (str_detect(s, regex("^Gained one fish|JUMPED OUT OF TANK", ignore_case = TRUE))) return(none)  # not a destination
+    if (!is.na(m <- str_match(s, "^Partial Harvest of (\\d+) fish on (\\d{1,2}/\\d{1,2}(?:/\\d{2,4})?) to (.+)$"))[1, 1])
+      return(tibble(label = m[1, 4], n = num(m[1, 2]), date_text = m[1, 3], note = "partial harvest"))
+    if (!is.na(m <- str_match(s, "^[ABCP]\\d+/(\\d+) in net pen$"))[1, 1])
+      return(tibble(label = "Net pen", n = num(m[1, 2]), date_text = NA_character_, note = paste0("the cell reads '", s, "'")))
+    date_text <- str_match(s, "\\bon (\\d{1,2}/\\d{1,2}(?:/\\d{2,4})?)")[1, 2]
+    s0 <- str_remove(s, " on \\d{1,2}/\\d{1,2}(?:/\\d{2,4})?.*$")
+    if (str_detect(s0, regex("^Saved (\\d+) for", ignore_case = TRUE)))
+      return(tibble(label = "Saved for telemetry tags", n = num(str_match(s0, "^Saved (\\d+)")[1, 2]), date_text = date_text, note = s0))
+    m <- str_match(s0, "^(?:Stocked|Transferred) (\\d+) to (.+)$")
+    if (is.na(m[1, 1])) m <- str_match(s0, "^(\\d+) to (.+)$")
+    if (!is.na(m[1, 1])) { n <- num(m[1, 2]); lab <- m[1, 3] }
+    else if (!is.na(m <- str_match(s0, "^Stocked to (.+)$"))[1, 1]) { n <- NA_real_; lab <- m[1, 2] }
+    else if (!is.na(m <- str_match(s0, "^([A-Za-z0-9]+)/(\\d+) to (.+)$"))[1, 1]) { n <- num(m[1, 3]); lab <- paste0(m[1, 2], " to ", m[1, 4]) }
+    else if (!is.na(m <- str_match(s0, "^(.+?)\\s*[-/ ]\\s*(\\d+)(?:\\s*\\(.*\\))?$"))[1, 1]) { n <- num(m[1, 3]); lab <- m[1, 2] }
+    else { n <- NA_real_; lab <- s0 }
+    if (str_detect(lab, " for .*Broodstock$")) { note <- str_extract(lab, "for .*$"); lab <- str_remove(lab, " for .*$") }
+    lab <- lab |> str_remove("^the ") |> str_replace("Willamson", "Williamson")
+    tibble(label = lab, n = n, date_text = date_text, note = note)
+  }) |> list_rbind() |> bind_rows(none)
+}
+
+# FY2021 report tables: "B9, B12", "497 in P11", "604 Stocked; 100 SNS and 50 LRS Broodstock (2019 Lot) in Pond 9", "Williamson River (372)"
+parse_stocked_to_report <- function(x) {
+  x <- str_squish(x) |> str_remove("^Larger Tag Effect Study Fish: ")
+  segs <- str_split(x, "\\s*[,;]\\s*")[[1]]
+  map(segs, function(s) {
+    note <- NA_character_
+    if (!is.na(m <- str_match(s, "^(\\d+) Stocked$"))[1, 1]) return(tibble(label = "Stocked (destination not named)", n = num(m[1, 2]), note = note))
+    if (!is.na(m <- str_match(s, "^(.+?) in Pond (\\w+)$"))[1, 1]) {
+      n <- sum(num(str_extract_all(m[1, 2], "\\b\\d+(?= (?:SNS|LRS|Short|Broodstock))")[[1]]))
+      return(tibble(label = paste0("P", str_remove(m[1, 3], "^P")) |> (\(z) if_else(str_detect(m[1, 3], "^[A-Za-z]\\d+$"), m[1, 3], z))(),
+                    n = n, note = str_remove(m[1, 2], "^\\d+ ")))
+    }
+    if (!is.na(m <- str_match(s, "^(\\d+) in ([ABCP]\\d+)$"))[1, 1]) return(tibble(label = m[1, 3], n = num(m[1, 2]), note = note))
+    if (!is.na(m <- str_match(s, "^(.+?) \\((\\d+)\\)$"))[1, 1]) return(tibble(label = str_replace(m[1, 2], "Willamson", "Williamson"), n = num(m[1, 3]), note = note))
+    tibble(label = s, n = NA_real_, note = note)
+  }) |> list_rbind()
+}
+
+movements_workbook <- production_harvest_raw |>
+  filter(!is.na(stocked_to)) |>
+  mutate(parsed = map(stocked_to, parse_stocked_to_workbook)) |>
+  unnest(parsed) |>                                          # a cell with no destination gives no row
+  transmute(from_facility = pond, lot, cycle_stock_date = stocked_date, cycle_harvest_date = harvest_date,
+            label, n_fish = n, date_text, note,
+            source = paste0(source_file, ", sheet ", source_sheet, ", row ", source_row), source_text = stocked_to)
+
+movements_report <- KFNFH_pond_growout |>
+  filter(!is.na(dispo_to)) |>
+  mutate(parsed = map(dispo_to, parse_stocked_to_report)) |>
+  unnest(parsed) |>
+  transmute(from_facility = pond, lot, cycle_stock_date = pond_stock_date, cycle_harvest_date = harvest_date,
+            label, n_fish = n, date_text = NA_character_, note, source = inventory_source, source_text = dispo_to,
+            report_fiscal_year = fiscal_year)
+
+movements_all <- bind_rows(movements_workbook, movements_report)
+
+KFNFH_fish_movements <- bind_cols(movements_all |> select(-label), classify_destination(movements_all$label)) |>
+  mutate(move_date = move_date(date_text)) |>
+  mutate(hatchery_name = "KFNFH",
+         fiscal_year = coalesce(fiscal_year_of(move_date), fiscal_year_of(cycle_harvest_date), report_fiscal_year)) |>
+  select(hatchery_name, fiscal_year, from_facility, lot, cycle_stock_date, cycle_harvest_date,
+         to_label, to_facility, to_type, n_fish, move_date, date_text, note, source, source_text) |>
+  arrange(fiscal_year, from_facility, cycle_stock_date)
+
+KFNFH_fish_movements |> count(to_type)
+
+# Cohort year: the single year in the lot name or capture year (NA for wild, salvage, mixed or several years)
+cohort_year_of <- function(lot) {
+  map_dbl(lot, function(l) {
+    if (is.na(l) || str_detect(l, regex("wild|salv", ignore_case = TRUE))) return(NA_real_)
+    y <- lot_years(l)
+    if (length(y) == 1) y else NA_real_
+  })
+}
+# release sites are written "A3", "Pond A3", "GERE Netpen": pond and net pen codes are kept, anything else as given
+release_facility <- function(x) {
+  case_when(str_detect(x, regex("^(pond )?[ABCP]\\d+$", ignore_case = TRUE)) ~ str_to_upper(str_remove(x, regex("^pond ", ignore_case = TRUE))),
+            str_detect(x, regex("^(GER|UKL)[A-Z] ?net ?pen$", ignore_case = TRUE)) ~ str_to_upper(str_extract(x, "^[A-Za-z]{4}")),
+            TRUE ~ x)
+}
+
+KFNFH_cohort_age <- bind_rows(
+  KFNFH_pond_growout |>
+    transmute(cohort = lot, stage = "pond", facility = pond,
+              fiscal_year = coalesce(fiscal_year_of(harvest_date), fiscal_year),
+              start_date = pond_stock_date, end_date = harvest_date,
+              age_at_start = cycle_age_class(year(pond_stock_date), lot),
+              age_at_end = cycle_age_class(year(harvest_date), lot),
+              start_number, end_number, source = inventory_source),
+  KFNFH_pen_survival |>
+    filter(!is.na(captured_year)) |>
+    transmute(cohort = as.character(captured_year), stage = "net pen", facility = pen_id,
+              fiscal_year = operation_year, start_date = as.Date(NA), end_date = as.Date(NA),
+              age_at_start = cycle_age_class(operation_year, cohort), age_at_end = cycle_age_class(operation_year, cohort),
+              start_number = number_stocked, end_number = number_harvested, source = "net pen survival tables"),
+  KFNFH_hatchery_release |>
+    transmute(cohort = lot, stage = "release", facility = release_facility(from_ponds), fiscal_year,
+              start_date = as.Date(NA), end_date = dispo_date,
+              age_at_start = NA_character_, age_at_end = cycle_age_class(year(dispo_date), lot),
+              start_number = NA_real_, end_number = number_fish, source = "release tables")
+) |>
+  mutate(hatchery_name = "KFNFH", cohort_year = cohort_year_of(cohort)) |>
+  relocate(hatchery_name, cohort, cohort_year, stage, facility, fiscal_year) |>
+  arrange(cohort_year, cohort, start_date, end_date)
+
+KFNFH_cohort_age |> count(stage)
+
+# Monthly pond mortality: the age class(es) of the cohorts in the pond that month. A cycle is in the pond from its stock date
+# to its harvest date (still in the pond when it has no harvest date); the age is the calendar year of the month minus the cohort year.
+# A monthly record belongs to the pond, not to one cycle, so several classes are joined with "/" ("0/2").
+pond_cycles <- KFNFH_cohort_age |>
+  filter(stage == "pond", !is.na(start_date)) |>
+  select(facility, cohort, start_date, end_date)
+
+monthly_age <- KFNFH_mortality_pond_monthly |>
+  distinct(fiscal_year, month, pond) |>
+  mutate(month_no = match(month, month.abb),
+         month_start = as.Date(sprintf("%d-%02d-01", if_else(month_no >= 10, fiscal_year - 1, fiscal_year), month_no)),
+         month_end = ceiling_date(month_start, "month") - 1) |>
+  left_join(pond_cycles, by = c("pond" = "facility"), relationship = "many-to-many") |>
+  filter(start_date <= month_end, is.na(end_date) | end_date >= month_start) |>
+  mutate(age = cycle_age_class(year(month_start), cohort)) |>
+  group_by(fiscal_year, month, pond) |>
+  summarise(age_class = collapse_age_classes(age), .groups = "drop")
+
+KFNFH_mortality_pond_monthly <- KFNFH_mortality_pond_monthly |>
+  select(-any_of(c("age_class", "starting_count"))) |>
+  left_join(monthly_age, by = c("fiscal_year", "month", "pond")) |>
+  relocate(age_class, .after = record_type)
+
+
 ### Save ========================================================================
 
 final_objects <- c(
@@ -2218,7 +2325,8 @@ final_objects <- c(
   "KFNFH_adfluvial_early_rearing",
   "KFNFH_LRS_ESS_incubation_hatch",
   # new
-  "KFNFH_age_facility_lookup",
+  "KFNFH_fish_movements",
+  "KFNFH_cohort_age",
   "KFNFH_mortality_events",
   "KFNFH_mortality_events_summary",
   "KFNFH_mortality_pond_monthly",
@@ -2227,8 +2335,9 @@ final_objects <- c(
 
 do.call(usethis::use_data, c(lapply(final_objects, as.name), list(overwrite = TRUE)))
 
-# objects that were renamed: remove the old files so both names do not ship
-stale <- here("data", c("KFNFH_adfluvial_early_rearing_2024.rda", "KFNFH_LRS_ESS_incubation_hatch_2024.rda"))
+# objects that were renamed or removed: remove the old files so they do not ship
+stale <- here("data", c("KFNFH_adfluvial_early_rearing_2024.rda", "KFNFH_LRS_ESS_incubation_hatch_2024.rda",
+                      "KFNFH_age_facility_lookup.rda"))
 file.remove(stale[file.exists(stale)])
 
 # sucker_pit_tag_detection_2024 is saved in its own section above (unchanged)
