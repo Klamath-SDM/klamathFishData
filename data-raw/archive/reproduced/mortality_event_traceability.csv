@@ -1,0 +1,29 @@
+event_id,report,anchor,sentence_flagged,category_agrees,source
+E01,2023,avian predators may have infiltrated the netting in 2019,TRUE,TRUE,nphistory.xlsx (UKL 2019)
+E02,2021,marked increase in total ammonia levels,TRUE,TRUE,NA
+E03,2021,all perished during the anticipated hatch,FALSE,FALSE,report text: all perished
+E04,2021,total losses within days of hatch,TRUE,FALSE,report text: total losses
+E05,2021,unhatched Artemia cysts,FALSE,FALSE,NA
+E06,2021,Costia outbreak during the middle of June,FALSE,TRUE,NA
+E07,2021,emergency harvest of the Gerber Reservoir Net pen,FALSE,TRUE,"report text: emergency harvest, no loss"
+E08,2021,only 606 fish were recovered,TRUE,TRUE,nphistory.xlsx (UKL 2021)
+E09,2022,signs of tetany,FALSE,TRUE,NA
+E10,2022,necrosis of the gill lamellae,FALSE,TRUE,NA
+E11,2022,200\+ fish lost during transport,TRUE,TRUE,report text: 200+ lost in transport
+E12,2022,"fathead minnows, tui chub, and blue chub",FALSE,FALSE,nphistory.xlsx (UKL 2022)
+E13,2022,low river flows led to ineffective catch rates,FALSE,TRUE,NA
+E14,2023,extreme gill hyperplasia,FALSE,TRUE,FY2023 Table 14 (RZB fingerling survival)
+E15,2023,losing larval fish to tank overflow,TRUE,TRUE,NA
+E16,2023,mortality event in Tank C14,TRUE,TRUE,FY2023 table (tank C14 survival)
+E17,2023,anoxic conditions forming,TRUE,TRUE,nphistory.xlsx (UKL 2023)
+E18,2023,nearly half of the fish in pen escaped,TRUE,TRUE,"nphistory.xlsx (Gerber GERE 2023, apparent loss)"
+E19,2023,"73,869 eggs counted",FALSE,FALSE,report text: eggs and fry
+E20,2023,ovulation rates of the females,FALSE,FALSE,NA
+E21,2023,lowest on record,FALSE,FALSE,NA
+E22,2024,acute loss of several thousand fish,FALSE,FALSE,not quantified in the report (several thousand fish)
+E23,2024,Costia infections for the extended intensive rearing,TRUE,TRUE,larval rearing workbook (FY2024 total)
+E24,2024,cumulative human error,FALSE,FALSE,larval rearing workbook (FY2024 total)
+E25,2024,bacterial infection spread early in the holding period,TRUE,TRUE,report text: 45 percent survival
+E26,2024,data was lost in parts of June and August,FALSE,FALSE,report text: no sucker mortality
+E27,2024,cyanobacteria bloom was detected,FALSE,TRUE,report text: no mortality attributed
+E28,2024,three small \(~30 mm\) perch were found dead,FALSE,FALSE,NA

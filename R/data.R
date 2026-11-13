@@ -184,84 +184,481 @@
 #' }
 #'
 #' @source Bird Research Northwest (2023)
-#' \href{https://birdresearchnw.org/brn-publications/avian-predation-on-ukb-suckers-summary-report-2021-2023/}{Avian Predation on UKB Suckers 2021–2023 Summary Report}
-"avian_predation_estimates"
+#' [Avian Predation on UKB Suckers 2021–2023 Summary Report](https://www.birdresearchnw.org/Avian%20Predation%20on%20UKB%20Suckers_Summary%20Report%202021-2023.pdf)
+"predation_estimates_hatchery"
 
-#' @title Annual Summary of Hatchery
-#' @name KFNFH_annual_summary
-#' @description Summary of collections and releases from the Klamath Falls National Fish Hatchery since its inception in 2016. Data summarizes the annual inputs and outputs of the hatchery program by federal fiscal year
-#' Corresponds to **Table 1** and **Table 4** in the FY2024 KFNFH Annual Report.
-#' @format A tibble with 9 rows and 12 columns
+#' @title Historical Hatchery Collection and Releases, KFNFH
+#' @name KFNFH_historical_collection_release
+#' @description Collections and releases from the Klamath Falls National Fish Hatchery (KFNFH) since its inception in 2016. Data summarizes the annual inputs and outputs of the hatchery program by federal fiscal year (FY2016-2025), plus an approximate count of broodstock on station.
+#' Corresponds to **Table 1** and **Table 7** in the FY2025 KFNFH Annual Report. Each annual report reproduces the full history with updated values, so the most recent report is used for all years. Broodstock columns are from the report text.
+#' Note: FY2025 Table 1 gives 30,142 larvae collected in FY2024, while the FY2024 report (Tables 1 and 4), FY2025 Table 7 and the hatchery's larval collection workbook all give 30,150; 30,150 is used here. Annual collection totals (6,036 in FY2023, 30,150 in FY2024, 70,049 in FY2025) were also confirmed against the hatchery workbook \code{2025 Larval Collection and Early Rearing Summary Data (version 1).xlsx}.
+#' @format A tibble with 10 rows and 18 columns
 #' \itemize{
-#'   \item \code{location}: location of data collection or estimate. This may be a river, wetland or marsh, hatchery, etc. (KFNFH)
+#'   \item \code{hatchery_name}: name of hatchery (KFNFH)
 #'   \item \code{fiscal_year}: fiscal year
 #'   \item \code{larvae_collected}: number of wild larval suckers collected
 #'   \item \code{sarp_release}: number of fish released or transferred that were raised in the Sucker Assisted Rearing Program (SARP)
 #'   \item \code{sarp_tl_mm}: average total length (TL) of the SARP release fish, measured in millimeters (mm)
 #'   \item \code{fingerling_release}: number of fingerlings released or transferred
 #'   \item \code{fingerling_tl_mm}: average total length (TL) of the fingerling release fish, measured in millimeters (mm)
-#'   \item \code{fry_release}: number of fry released or transferred. This includes fry produced from experimental, wild-spawning activities that were transferred to other facilities (e.g., the Klamath Tribes Hatchery in FY24)
-#'   \item \code{fry_tl_mm }: average total length (TL) of the  fry release fish, measured in millimeters (mm)
-#'   \item \code{salvage_release}:  number of suckers salvaged throughout the year
-#'   \item \code{salvage_sl_mm}: average length of release fish, measured in millimeters (mm)
-#'   \item \code{salvage_tl_mm}: standard lengths (SL) of salvage fish are averages from measurements for each year
+#'   \item \code{fry_release}: number of fry released or transferred. This includes fry produced from experimental, wild-spawning activities that were transferred to other facilities (e.g., the Klamath Tribes Hatchery in FY24 and FY25)
+#'   \item \code{fry_tl_mm}: average total length (TL) of the fry release fish, measured in millimeters (mm)
+#'   \item \code{salvage_release}: number of suckers salvaged throughout the year
+#'   \item \code{salvage_sl_mm}: average standard length (SL) of salvage fish in millimeters (mm), reported in years where the report gives standard length
+#'   \item \code{salvage_tl_mm}: average total length (TL) of salvage fish in millimeters (mm), reported in years where the report gives total length
 #'   \item \code{primary_collection_method}: drift net, dip net, or both
+#'   \item \code{total_released}: total number of fish released across release types
+#'   \item \code{broodstock_on_station_raw}: broodstock currently on station, as written in the report
+#'   \item \code{broodstock_cohort_years}: capture years of the broodstock on station, as written in the report
+#'   \item \code{new_broodstock_reported}: number of new broodstock reported
+#'   \item \code{broodstock_on_station}: leading number parsed from \code{broodstock_on_station_raw}; a rounded or minimum estimate, not an exact count
 #'   }
+#'
+#' @source Klamath Falls National Fish Hatchery Annual Report for Fiscal Year 2025 (Tables 1 and 7); broodstock columns compiled from the annual reports
+"KFNFH_historical_collection_release"
+
+#' @title Hatchery Distributions and Transfers, KFNFH
+#' @name KFNFH_hatchery_release
+#' @description Summary of all fish distributions for repatriation or transfer from the Klamath Falls National Fish Hatchery during fiscal years 2021-2025. A "distribution" is considered a stocking or repatriation event, while a "transfer" involves moving fish for temporary holding.
+#' FY2025 matches the hatchery workbook \code{FY25 Fish Distribution.xlsx}; the FY2021 and FY2022 totals match \code{FY20-FY25 Pond Summaries and Fish Distributions.xlsx} (FY2023 is 48,377 here and 48,374 in that workbook).
+#' Corresponds to **Table 15** in the FY2025 KFNFH Annual Report, **Table 11** in the FY2024 report, **Table 10** in the FY2023 report, **Table 5** in the FY2022 report, and **Table 2** in the FY2021 report.
+#' @format A tibble with 181 rows and 16 columns
+#' \itemize{
+#'   \item \code{hatchery_name}: name of hatchery (KFNFH)
+#'   \item \code{fiscal_year}: fiscal year (2021-2025)
+#'   \item \code{dispo_date}: date the fish distribution or transfer event occurred
+#'   \item \code{species}: species of sucker being distributed (e.g. LRS, SNS, ESS LRS)
+#'   \item \code{lot}: grouping or cohort of fish categorized primarily by their collection year (CY) or their operational origin
+#'   \item \code{number_fish}: number of fish in that specific grouping (lot) that were distributed or transferred
+#'   \item \code{weight_lb}: total weight of the fish lot being distributed, measured in pounds (lb)
+#'   \item \code{actual_tl_mm}: actual total length (TL) of the fish, measured in millimeters (mm)
+#'   \item \code{number_per_lb}: number of fish per pound for the specific lot being distributed
+#'   \item \code{projected_tl_inches}: projected total length (TL) of the fish, measured in inches
+#'   \item \code{projected_tl_mm}: projected total length (TL) of the fish, measured in millimeters (mm)
+#'   \item \code{from_ponds}: source location within the hatchery facility from which the fish were harvested just prior to distribution or transfer
+#'   \item \code{dispo_location}: ultimate destination where the fish were distributed or transferred
+#'   \item \code{fish_type}: fish type as reported in the earlier (FY2021-2022) report tables
+#'   \item \code{tl_inches}: total length in inches as reported in the earlier (FY2021-2022) report tables
+#'   \item \code{tl_mm}: total length in millimeters as reported in the earlier (FY2021-2022) report tables
+#'   }
+#'
+#' @source Klamath Falls National Fish Hatchery Annual Reports for Fiscal Years 2021-2025
+"KFNFH_hatchery_release"
+
+#' @title Wild LRS Adult Collections – East Side Springs (ESS)
+#' @name KFNFH_LRS_ESS_adult_collection
+#' @description
+#' Records of wild adult Lost River suckers collected at East Side Springs
+#' for assisted spawning at the Klamath Falls National Fish Hatchery (KFNFH)
+#' during fiscal years 2023-2025. Adults were captured, spawned, and returned
+#' to the lake to support genetic representation of the ESS population.
+#'
+#' Corresponds to **Table 2** in the FY2025, FY2024 and FY2023 KFNFH Annual Reports.
+#'
+#' @format A tibble with columns describing collection timing and fish attributes. Columns that a report did not include are \code{NA} for that year.
+#' \itemize{
+#'   \item \code{hatchery_name}: hatchery name (KFNFH)
+#'   \item \code{fiscal_year}: fiscal year (2023-2025)
+#'   \item \code{date}: date adults were collected
+#'   \item \code{fin_clip_id_number}: fin clip identification number
+#'   \item \code{pit_tag_suffix}: PIT tag suffix (FY2024 and FY2025)
+#'   \item \code{pit_tag_last_5}: last five characters of the PIT tag
+#'   \item \code{sex}: sex of the adult fish
+#'   \item \code{gamete_use}: whether gametes were used (e.g. Spawned, Not Spawned; FY2025 includes the reason, e.g. "Not Spawned/No Eggs")
+#'   \item \code{fl_mm}: fork length (mm)
+#'   \item \code{tl_mm}: total length (mm); reported in FY2024 only
+#'   \item \code{spring_location}: spring or location where the fish was collected
+#'   \item \code{family_groups}: number of family groups the female was crossed into (FY2024 and FY2025)
+#'   \item \code{fl_in}: fork length (inches)
+#'   \item \code{atfc_genetic_id}: Abernathy Fish Technology Center genetic ID (FY2023)
+#'   \item \code{fry_collected_for_aftc}: whether fry were collected for genetic analysis by the Abernathy Fish Technology Center (FY2023)
+#' }
+#'
+#' @source Klamath Falls National Fish Hatchery Annual Reports for Fiscal Years 2023-2025. FY2024 (43 fish) matches \code{METADATA FOR ALL ESS LRS FISH SPAWNED (version 1).xlsx} and FY2023 (29 fish) matches the "Genetics for All Fish" sheet of \code{FY25 METADATA FOR ALL ESS LRS FISH SPAWNED.xlsx}; the FY2025 records (69 fish) come from the report table only
+"KFNFH_LRS_ESS_adult_collection"
+
+
+#' @title LRS ESS Incubation and Hatch Results
+#' @name KFNFH_LRS_ESS_incubation_hatch
+#' @description
+#' Egg incubation and hatch outcomes for wild Lost River suckers spawned from
+#' East Side Springs (ESS) adults at the Klamath Falls National Fish Hatchery
+#' during fiscal years 2024 and 2025.
+#'
+#' Corresponds to **Table 3** in the FY2024 and FY2025 KFNFH Annual Reports. FY2025 rows are from the ESS metadata workbook (the same table as the report).
+#'
+#' @format A tibble with one row per spawning female and incubation vessel
+#' \itemize{
+#'   \item \code{hatchery_name}: hatchery name (KFNFH)
+#'   \item \code{fiscal_year}: fiscal year (2024-2025)
+#'   \item \code{program}: spawning program (Wild ESS Spawning)
+#'   \item \code{species}: species (LRS)
+#'   \item \code{spawning_date}: date eggs were spawned
+#'   \item \code{female}: female parent PIT tag suffix
+#'   \item \code{male_1}: first male parent PIT tag suffix
+#'   \item \code{male_2}: second male parent PIT tag suffix
+#'   \item \code{male_3}: third male parent PIT tag suffix
+#'   \item \code{male_4}: fourth male parent PIT tag suffix
+#'   \item \code{male_5}: fifth male parent PIT tag suffix (FY2025 only)
+#'   \item \code{male_6}: sixth male parent PIT tag suffix (FY2025 only)
+#'   \item \code{family_groups}: number of family groups (distinct males crossed with the female)
+#'   \item \code{incubator}: incubation system (e.g., jars, aquaria); not reported in FY2025
+#'   \item \code{egg_volume_mL}: volume of eggs incubated (mL)
+#'   \item \code{eggs_per_mL}: egg density (eggs per mL)
+#'   \item \code{total_eggs}: total number of eggs incubated
+#'   \item \code{total_fry}: total fry produced at the first count
+#'   \item \code{hatch_percent}: percent hatch success at the first count
+#'   \item \code{hatch_date}: date fry hatched; not reported in FY2025
+#'   \item \code{second_fry_count}: total fry at the second count (FY2025 only)
+#'   \item \code{second_hatch_percent}: percent hatch success at the second count (FY2025 only)
+#' }
+#'
+#' @source Klamath Falls National Fish Hatchery Annual Reports for Fiscal Years 2024 and 2025. The FY2025 females (18 crosses) match the "FY25 Tables Reorganized" sheet of \code{FY25 METADATA FOR ALL ESS LRS FISH SPAWNED.xlsx}; the FY2024 crosses match the "FY24 Tables Reorganized - MY" sheet of \code{METADATA FOR ALL ESS LRS FISH SPAWNED (version 1).xlsx}
+"KFNFH_LRS_ESS_incubation_hatch"
+
+
+#' @title Adfluvial Early Rearing Performance
+#' @name KFNFH_adfluvial_early_rearing
+#' @description
+#' Early rearing performance of adfluvial (river-origin) sucker larvae
+#' at the Klamath Falls National Fish Hatchery (KFNFH) during fiscal years 2023, 2024 and 2025.
+#' Data summarize larval collection, stocking, mortality, and survival
+#' prior to transfer to outdoor pond grow-out. The FY2021 and FY2022 reports do not include an equivalent table.
+#'
+#' Corresponds to **Table 3** in the FY2023 report, **Table 5** in the FY2024 report, and **Table 8** in the FY2025 KFNFH Annual Report.
+#'
+#' @format A tibble with one row per stocking of an individual culture unit
+#' \itemize{
+#'   \item \code{hatchery_name}: hatchery name (KFNFH)
+#'   \item \code{fiscal_year}: federal fiscal year (2023-2025)
+#'   \item \code{date_raw}: collection date as written in the report (may list two days, e.g. "5/8/2025 & 5/9/2025")
+#'   \item \code{date}: collection, transfer, or observation date (first date when two are listed)
+#'   \item \code{culture_unit}: indoor rearing unit or tank identifier
+#'   \item \code{collected}: number of larvae collected or introduced
+#'   \item \code{mortality}: observed larval mortalities
+#'   \item \code{stocked}: number of larvae successfully stocked or transferred
+#'   \item \code{survival_percent}: percent survival relative to collected larvae
+#'   \item \code{observed_mortality_percent}: percent observed mortality
+#'   \item \code{unobserved_mortality_percent}: percent unobserved or inferred loss
+#'   \item \code{restock}: \code{TRUE} for "Restock" rows (larvae moved back into an already-stocked tank). In FY2024 these rows re-count 7,327 fish, so the \code{collected} column sums to 37,477 while 30,150 larvae were collected; sum \code{collected} over non-restock rows (or use \code{KFNFH_historical_collection_release}) for collection totals
+#' }
+#'
+#' @source Klamath Falls National Fish Hatchery Annual Reports for Fiscal Years 2023, 2024 and 2025. The FY2024 rows are identical to the hatchery workbook \code{2024 Larval Collection and Early Rearing Summary Data.xlsx} (sheet "Pond Performance Table 4 Report"); FY2023 and FY2025 totals agree with \code{2025 Larval Collection and Early Rearing Summary Data (version 1).xlsx}
+"KFNFH_adfluvial_early_rearing"
+
+
+#' @title Adfluvial Pond Grow-out Performance, FY2021-2025
+#' @name KFNFH_pond_growout
+#' @description
+#' Grow-out performance of adfluvial and East Side Springs (ESS) suckers reared at the Klamath Falls
+#' National Fish Hatchery (KFNFH) during fiscal years 2021-2025. The dataset
+#' includes fertilized pond rearing, extended holding, and inventory
+#' transitions, with each row representing a discrete grow-out unit
+#' and time interval (one pond cycle).
+#'
+#' Data are distinguished by originating report table using
+#' \code{inventory_source}.
+#'
+#' Combines **Tables 10-12** from the FY2025 KFNFH Annual Report, **Tables 6-8** from FY2024, **Tables 5-7** from FY2023, **Tables 2-4** from FY2022, and **Tables 3-4** from FY2021. A completed cycle that is listed in two consecutive reports (44 cycles) is kept once, with the later report's row. A cycle reported as still in progress in one report (no harvest date) is replaced by its completed record from the later report, so a pond cycle appears once. The FY2025 Production Harvest Data Sheet workbook was compared with these tables and adds no additional cycles. The fiscal year of a cycle is the report in which it was completed (or, if still in progress, the last report that lists it). FY2022 rows taken from report tables 3 and 4 (embedded as images) have no \code{inventory_source}.
+#'
+#' @format A tibble with rows for each pond for each inventory season.
+#' \itemize{
+#'   \item \code{hatchery_name}: hatchery name (KFNFH)
+#'   \item \code{fiscal_year}: fiscal year (2021-2025)
+#'   \item \code{inventory_source}: source table in the report (e.g., "FY2024 Table 6")
+#'   \item \code{life_history}: ESS (east spring spawner) or adfluvial
+#'   \item \code{source}: where the row came from ("annual_report_table" or "production_harvest_workbook")
+#'   \item \code{pond}: pond or rearing unit identifier
+#'   \item \code{lot}: cohort or production lot identifier
+#'   \item \code{pond_stock_date}: date fish were stocked into the unit
+#'   \item \code{harvest_date}: date fish were harvested or transferred
+#'   \item \code{start_number}: number of fish at the start of the interval
+#'   \item \code{start_g_fish}: mean fish weight at stocking (g)
+#'   \item \code{start_wt_g}: total biomass at stocking (g)
+#'   \item \code{start_wt_lb}: total biomass at stocking (lb)
+#'   \item \code{start_tl_mm}: mean total length at stocking (mm)
+#'   \item \code{end_number}: number of fish at harvest or transfer
+#'   \item \code{end_g_fish}: mean fish weight at harvest (g)
+#'   \item \code{end_wt_g}: total biomass at harvest (g)
+#'   \item \code{end_gt_lb}: total biomass at harvest (lb) as named in the FY2024 tables (see also \code{end_wt_lb})
+#'   \item \code{end_tl_mm}: mean total length at harvest (mm)
+#'   \item \code{days}: duration of the grow-out interval (days)
+#'   \item \code{months}: duration of the grow-out interval (months)
+#'   \item \code{growth_mm_day}: mean daily growth rate (mm/day)
+#'   \item \code{weight_gain_lb}: total biomass gain during interval (lb); not reported for FY2025
+#'   \item \code{harvest_mortality_number}: mortalities recorded at harvest
+#'   \item \code{survival_percent}: percent survival during the interval
+#'   \item \code{end_wt_lb}: total biomass at harvest (lb); FY2025 and earlier report tables that name the column this way
+#'   \item \code{weight_gain_g}: total biomass gain during interval (g)
+#'   \item \code{dispo_to}: destination of the harvested fish
+#'   \item \code{dispo_tl_mm}: mean total length of the fish sent to the destination (mm)
+#'   \item \code{dispo_number}: number of fish sent to the destination
+#'   \item \code{dispo_percent}: percent of harvested fish sent to the destination
+#'   \item \code{short_number}: number of fish short of the target length
+#'   \item \code{short_percent}: percent of fish short of the target length
+#'   \item \code{short_tl_mm}: mean total length of the fish short of the target (mm)
+#'   \item \code{brood_number}: number of fish kept as broodstock
+#'   \item \code{brood_percent}: percent of harvested fish kept as broodstock
+#'   \item \code{age_class}: age class of the cycle's fish: the calendar year of the harvest date minus the year in the lot name, 4 meaning 4 or older, calculated the same way for every lot; a lot name with two years gives both (e.g. "2/4"); "wild" for wild and salvage lots; \code{NA} for a lot with no year and for a cycle still in progress (no harvest date)
+#' }
+#'
+#' @source Klamath Falls National Fish Hatchery Annual Reports for Fiscal Years 2021-2025. Completed FY2025 cycles were validated against \code{FY2025 Production Harvest Data Sheet_20251107.xlsx}; the workbook's live end count equals \code{end_number} minus \code{harvest_mortality_number}
+"KFNFH_pond_growout"
+
+
+#' @title Net Pen Survival of Adfluvial Suckers
+#' @name KFNFH_pen_survival
+#' @description
+#' Survival and growth outcomes for adfluvial suckers reared in net pens
+#' (including Upper Klamath Lake and Gerber Reservoir) as part of the
+#' Sucker Assisted Rearing Program, by operation year. Years in which a pen was
+#' not operated are kept as rows with a \code{note} and missing values.
+#'
+#' Derived from **Tables 9 and 10** in the FY2024 KFNFH Annual Report and confirmed against **Tables 13 and 14** in the FY2025 report, which add the operation status for 2024 and 2025.
+#'
+#' @format A tibble with rows corresponding to pen by year.
+#' \itemize{
+#'   \item \code{hatchery_name}: hatchery name (KFNFH)
+#'   \item \code{pen_type}: type of pen (Net Pen for Upper Klamath Lake, Gerber Net Pen)
+#'   \item \code{operation_year}: year of net pen operation
+#'   \item \code{captured_year}: year fish were originally collected
+#'   \item \code{pen_id}: pen identifier
+#'   \item \code{stock_tl_mm}: mean total length at stocking (mm)
+#'   \item \code{number_stocked}: number of fish stocked
+#'   \item \code{harvest_tl_mm}: mean total length at harvest (mm)
+#'   \item \code{number_harvested}: number of fish harvested
+#'   \item \code{survival_percentage}: percent survival
+#'   \item \code{note}: reason there are no data for that operation year (e.g. "Low water - not operational", "No fish available - not operational")
+#' }
+#'
+#' @source Klamath Falls National Fish Hatchery Annual Reports for Fiscal Years 2024 and 2025. All rows and notes are identical to the hatchery workbook \code{nphistory.xlsx} (sheets "UKL" and "Gerber")
+"KFNFH_pen_survival"
+
+
+#' @title Sucker PIT-tag Detections, FY2024
+#' @name sucker_pit_tag_detection_2024
+#' @description
+#' Summary of PIT-tag detections from stationary monitoring locations
+#' used to assess post-release survival and persistence of hatchery
+#' and salvaged suckers in Upper Klamath Lake during fiscal year 2024.
+#'
+#' Corresponds to **Table 12** in the FY2024 KFNFH Annual Report. Calendar year 2025 detections (six sites) are in the FY2025 report (Tables 16-17) and in the hatchery workbook \code{monitor table.xlsx}; they are not yet in this object.
+#'
+#' @format A tibble with monitoring deployment summaries.
+#' \itemize{
+#'   \item \code{monitor_location}: PIT tag monitoring site
+#'   \item \code{date_deployed}: deployment date
+#'   \item \code{date_retrieved}: retrieval date
+#'   \item \code{tags_total_unique}: total unique PIT tags detected
+#'   \item \code{tags_sarp}: tags from SARP-reared fish
+#'   \item \code{tags_salvage}: tags from salvaged fish
+#'   \item \code{tags_unknown}: tags of unknown origin
+#' }
 #'
 #' @source Klamath Falls National Fish Hatchery Annual Report for Fiscal Year 2024
-"KFNFH_annual_summary"
+"sucker_pit_tag_detection_2024"
 
-#' @title Sucker Juvenile Survival
-#' @name sucker_juvenile_survival
-#' @description This dataset compiles modeled estimates of juvenile sucker survival
-#' for both age-0 and age-0 to age-1 for Upper Klamath Lake from 2015-2022. These data
-#' are from \href{Martin et al. 2024}{https://doi.org/10.3133/ofr20241013}
-#' @format A tibble with 30 rows and 6 columns
-#' \itemize{
-#'   \item \code{taxa}: taxa (lost river suckers, shortnose suckers/klamath largescale suckers/SNS/KLS)
-#'   \item \code{location}: location of data collection or estimate. This may be a river, wetland or marsh, hatchery, etc. (upper klamath lake)
-#'   \item \code{year}: julian year (2015-2022)
-#'   \item \code{age}: age of suckers (age-0 or age-0-age-1)
-#'   \item \code{survival_indice_type}: type of survival indice estimate (august to september and september to june)
-#'   \item \code{value}: value of survival estimate
-#'   }
-#' @source \href{Growth, Survival, and Cohort Formation of Juvenile Lost River (Deltistes luxatus) and Shortnose Suckers (Chasmistes brevirostris) in Upper Klamath Lake, Oregon, and Clear Lake Reservoir, California—2021–22 Monitoring Report}{https://doi.org/10.3133/ofr20241013}
-'sucker_juvenile_survival'
 
-#' @title Colonial Waterbird Colony Counts
-#' @name bird_colony_counts
-#' @description Annual peak colony counts of piscivorous colonial waterbirds
-#' (American White Pelican, Double-crested Cormorant and Caspian Tern) nesting
-#' at Upper Klamath Lake, Clear Lake Reservoir, Sheepy Lake and Tule Lake,
-#' 2009-2024. Counts were compiled from the published tables of two reports and
-#' are reported as in those tables. No values were estimated, smoothed or imputed.
-#' @format A tibble with 164 rows and 9 columns
-#' \itemize{
-#'   \item \code{year}: breeding season year (2009-2024)
-#'   \item \code{location}: nesting location (upper klamath lake, clear lake reservoir, sheepy lake, tule lake). Each location can include several nesting sites (for example, up to five islands in Upper Klamath Lake and up to four sites in Clear Lake Reservoir)
-#'   \item \code{species}: waterbird species (american white pelican, double-crested cormorant, caspian tern)
-#'   \item \code{count}: peak colony count. NA when no count is available; see \code{count_status}
-#'   \item \code{count_unit}: unit of \code{count} (individuals, pairs, unspecified). Four 2021 values are breeding pairs, not individuals, and should not be summed with individual counts. "unspecified" means the source table does not state the unit
-#'   \item \code{count_status}: whether a count exists (counted, present_not_counted, no_colony, not_available).
-#'   present_not_counted: breeding birds were present but counts were not available as part of the study (dash in Table S.1).
-#'   no_colony: no colony site existed that year (NC in Table S.1).
-#'   not_available: no count in the source (blank cell in Table S.1 or NA in Table A1). For Upper Klamath Lake 2021, birds were not at historical nesting sites at the June survey, but colonies appeared to be active and unsuccessful at fledging young
-#'   \item \code{colony_abandoned}: TRUE if birds attempted to nest but abandoned the site at some point during the breeding season (March-August), as marked with an asterisk in Table S.1. The count is still reported. Table A1 (2021-2024) does not use this marker, so these years are always FALSE
-#'   \item \code{count_method}: how the count was obtained (unspecified, osu_photo_count, osu_pair_count). osu_photo_count: individuals counted by one Real Time Research observer from photos provided by Oregon State University. osu_pair_count: breeding pairs (individuals in nesting posture) counted by Oregon State University
-#'   \item \code{source}: report and table each value was taken from
-#' }
-#' @note
-#' \itemize{
-#'   \item Counts for 2009-2014 are credited in Table S.1 to Evans et al. (2016).
-#'   \item There are no counts for Upper Klamath Lake or Clear Lake Reservoir in 2016 and 2017 (breeding birds were present but not counted).
-#'   \item Sheepy Lake and Tule Lake have no counts before 2018, and Tule Lake had no colony site in 2009 and 2010. Sheepy Lake is called "Sheep Lake" in Table S.1.
-#'   \item Count units and methods differ between 2021 and other years (see \code{count_unit} and \code{count_method}).
-#'   \item This dataset does not include years before 2009.
-#' }
-#' @source
-#' Evans et al. (2021). North American Journal of Fisheries Management.
-#' \href{https://doi.org/10.1002/nafm.10838}{doi:10.1002/nafm.10838}, Supplemental Table S.1 (2009-2020).
+#' @title Where the Fish of a Pond Cycle Went, KFNFH
+#' @name KFNFH_fish_movements
+#' @description
+#' One row per destination of the fish harvested from a pond cycle at the Klamath Falls National Fish Hatchery (KFNFH).
+#' The destinations are written as free text in the "Stocked To" column of the Production Harvest Data Sheet workbooks
+#' (FY2022 to FY2025; the Spring 2022 sheet calls it "Disposition") and in the disposition column of the FY2021 report tables.
+#' Each text is split into its destinations, for example \code{P10/454 on 3/9/25, P11/490 on 3/11/25} gives two rows.
+#' The text of the cell is kept in \code{source_text} and its workbook sheet and row, or report table, in \code{source}.
+#' A cell that gives no destination (for example "-") gives no row. Cycles with no text are not in this object.
 #'
-#' Banet et al. (2025). Final report, September 23, 2025, "An Analysis of
-#' Predation Effects in 2024", Appendix A, Table A1 (2021-2024).
-"bird_colony_counts"
+#' @format A tibble with 342 rows and 15 columns
+#' \itemize{
+#'   \item \code{hatchery_name}: hatchery name (KFNFH)
+#'   \item \code{fiscal_year}: fiscal year of \code{move_date}, otherwise of the harvest date of the cycle, otherwise of the report table
+#'   \item \code{from_facility}: pond the fish came from
+#'   \item \code{lot}: lot of the cycle (the cohort)
+#'   \item \code{cycle_stock_date}: date the cycle was stocked; \code{NA} where the source gives none
+#'   \item \code{cycle_harvest_date}: date the cycle was harvested; \code{NA} where the source gives none
+#'   \item \code{to_label}: destination as written (pond codes in upper case without leading zero)
+#'   \item \code{to_facility}: pond code (A, B, C and P series) or net pen code (\code{GERE}, \code{GERW}) when the destination is one; \code{NA} otherwise
+#'   \item \code{to_type}: "pond" (a code of the A, B, C or P series; the source cells do not say whether a C code is a Tier-1 pond or an indoor tank), "net pen" (named net pen or "Net Pen" with no code), "other site" (any other named place, for example a refuge pond or another hatchery), "retained at the hatchery" (fish saved for telemetry tags), or "stocked, destination not named" (FY2021 report tables)
+#'   \item \code{n_fish}: number of fish sent to this destination; \code{NA} when the text gives no number
+#'   \item \code{move_date}: date of the move when the text gives a complete date; \code{NA} otherwise
+#'   \item \code{date_text}: the date as written in the text (for example "10/25" when no year is given)
+#'   \item \code{note}: words in the text about this destination (for example "partial harvest"); \code{NA} when none
+#'   \item \code{source}: workbook file, sheet and Excel row, or the report table, of the text
+#'   \item \code{source_text}: the whole text of the cell the row was split from
+#' }
+#' @source Production Harvest Data Sheet.xlsx (FY2024 supporting tables) sheets Spring 2022, SPRING 2023, FALL 2023 and SPRING 2024; FY2025 Production Harvest Data Sheet_20251107.xlsx sheets FALL 2024, Spring 2025 and Fall 2025; FY2021 KFNFH Annual Report tables 3-4
+"KFNFH_fish_movements"
+
+
+#' @title Age of Each Cohort by Pond, Net Pen and Release, KFNFH
+#' @name KFNFH_cohort_age
+#' @description
+#' The age class of each cohort (lot or capture year) at every pond cycle, net pen group and release at the Klamath Falls National Fish Hatchery (KFNFH).
+#' It stacks \code{KFNFH_pond_growout}, \code{KFNFH_pen_survival} and \code{KFNFH_hatchery_release}, so filtering on one
+#' \code{cohort} gives its stays and releases in date order. With \code{KFNFH_fish_movements} (which gives the pond a cycle's fish went to next)
+#' a cohort can be followed from pond to pond.
+#'
+#' The age class is the calendar year of the date minus the year in the cohort name, 4 meaning 4 or older (net pens, which have only an operation year, use it as the calendar year).
+#' \strong{Assumption:} it is calculated the same way for every cohort, including East Side Springs lots (for example ESS2023), and the year in the
+#' cohort name is taken as the collection year. Ages are whole calendar years, not days. The \code{fiscal_year} column is kept for joining to the other objects but is not used for age.
+#'
+#' @format A tibble with 559 rows and 13 columns
+#' \itemize{
+#'   \item \code{hatchery_name}: hatchery name (KFNFH)
+#'   \item \code{cohort}: lot of the pond cycle or release, or capture year of the net pen group, as written
+#'   \item \code{cohort_year}: the single year in the cohort name; \code{NA} for wild, salvage and mixed cohorts and names with several years
+#'   \item \code{stage}: "pond", "net pen" or "release"
+#'   \item \code{facility}: pond or net pen code; for releases the facility the fish came from, as written when it is not a pond or net pen code
+#'   \item \code{fiscal_year}: fiscal year the stay ended (ponds: harvest date, or the report year while in progress; net pens: operation year; releases: release year)
+#'   \item \code{start_date}: date stocked into the pond; \code{NA} for net pens and releases and where the source gives none
+#'   \item \code{end_date}: harvest date of the pond cycle or release date; \code{NA} for net pens
+#'   \item \code{age_at_start}: age class when the stay started (net pens: in the operation year); \code{NA} for releases and where there is no start date
+#'   \item \code{age_at_end}: age class when the stay ended (net pens: in the operation year; releases: in the release year); "wild" for wild and salvage lots; \code{NA} for a lot with no year
+#'   \item \code{start_number}: fish at the start (ponds: start number; net pens: number stocked)
+#'   \item \code{end_number}: fish at the end (ponds: end number; net pens: number harvested; releases: number of fish released)
+#'   \item \code{source}: table the row comes from
+#' }
+#' @source The rows come from the annual report tables and workbooks behind three objects: pond cycles from the FY2021-FY2025 report pond tables and the Production Harvest Data Sheet workbooks (\code{KFNFH_pond_growout}); net pen groups from \code{nphistory.xlsx} and the FY2024-FY2025 net pen tables (\code{KFNFH_pen_survival}); releases from the FY2021-FY2025 distribution tables and FY25 Fish Distribution.xlsx (\code{KFNFH_hatchery_release}). The age classes are calculated from the lot or capture year.
+"KFNFH_cohort_age"
+
+
+#' @title Hatchery Mortality Events from Report Narratives, KFNFH
+#' @name KFNFH_mortality_events
+#' @description
+#' Disease, water quality, weather, predation and other events described in the narratives of the FY2021-2025
+#' Klamath Falls National Fish Hatchery (KFNFH) annual reports, with a category, a best-estimate percent lost and a
+#' severity tier. Most events are not quantified in the reports. Events E01-E28 come from the FY2021-2024 reports;
+#' events E29-E37 come from the FY2025 report, with their losses taken from the FY2025 water quality and mortality
+#' workbook (\code{KFNFH_WQ_FY2025_2 (version 1).xlsx}, daily sheets and \code{Sheet1}) and the report text.
+#' See \code{KFNFH_mortality_events_summary} for a simplified version.
+#'
+#' Each event is written from the report text, in wording that stays within what the report says (hedges such as
+#' "suspected" or "likely" are kept, and nothing is added that the report does not say). \code{citation} gives the report and page
+#' each event is taken from, and \code{report_phrase} is a phrase from the report that describes it (the script stops if the phrase is not
+#' on a cited page). \code{percent_lost} is computed from the net pen records (\code{nphistory.xlsx}), the larval rearing workbook and
+#' numbers in the report text, and is \code{NA} when the report gives no loss that belongs to the event. \code{severity_tier} follows from it by a fixed rule (over 70\% Catastrophic, 30-70\% Major, 10-30\% Moderate,
+#' under 10\% Minor; no loss in a non-mortality event is a near-miss; no number is qualitative only).
+#'
+#' Events with no \code{percent_lost} and their tier "Qualitative only (unquantified)": E22 (the report says only "several thousand fish"), E11 (an estimated 200+ fish lost; the
+#' report gives no percent), E14 (the report gives survival for the whole diet treatment, not for the event) and E16 (the report gives 752 fish lost in the event and survival for
+#' the whole tank). For E26 and E27 \code{percent_lost} is 0 because the report says no sucker mortality was observed.
+#'
+#' @format A tibble with 37 rows and 17 columns
+#' \itemize{
+#'   \item \code{hatchery_name}: hatchery name (KFNFH)
+#'   \item \code{event_id}: event identifier (E01, E02, ...)
+#'   \item \code{year}: year the event occurred
+#'   \item \code{period}: date or period of the event as described
+#'   \item \code{location}: pond, tank, pen or facility affected
+#'   \item \code{category}: event category (disease, water_quality, weather, predation, equipment, other)
+#'   \item \code{mortality_event}: whether the event resulted in fish mortality
+#'   \item \code{cause_description}: cause of the event as described
+#'   \item \code{population_affected}: group of fish affected (the denominator for the loss)
+#'   \item \code{loss_as_reported}: number or percent lost as reported
+#'   \item \code{percent_lost}: best-estimate percent lost (numeric); \code{NA} when not quantified
+#'   \item \code{confidence}: how well the loss is quantified (e.g. Quantified, Estimated, Qualitative only)
+#'   \item \code{severity_tier}: severity class (Catastrophic >70\% loss, Major 30-70\%, Moderate 10-30\%, Minor <10\%, Near-miss, Non-mortality, Qualitative only)
+#'   \item \code{report_year}: fiscal year of the annual report whose narrative describes the event
+#'   \item \code{report_phrase}: phrase copied from that report that describes the event (the script stops if it is not in the report)
+#'   \item \code{citation}: report(s) and page(s) the event is taken from (for example "FY2021 Annual Report, p. 6, 13"); printed page numbers equal PDF page numbers
+#'   \item \code{loss_source}: where \code{percent_lost} comes from (workbook and sheet, report table, or report text); \code{NA} when the loss is not quantified
+#' }
+#'
+#' @source Klamath Falls National Fish Hatchery Annual Reports for Fiscal Years 2021-2025 (narrative sections and tables, pages in \code{citation}); losses from \code{KFNFH_WQ_FY2025_2 (version 1).xlsx} (FY2025 events), \code{nphistory.xlsx}, \code{2024 Larval Collection and Early Rearing Summary Data.xlsx}, the FY2023 report tables and the report text
+"KFNFH_mortality_events"
+
+
+#' @title Hatchery Mortality Events Summary, KFNFH
+#' @name KFNFH_mortality_events_summary
+#' @description
+#' Simplified version of \code{KFNFH_mortality_events}: one row per event with the category, whether it was a
+#' mortality event, the percent mortality and the number of fish lost where available. Most events have no quantity. Computed the same way as \code{KFNFH_mortality_events}; events without a loss in the report (such as E22, E11, E14 and E16) have no percent mortality (see that object).
+#'
+#' @format A tibble with 37 rows and 7 columns
+#' \itemize{
+#'   \item \code{hatchery_name}: hatchery name (KFNFH)
+#'   \item \code{event_id}: event identifier, matches \code{KFNFH_mortality_events}
+#'   \item \code{year}: year the event occurred
+#'   \item \code{category}: event category
+#'   \item \code{mortality_event}: whether the event resulted in fish mortality
+#'   \item \code{percent_mortality}: percent of the affected population lost (numeric percent, e.g. 99 = 99\%)
+#'   \item \code{n_mortality}: number of fish lost, where reported
+#' }
+#'
+#' @source Klamath Falls National Fish Hatchery Annual Reports for Fiscal Years 2021-2025 (narrative sections and tables; see \code{KFNFH_mortality_events$citation})
+"KFNFH_mortality_events_summary"
+
+
+#' @title Monthly Pond Mortality, KFNFH
+#' @name KFNFH_mortality_pond_monthly
+#' @description
+#' Monthly mortality counts by pond from the hatchery's water quality and mortality logs for fiscal years 2023-2025,
+#' plus per-event mortality during harvest operations in FY2023. The records are at different levels of detail in each
+#' year (FY2023 is a pond by month table; FY2024 and FY2025 are daily per-pond logs summed to months).
+#' Counts come straight from the three workbooks; \code{age_class} comes from \code{KFNFH_cohort_age}: the age class(es) of the pond cycles in the pond that month.
+#' FY2024 covers 1 January to 22 September 2024 only (the October-December 2023 quarter was not found), so FY2024 totals are a partial year. FY2023 includes all pond series (A, B and P) and is larger than the "Monthly with no harvest Morts" column of the source sheet, which covers the P-series only.
+#'
+#' @format A tibble with 1516 rows and 7 columns
+#' \itemize{
+#'   \item \code{hatchery_name}: hatchery name (KFNFH)
+#'   \item \code{fiscal_year}: fiscal year (2023-2025)
+#'   \item \code{month}: calendar month (abbreviated); missing for some harvest records
+#'   \item \code{pond}: pond or tank identifier
+#'   \item \code{mortality}: number of fish recorded dead
+#'   \item \code{record_type}: "pond" for routine pond mortality or "harvest" for mortality recorded during harvest operations
+#'   \item \code{age_class}: age class(es) of the pond cycles (stocked on or before the end of the month and not yet harvested before its start) from \code{KFNFH_cohort_age}, with the age taken in the calendar year of the month; several classes are joined with "/" (e.g. "0/2"); \code{NA} where no cycle with a stock date was in the pond that month
+#' }
+#'
+#' @source Klamath Falls National Fish Hatchery mortality spreadsheets: Fiscal Year 23 WQ_Mortality reporting.xlsx, Copy of 2024_KFNFH_WQ.xlsx, KFNFH_WQ_FY2025_2 (version 1).xlsx
+"KFNFH_mortality_pond_monthly"
+
+
+#' @title Hatchery Pond and Tank Capacity, KFNFH
+#' @name KFNFH_capacity
+#' @description
+#' Outdoor pond and indoor tank capacity at the Klamath Falls National Fish Hatchery (KFNFH) by fiscal year. Construction changed capacity
+#' over time, so the current (constrained) capacity and the planned full build-out capacity are recorded as separate rows
+#' (\code{capacity_type}) rather than choosing one.
+#'
+#' Pond counts and acreage come from the facility description of each report (each phrase is checked against the report text). Indoor gallons are
+#' summed from the tank lists in the reports: 10,360 (FY2021), 12,035 (FY2022), 12,755 (FY2023 and FY2024; the second indoor building is first described in
+#' the FY2025 report) and 16,395 (FY2025). The
+#' reports support the 16,395 total only for FY2025, and no report gives indoor gallons for the planned build-out (\code{NA}).
+#'
+#' @format A tibble with 6 rows and 6 columns
+#' \itemize{
+#'   \item \code{hatchery_name}: hatchery name (KFNFH)
+#'   \item \code{fiscal_year}: fiscal year (planned build-out is shown in a future fiscal year)
+#'   \item \code{n_outdoor_ponds}: number of outdoor ponds
+#'   \item \code{acreage_outdoor_ponds}: total acreage of outdoor ponds
+#'   \item \code{gallons_indoor}: indoor tank capacity in gallons
+#'   \item \code{capacity_type}: "current" or "planned"
+#' }
+#'
+#' @source Facility descriptions in the Klamath Falls National Fish Hatchery Annual Reports for Fiscal Years 2021-2025 (pond counts and acreage; the planned 33 ponds on 8.5 acres is in the FY2025 report) and the tank lists in the same reports (indoor gallons)
+"KFNFH_capacity"
+
+
+#' @title Broodstock Spawned by Capture Year, KFNFH
+#' @name KFNFH_broodstock_spawned
+#' @description
+#' Number of broodstock, by capture-year class, species and sex, spawned at the Klamath Falls National Fish Hatchery (KFNFH)
+#' in spring 2025 (Shortnose sucker, SNS, and Lost River sucker, LRS). One LRS record has a capture year that was not recorded.
+#'
+#' Corresponds to **Table 4** in the FY2025 KFNFH Annual Report.
+#'
+#' @format A tibble with 9 rows and 8 columns
+#' \itemize{
+#'   \item \code{hatchery_name}: hatchery name (KFNFH)
+#'   \item \code{spawn_fiscal_year}: fiscal year in which the fish were spawned (2025)
+#'   \item \code{species}: SNS or LRS
+#'   \item \code{capture_year}: year the broodstock was captured (\code{NA} when not recorded)
+#'   \item \code{capture_year_raw}: capture year as written in the report
+#'   \item \code{females_spawned}: number of females spawned
+#'   \item \code{males_spawned}: number of males spawned
+#'   \item \code{total_spawned}: total number of fish spawned
+#' }
+#'
+#' @source Klamath Falls National Fish Hatchery Annual Report for Fiscal Year 2025
+"KFNFH_broodstock_spawned"

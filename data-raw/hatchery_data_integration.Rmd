@@ -1,0 +1,1189 @@
+---
+title: "KFNFH Hatchery Data Objects"
+subtitle: "Exploration, QC checks, object descriptions and a draft data dictionary"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    df_print: default
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+knitr::opts_knit$set(root.dir = here::here())
+
+library(tidyverse)
+library(janitor)
+library(lubridate)
+
+# the data objects are built by data-raw/processing-scripts/process-hatchery-data.R and saved in data/
+data_files <- list.files(here::here("data"), pattern = "^KFNFH_", full.names = TRUE)
+walk(data_files, load, envir = globalenv())
+
+final_objects <- c(
+  "KFNFH_historical_collection_release", "KFNFH_pond_growout", "KFNFH_LRS_ESS_adult_collection",
+  "KFNFH_hatchery_release", "KFNFH_pen_survival", "KFNFH_adfluvial_early_rearing",
+  "KFNFH_LRS_ESS_incubation_hatch", "KFNFH_fish_movements", "KFNFH_cohort_age",
+  "KFNFH_mortality_events", "KFNFH_mortality_events_summary", "KFNFH_mortality_pond_monthly", "KFNFH_capacity",
+  "KFNFH_broodstock_spawned")
+stopifnot(all(map_lgl(final_objects, exists)))
+
+pct <- function(x) suppressWarnings(parse_number(x))
+
+# every data frame is printed as an HTML table that wraps its text and fits the page (first 25 rows); glimpse() lines fit the page too
+options(width = 100)
+knit_print.data.frame <- function(x, ...) {
+  n <- nrow(x)
+  knitr::asis_output(knitr::kable(head(x, 25), format = "html", digits = 3, table.attr = 'class="fit"',
+                                  caption = if (n > 25) sprintf("first 25 of %s rows", format(n, big.mark = ","))))
+}
+registerS3method("knit_print", "data.frame", knit_print.data.frame, envir = asNamespace("knitr"))
+```
+
+<style>
+.main-container { max-width: 1250px !important; }
+/* all tables fit the page and wrap their text */
+.main-container table { width: 100%; max-width: 100%; }
+.main-container td, .main-container th { white-space: normal; overflow-wrap: anywhere; vertical-align: top; }
+table.fit, table.dict { font-size: 0.8em; }
+table.fit td, table.fit th, table.dict td, table.dict th { padding: 3px 5px; }
+table.fit caption { caption-side: bottom; font-size: 0.9em; }
+table.dict { table-layout: fixed; }
+table.na-table { width: 70%; table-layout: fixed; font-size: 0.8em; }
+table.na-table td, table.na-table th { padding: 2px 6px; }
+table.na-table th:nth-child(1), table.na-table td:nth-child(1) { width: 34%; }
+/* column | type | description | data source */
+table.dict th:nth-child(1), table.dict td:nth-child(1) { width: 15%; }
+table.dict th:nth-child(2), table.dict td:nth-child(2) { width: 8%; }
+table.dict th:nth-child(3), table.dict td:nth-child(3) { width: 42%; }
+table.dict th:nth-child(4), table.dict td:nth-child(4) { width: 35%; }
+table.qc-table, table.qc-flags, table.qc-summary, table.qc-counts { width: 100%; table-layout: fixed; }
+.qc-table th, .qc-table td, .qc-flags th, .qc-flags td, .qc-summary th, .qc-summary td, .qc-counts th, .qc-counts td {
+  white-space: normal; word-wrap: break-word; vertical-align: top; font-size: 0.82em; padding: 3px 6px; }
+/* check | checked | failing | status | note */
+.qc-table th:nth-child(1), .qc-table td:nth-child(1) { width: 34%; }
+.qc-table th:nth-child(2), .qc-table td:nth-child(2), .qc-table th:nth-child(3), .qc-table td:nth-child(3) { width: 8%; }
+.qc-table th:nth-child(4), .qc-table td:nth-child(4) { width: 7%; }
+/* object | check | checked | failing | status | note */
+.qc-flags th:nth-child(1), .qc-flags td:nth-child(1) { width: 20%; }
+.qc-flags th:nth-child(2), .qc-flags td:nth-child(2) { width: 26%; }
+.qc-flags th:nth-child(3), .qc-flags td:nth-child(3), .qc-flags th:nth-child(4), .qc-flags td:nth-child(4) { width: 7%; }
+.qc-flags th:nth-child(5), .qc-flags td:nth-child(5) { width: 6%; }
+/* object | check | failing | checked | note */
+.qc-summary th:nth-child(1), .qc-summary td:nth-child(1) { width: 20%; }
+.qc-summary th:nth-child(2), .qc-summary td:nth-child(2) { width: 28%; }
+.qc-summary th:nth-child(3), .qc-summary td:nth-child(3), .qc-summary th:nth-child(4), .qc-summary td:nth-child(4) { width: 7%; }
+</style>
+
+# Purpose
+
+The hatchery data objects of the package are **built in `data-raw/processing-scripts/process-hatchery-data.R`** and saved to `data/`.
+This document does not build anything: it loads the saved objects and explores them (a `glimpse()` and summaries of each), runs QC checks and plots
+on each one, describes each object, and holds a draft data dictionary.
+
+**Where values come from.** Every value is taken from the annual reports (PDF text and tables) or the hatchery Excel workbooks. The mortality events are
+written in the script from the report text, and each event gives the report and page it comes from (`citation`).
+
+**How the objects are built.** `process-hatchery-data.R` has these sections:
+
+| Part of the script | What it does |
+|---|---|
+| PARSE PDF FILES, PROCESS TABLES | Report tables of each year (FY2021-FY2025, cached in `data-raw/pdf-tables/`) into per-year objects; intermediate objects `hatchery_release_2021_2024`, `adult_collection_2023_2024`, `pond_growout_reports_2021_2024`, `pen_survival_reports_2024` |
+| 2. INPUTS FROM THE EXCEL WORKBOOKS AND THE REPORTS | Reads the workbooks and report text/tables: mortality spreadsheets, production harvest, spawning crosses, broodstock, fish movements and cohort age, collections and releases, capacity, and the mortality events (description, phrase in the report, loss and severity tier). |
+| 3. FINAL OBJECTS | Merges the FY2021-2024 tables with FY2025 and the workbook inputs and saves the objects: collection and release history, pond grow-out, incubation and hatch, adult collection, hatchery release, net pens, early rearing, mortality events (E01-E37), monthly pond mortality, capacity, broodstock spawned. |
+
+# Assumptions and decisions
+
+Every number in the objects comes from the annual reports or the hatchery workbooks. The items below are the places where a rule, a reading of the text, or a
+choice between sources decides a value. They were made while building the objects, and each one should be confirmed or changed.
+
+| Area | What was assumed or decided |
+|---|---|
+| Mortality events E01-E28: descriptions | Each event is written from the FY2021-2024 report text, checked against the report pages named in `citation`. Wording keeps the report's hedges ("suspected", "likely", "may have") and leaves out details the report does not give (for example a pond's location when the report does not say where). The `category` is a label chosen from the report's description: events whose cause the report does not state or that the report does not call a disease are labelled `other` (E05, E09, E10, E14, E15, E16). `mortality_event` is no when the report describes no fish deaths (E07, E13, E18, E20, E21, E26, E27, E28). |
+| Mortality events: losses typed from the text | E03 and E04 are 100% ("all perished", "total losses within days of hatch"). E26 and E27 are 0%: the report says no sucker mortality was observed (it also gives 96% harvest survival for the Gerber pens), so 0% means no observed mortality. **No `percent_lost` (tier "Qualitative only") where the report gives no loss that belongs to the event:** E07 (2,175 of 2,479 fish harvested; the report does not say what happened to the rest), E11 ("an estimated 200+ fish lost" of 1,999 stocked; the number at risk is not clear), E14 (86% is survival of the whole RZB treatment, not the event) and E16 (752 fish died in the event; 19.7% is survival of the whole tank). E22 has none either ("several thousand fish"). Percentages computed from reported counts (E01, E08, E12, E17, E19, E23) and from reported survival (E25, 100 minus 45%) are arithmetic on reported numbers; E18's 54.8% is an apparent loss because the report presumes the missing fish escaped. |
+| Mortality events: severity tier | Over 70% is Catastrophic, 30-70% Major, 10-30% Moderate, under 10% Minor; an event that is not a mortality event is "Near-miss" if its loss is 0 and "Non-mortality" otherwise; an event with no percent is "Qualitative only". These thresholds are a choice (they are not in the reports). |
+| Mortality events: fish lost (`n_mortality`) | Filled for E01, E11 (200, the report's minimum), E12 and E16 (752) among E01-E28 (where the reports give the fish lost); counts that could be computed for others (for example E08, E17, E19) are left `NA`. For E29-E37 it is filled whenever a count exists. |
+| FY2025 events E29-E37 | The category, `mortality_event` and `confidence` labels and the wording of the description columns are mine, written from the FY2025 report. **E29:** the loss is the fish at the start minus (harvested + harvest-day deaths), the definition of the `Survival` column of `Sheet1`, and `Sheet1` is used rather than the Production Harvest workbook (they disagree on the harvested fish). **E33:** "just under 70% survival" is taken to be the P10 cycle in the Production Harvest workbook (sheet Spring 2025). **E34:** the event window runs from the first July day with 10 or more dead fish to the last day the staff note stratification; the loss is recorded deaths only, over the fish at the start in the Production Harvest workbook (sheet Fall 2025). **E35:** uses the Table 8 total of 3,562 deaths, not the 3,652 in the report text. **E30, E32, E37:** no number of fish at risk is given, so there is no percent. |
+| Pond grow-out | A completed cycle listed in two reports is kept once (the later report's row, 44 cycles); a cycle reported in progress is replaced by its completed record; `fiscal_year` is the year of the report that lists the cycle; numeric pond IDs ("0") become "P0"; `weight_gain_lb` merges a misspelled duplicate column; `life_history` is "ESS" when the lot name contains "ESS"; the FY2025 report tables are read by column position, with months and growth split from one text cell. |
+| Fish movements | The "Stocked To" cells are free text, read by rules for each format. A destination with no number has `n_fish` = `NA`; a date with no year has `move_date` = `NA` (the text stays in `date_text`). "Net Pen" with no code is a net pen with no pen ID. A destination written A, B, C or P plus a number is labelled a pond, but the C-names are also used for indoor tanks in the early rearing tables (and the B-names for the old B-series and the new Tier-1 ponds), so a C destination may be a tank and a B destination may be an old or new pond. "TKT", "HKM", "S3" and similar are kept as written (other site). The fish moved out of a cycle were compared with its `end_number` as a check (see the section). | Ask USFWS what the short names stand for |
+| Cohort age | The age class of a cohort at any stay is built by one rule for every object: net pens = operation year minus capture year; ponds, releases and monthly mortality = calendar year of the date minus the year in the lot name (4 means 4 or older), calculated the same way for every lot including East Side Springs lots (**assumption: the year in the lot name is the collection year; a lot name with several years gets one age per year; a lot with no year such as MIX has no age class**); wild or salvage lots are "wild". Ages are whole calendar years, not days; there is no hatch date in the reports or workbooks. The `fiscal_year` columns are kept for joining but are not used for age. A pond cycle still in progress has no harvest date, so its `age_class` in `KFNFH_pond_growout` and `age_at_end` in `KFNFH_cohort_age` are `NA`. Monthly pond mortality takes the age class(es) of the pond cycles in the pond that month (stock date on or before the month's end, harvest on or after its start; no harvest date = still in the pond). | Ask USFWS for the hatch dates |
+| Capacity | The pond counts and sizes are typed from report sentences, and each sentence is checked against the report text. FY2024 is set to 22 ponds because the four A-series ponds were demolished early in the year. The FY2022 report says "nearly 2.1 acres" but its own pond counts give 2.38 acres, and 2.38 is used. The planned row's year (2028) is an assumption: the FY2025 report only says the build-out is "beyond 2027/2028". Indoor gallons are summed from the tank lists by text pattern, counting each research rack sump (4 x 180 gallons) as capacity. |
+| Rounding | `total_eggs` is rounded to whole numbers, `hatch_percent` to one decimal (and captive `eggs_per_mL` to two), as in Excel, so FY2025 incubation values differ slightly from the raw workbook values (for example 3,255.78 is 3,256). |
+| Incubation and adult collection | FY2024 `family_groups` is the number of males listed (the table has no such value). Short PIT tags (4-5 characters) are expanded to the full tag when exactly one tag in the FY2025 workbook or report table ends with them. Adult `sex` M/F is recoded to Male/Female. |
+| Collection and release history | `larvae_collected` is taken from Table 7 (30,150 for FY2024) rather than Table 1 (30,142); `total_released` is the sum of the four release columns; `broodstock_on_station` is the number parsed from "approximately" or "over" in the report text; FY2021 `new_broodstock_reported` (300) is read from "300 broodstock selected". |
+| Early rearing | `restock` is set from the word "Restock" in the culture-unit name; `date` is the first date when a row lists two days. |
+| QC checks | The tolerances (for example 5% for eggs, 2 points for survival) and the plausible ranges (for example fork length 300-1000 mm) were chosen for this document. |
+
+# Inputs used for the checks
+
+The FY2025 Production Harvest workbook is read here for two cross-checks (pond grow-out, and the September 2025 harvest). One row per pond cycle,
+sheets `FALL 2024`, `Spring 2025` and `Fall 2025`:
+
+```{r production-harvest-workbook}
+ph_path <- here::here("data-raw/hatchery-resources/FY2025 Supporting Excel Tables/FY2025 Production Harvest Data Sheet_20251107.xlsx")
+
+extract_col <- function(raw, pattern) {
+  matched <- names(raw)[str_detect(str_squish(names(raw)), regex(pattern, ignore_case = TRUE))]
+  if (length(matched) == 0) return(rep(NA_character_, nrow(raw)))
+  if (length(matched) == 1) return(raw[[matched]])
+  exec(coalesce, !!!as.list(raw[matched]))
+}
+excel_date <- function(x) as.Date(suppressWarnings(as.numeric(x)), origin = "1899-12-30")
+
+production_harvest_fy2025 <- map2(c("FALL 2024", "Spring 2025", "Fall 2025"), c("Fall 2024", "Spring 2025", "Fall 2025"), \(sheet, season) {
+  raw <- readxl::read_excel(ph_path, sheet = sheet, col_types = "text")
+  tibble(pond = extract_col(raw, "^Pond$"),
+         stocked_date = excel_date(extract_col(raw, "^Stocked? Date$")),
+         start_number = suppressWarnings(as.numeric(extract_col(raw, "^Start #$"))),
+         harvest_date = excel_date(extract_col(raw, "^Harvest Date$")),
+         end_number = suppressWarnings(as.numeric(extract_col(raw, "^End # Live$|^End #$"))),
+         survival_percent = suppressWarnings(as.numeric(extract_col(raw, "^Survival$")))) |>
+    filter(!is.na(pond), pond != "Pond") |>
+    mutate(season = season, pond = str_to_upper(pond),
+           # some seasons record survival as a fraction (0-1)
+           survival_percent = if (!all(is.na(survival_percent)) && max(survival_percent, na.rm = TRUE) <= 1) survival_percent * 100 else survival_percent)
+}) |> list_rbind()
+```
+
+# Fish movements and cohort age
+
+These two objects answer "how old are the fish as they move through the system, by pond and net pen".
+
+**`KFNFH_fish_movements`** splits the free-text "Stocked To" cell of the Production Harvest workbooks (and the disposition column of the FY2021 report
+tables) into one row per destination. The cell formats change from sheet to sheet (`P10/454 on 3/9/25, P11/490 on 3/11/25`, `P9-50 / HENZEL-417`,
+`Stocked 325 to A3 / Stocked 547 to Henzel on 10/21/2022`), so each is read by a rule and every row keeps the whole cell (`source_text`) and its sheet and
+row (`source`). A cell with no destination gives no row. A destination is a pond code, a net pen, or another named place (`to_type`).
+
+```{r movements}
+glimpse(KFNFH_fish_movements, width = 100)
+
+KFNFH_fish_movements |> count(to_type, name = "rows")
+```
+
+**`KFNFH_cohort_age`** stacks the pond cycles, net pen groups and releases and gives each its cohort and the age class at the start and end of the stay,
+with one rule for the age (calendar year of the date minus the year in the lot name or capture year, 4 = 4 or older; the same for every lot, including East Side Springs lots, **an assumption**). Filtering one `cohort` gives its stays in date order:
+
+```{r cohort}
+glimpse(KFNFH_cohort_age, width = 100)
+
+KFNFH_cohort_age |> count(stage, name = "rows")
+```
+
+Check of the parsing: the fish moved out of a cycle should add up to the fish alive at harvest (`end_number`), for the workbook cycles where every destination has a number.
+
+```{r movements-check}
+cycle_moved <- KFNFH_fish_movements |>
+  filter(str_detect(source, "xlsx"), to_type != "retained at the hatchery") |>
+  group_by(source, from_facility, cycle_stock_date, cycle_harvest_date) |>
+  summarise(moved = sum(n_fish, na.rm = TRUE), all_counted = !any(is.na(n_fish)), .groups = "drop") |>
+  inner_join(KFNFH_pond_growout |> select(pond, pond_stock_date, harvest_date, end_number),
+             by = c("from_facility" = "pond", "cycle_stock_date" = "pond_stock_date", "cycle_harvest_date" = "harvest_date"),
+             relationship = "many-to-many") |>
+  filter(all_counted, moved > 0, end_number > 0) |>
+  mutate(ratio = moved / end_number)
+tibble(workbook_cycles_with_destination_counts = nrow(cycle_moved),
+       moved_within_10_percent_of_end_number = sum(abs(cycle_moved$ratio - 1) <= 0.1))
+cycle_moved |>
+  filter(abs(ratio - 1) > 0.1) |>
+  transmute(source = str_remove(source, "^.*sheet "), from_facility, cycle_harvest_date, moved, end_number, ratio = round(ratio, 2))
+```
+
+# Collection and release history
+
+`KFNFH_historical_collection_release` is built from Table 1 and Table 7 of the FY2025 report, which repeat the full history (FY2016-2025) with updated
+numbers; the broodstock columns come from the report text.
+
+```{r historical}
+glimpse(KFNFH_historical_collection_release, width = 100)
+```
+
+FY2024 `larvae_collected` is **30,142** in FY2025 Table 1, but **30,150** in the FY2024 report (Tables 1 and 4, and the narrative), in FY2025 Table 7 of the
+FY2025 report itself, and in the hatchery's own workbook (the cumulative "Total Collected To Date" in `2024 Larval Collection and Early Rearing Summary Data.xlsx`
+ends at 30,150). Three sources agree on 30,150, so **the object uses the Table 7 value (30,150) for all years** (it equals Table 1 in every other year). The same workbooks also confirm FY2023 (6,036) and FY2025 (70,049).
+
+# Pond grow-out
+
+`KFNFH_pond_growout` combines the pond tables of the FY2021-FY2025 reports. The Production Harvest Data Sheet workbooks describe the same pond cycles;
+for FY2021-2024 their rows match the report rows on pond and harvest date (start numbers are identical; end numbers and survival agree for about 95% of
+rows), so they are not appended as a second copy. The script:
+
+1. keeps the report tables as the primary source (they have the full set of columns, including weights);
+2. adds FY2025 from the FY2025 report pond tables (Tables 10-12) so FY2025 has the same columns as earlier years;
+3. validates the FY2025 rows against the workbook, and would append (flagged `source = "production_harvest_workbook"`) any workbook row that is not in the report tables
+   (there are none);
+4. replaces a cycle reported as still in progress (no harvest date) in an earlier report with the later, completed record of the same pond and stocking date;
+5. removes a completed cycle that is listed in two consecutive reports (44 cycles: 24 in both FY2023 Table 7 and FY2024 Table 6, and 20 in both the
+   FY2022 tables and FY2023 Table 5), keeping the later report's row;
+6. calculates `age_class` for each cycle from its own lot name and the calendar year it was harvested (`NA` for a cycle in progress).
+
+```{r pond}
+glimpse(KFNFH_pond_growout, width = 100)
+
+KFNFH_pond_growout |> count(fiscal_year, source)
+```
+
+Validation of the completed FY2025 cycles against the Production Harvest workbook:
+
+```{r pond-validate}
+key <- function(d, stock, pond = "pond") ifelse(is.na(d[[stock]]), NA, paste(d[[pond]], d[[stock]]))
+
+pond_2025_report <- KFNFH_pond_growout |> filter(fiscal_year == 2025, source == "annual_report_table")
+
+fy25_check <- pond_2025_report |>
+  filter(!is.na(harvest_date)) |>
+  mutate(k = key(pick(everything()), "pond_stock_date")) |>
+  inner_join(production_harvest_fy2025 |> filter(!is.na(harvest_date)) |>
+               mutate(k = key(pick(everything()), "stocked_date")) |>
+               select(k, wb_start = start_number, wb_end = end_number, wb_survival = survival_percent),
+             by = "k")
+
+tibble(completed_report_rows_fy25 = sum(!is.na(pond_2025_report$harvest_date)),
+       matched_to_workbook = nrow(fy25_check),
+       start_number_equal = mean(fy25_check$start_number == fy25_check$wb_start, na.rm = TRUE),
+       end_number_equal = mean(fy25_check$end_number == fy25_check$wb_end, na.rm = TRUE),
+       end_number_minus_morts_equal = mean(fy25_check$end_number - fy25_check$harvest_mortality_number == fy25_check$wb_end, na.rm = TRUE),
+       survival_within_0.5 = mean(abs(fy25_check$survival_percent - fy25_check$wb_survival) < 0.5, na.rm = TRUE))
+```
+
+For the completed FY2025 cycles, start numbers are identical and survival agrees. The FY2025 report's `End #` counts fish before harvest mortalities, while the
+workbook's `End #` is the live count, so `end_number - harvest_mortality_number` equals the workbook value for every matched row.
+
+Cycles with no age class are lots with no year in the name:
+
+```{r pond-age-gaps}
+KFNFH_pond_growout |>
+  filter(is.na(age_class)) |>
+  count(fiscal_year, pond) |>
+  arrange(fiscal_year, pond)
+```
+
+# Incubation and hatch results
+
+`KFNFH_LRS_ESS_incubation_hatch` (the `_2024` suffix is dropped) holds the wild East Side Springs LRS spawning crosses of FY2024 (report Table 3) and FY2025
+(the ESS metadata workbook, identical to report Table 3), with the family-group count and, for FY2025, the second fry count.
+
+```{r incubation}
+glimpse(KFNFH_LRS_ESS_incubation_hatch, width = 100)
+
+KFNFH_LRS_ESS_incubation_hatch |> count(fiscal_year)
+```
+
+# Adult collection and hatchery release, FY2025
+
+The FY2025 report gives FY2025 versions of both tables, which are added to the FY2023-2024 data.
+
+```{r adults}
+glimpse(KFNFH_LRS_ESS_adult_collection, width = 100)
+
+KFNFH_LRS_ESS_adult_collection |> count(fiscal_year, sex)
+```
+
+```{r release}
+glimpse(KFNFH_hatchery_release, width = 100)
+
+KFNFH_hatchery_release |> group_by(fiscal_year) |> summarise(rows = n(), fish = sum(number_fish, na.rm = TRUE))
+```
+
+The FY2025 report states 26,454 fish distributed or transferred ("All Spp." overall total) and `FY25 Fish Distribution.xlsx` has the same table.
+
+# Net pen survival
+
+FY2025 Tables 13 and 14 repeat the full net pen history (identical to `nphistory.xlsx`). The new information is that no production fish were available in
+later years, which is recorded as explicit rows with a `note` so these are not mistaken for missing data.
+
+```{r pens}
+glimpse(KFNFH_pen_survival, width = 100)
+
+KFNFH_pen_survival |> filter(!is.na(note))
+```
+
+# Early rearing
+
+`KFNFH_adfluvial_early_rearing` (the `_2024` suffix is dropped) holds larval culture-unit stocking, mortality and survival for FY2023 (Table 3), FY2024 (Table 5)
+and FY2025 (Table 8). The FY2021 and FY2022 reports do not contain an equivalent table.
+
+```{r early-rearing}
+glimpse(KFNFH_adfluvial_early_rearing, width = 100)
+
+KFNFH_adfluvial_early_rearing |>
+  group_by(fiscal_year) |>
+  summarise(rows = n(), collected = sum(collected),
+            collected_excl_restock = sum(collected[!restock]),
+            stocked = sum(stocked),
+            survival = round(100 * stocked / collected, 1))
+```
+
+`restock` flags rows whose culture unit is a "Restock" (larvae moved back into a tank that was already
+stocked). In FY2024 the five restock rows add up to 7,327 fish, which is exactly the difference between the
+sum of the `collected` column (37,477) and the 30,150 larvae actually collected; so **sum `collected` only
+over non-restock rows (or use `KFNFH_historical_collection_release$larvae_collected`) for collection totals**.
+In FY2025 the rows sum to the reported 70,049, which is also the cumulative collected total in the hatchery
+workbook, so those restock rows are fish collected that day, not re-counts.
+
+`date_raw` keeps the date text as reported because FY2025 (and some FY2023) entries span two days
+(`"5/8/2025 & 5/9/2025"`). `date` is the first date.
+
+Totals in the reports for comparison: FY2023 6,036 collected and 3,969 stocked (65.8%); FY2025
+70,049 collected and 65,847 stocked (94.0%). The FY2023 rows sum to 6,037 collected (the report's
+total row says 6,036), a one-fish difference inside the report.
+
+
+# Mortality events (from the report narratives)
+
+Events E01-E28 come from the FY2021-2024 report narratives and E29-E37 from the FY2025 report. Each event is written from the report text
+(`process-hatchery-data.R`, section 2c) and gives the report and page(s) it is taken from in `citation`; wording keeps the report's hedges and leaves out
+anything the report does not say. E29-E37 take their losses from the FY2025 water quality and mortality workbook (daily sheets and `Sheet1`), the Production Harvest workbook and the report text.
+
+* every event is tied to a phrase in the report that describes it, and the phrase must be on a page named in `citation` (the script stops otherwise);
+* `percent_lost` and `n_mortality` are computed from the net pen records (`nphistory.xlsx`), the larval rearing workbook and numbers in the report text,
+  and are left `NA` when the report gives no loss that belongs to the event (see the assumptions table);
+* `severity_tier` is computed from `percent_lost` with a fixed rule (over 70% Catastrophic, 30-70% Major, 10-30% Moderate,
+  under 10% Minor; no loss in a non-mortality event is a near-miss; no number is qualitative only).
+
+```{r mortality-events}
+glimpse(KFNFH_mortality_events, width = 100)
+glimpse(KFNFH_mortality_events_summary, width = 100)
+
+KFNFH_mortality_events |> count(severity_tier)
+```
+
+## FY2025 events (E29-E37)
+
+The FY2025 report (`FY25 KFNFH Annual Report.pdf`) describes the summer 2025 mortality spike and other losses that are not in the FY2021-2024
+event list. The losses come from `KFNFH_WQ_FY2025_2 (version 1).xlsx`: the daily pond sheets (`OctobertoDecember_WQ`, `JantoMar_WQ`, `AprtoJun_WQ`, `JulytoSept_WQ`),
+which have a `Morts` column, a lot column (`CY`) and a `Comments` column, and `Sheet1`, which gives the fish at the start and at harvest of the
+ponds harvested early in September 2025. Where the workbooks do not give a loss, the number in the report text or Table 8 is used. As for the earlier
+events, each event is tied to a phrase in the report (the chunk stops if a phrase is missing), the severity tier comes from the fixed rule, and an event with no
+percent loss is "Qualitative only" even when the report gives a number of fish.
+The events are built in `process-hatchery-data.R` (section FINAL OBJECTS, Mortality events); the FY2025 events are the rows E29 to E37:
+
+```{r events-fy2025-table}
+KFNFH_mortality_events |>
+  filter(event_id >= "E29") |>
+  select(event_id, year, period, category, percent_lost, loss_as_reported, severity_tier, loss_source)
+```
+
+Notes on how these events were built:
+
+* **E29** is the ESS2025 lot in ponds C1 and C2. Loss is from `Sheet1`: fish at the start minus (harvested + harvest-day deaths), which is the same
+  definition as the `Survival` column of that sheet. The daily logs record fewer dead fish than were lost, because fish that could not be retrieved
+  are not counted (the comments note them every day).
+* **E34** differs from the report. The report calls it a minor event with 11 dead fish on one morning; the daily log for pond C6 shows deaths on
+  every day from 3 to 18 July, with the staff logging bottom dissolved oxygen of 0.2-0.6 mg/L. The event is built from the workbook (the Excel file wins),
+  and the report phrase is kept as its citation.
+* **E35** uses Table 8 (3,562 deaths, 5.1% of 70,049); the report text says 3,652, which is a transposition because 3,562 is both the table total and 5.1%.
+* **E30, E32** and **E37** have numbers of dead fish (or none) but no number at risk in the reports or workbooks, so they have no percent and are qualitative.
+
+**Sheet1 and the Production Harvest workbook do not agree** on the ponds harvested early. `Sheet1` (used above) gives fewer harvested fish than the
+`Fall 2025` sheet of `FY2025 Production Harvest Data Sheet_20251107.xlsx`:
+
+```{r sheet1-load}
+harvest_2025 <- readxl::read_excel(
+  here::here("data-raw/hatchery-resources/FY2025 Supporting Excel Tables/KFNFH_WQ_FY2025_2 (version 1).xlsx"),
+  sheet = "Sheet1") |>
+  set_names(c("pond", "harvest_date", "initial", "harvested", "harvest_morts", "survival")) |>
+  filter(!is.na(initial))
+```
+
+```{r sheet1-vs-production-harvest}
+harvest_2025 |>
+  select(pond, harvest_date, initial, harvested_sheet1 = harvested, harvest_morts_sheet1 = harvest_morts, survival_sheet1 = survival) |>
+  left_join(production_harvest_fy2025 |>
+              filter(season == "Fall 2025") |>
+              select(pond, start_number, end_number_production_harvest = end_number, survival_percent_production_harvest = survival_percent),
+            by = "pond") |>
+  mutate(difference_in_harvested = end_number_production_harvest - harvested_sheet1)
+```
+
+The differences (1,670 fish for C1 and 1,080 for C2) are not the harvest-day deaths in `Sheet1`, so they are not explained by that column. `Sheet1` is used
+for E29; the other workbook is shown for comparison.
+
+## Sources of the losses
+
+Each event is tied to the phrase of the report that describes it (`report_phrase`, in the report of `report_year`) and to the page(s) in `citation`, and its loss to the
+workbook, table or text in `loss_source`. The script stops if a phrase is not on a cited page, so an event cannot be mis-cited. Event E07 (Gerber net pen emergency harvest, 2021) has no
+`percent_lost` because the report states no loss, so its tier is "Non-mortality". Events E11, E14 and E16 have no `percent_lost` either: the report gives the fish lost for E11 (an estimated 200+) and E16 (752) but not a share of the fish at risk, and for E14 only the survival of the whole diet treatment. Event E22 (August 2024 dissolved-oxygen crashes in ponds
+P12 and P13) has no `percent_lost`: the FY2024 report only says "the acute loss of several thousand fish between both instances, as well as some chronic losses",
+and the pond records cannot be turned into a combined loss (P13's May 2024 stocking of 3,012 fish was split before harvest), so its tier is
+"Qualitative only (unquantified)".
+
+```{r mortality-sources}
+KFNFH_mortality_events |>
+  select(event_id, year, category, percent_lost, severity_tier, citation, report_phrase, loss_source)
+```
+
+# Monthly pond mortality (from the mortality spreadsheets)
+
+`age_class` comes from `KFNFH_cohort_age` (below) so all objects use the same age
+definition. The FY2024 workbook covers 1 January to 22 September 2024 only (the October to December 2023 quarter and
+the last week of September 2024 are missing), so FY2024 totals are a partial year. The P-series pond matrices
+in the `FALL 2023 MORTALITY` and `SPRING 2024 MORTALITY` sheets of the Production Harvest Data Sheet workbooks
+cover November and December 2023 and could fill part of that gap.
+
+```{r mortality-monthly}
+glimpse(KFNFH_mortality_pond_monthly, width = 100)
+
+KFNFH_mortality_pond_monthly |>
+  group_by(fiscal_year, record_type) |>
+  summarise(months = n_distinct(month, na.rm = TRUE), mortality = sum(mortality, na.rm = TRUE),
+            .groups = "drop")
+```
+
+The counts (month, pond, number dead) come straight from the three mortality workbooks; `age_class` is the class(es) of the pond cycles in the pond that month, from `KFNFH_cohort_age` (several classes are joined with "/"). The cycles are matched by pond and by the dates of the month; a record with no cycle that has a stock date has no age class.
+
+# Capacity
+
+```{r capacity}
+glimpse(KFNFH_capacity, width = 100)
+
+KFNFH_capacity
+```
+
+Pond counts and acreage are read from the facility description of each report. Indoor tank gallons are summed from the tank lists in the reports: the FY2022-FY2024
+reports list only the greenhouse tanks (the second indoor building is first described in the FY2025 report), so each year has the value its report supports:
+10,360 (FY2021), 12,035 (FY2022), 12,755 (FY2023 and FY2024), 16,395 (FY2025). The planned build-out has no gallons in any report (`NA`).
+
+# Broodstock spawned
+
+`KFNFH_broodstock_spawned` is the number of captive broodstock spawned in spring 2025 by capture year, species and sex, from the summary block of the
+"All PIT" sheet of `FY25CaptiveBroodSpawning_FINAL.xlsx`. It is identical to FY2025 Table 4:
+
+```{r broodstock}
+glimpse(KFNFH_broodstock_spawned, width = 100)
+
+tables_raw_2025 <- readRDS(here::here("data-raw/pdf-tables/kfnfh_2025_tables_raw.Rds"))
+brood_2025 <- tables_raw_2025[[5]] |>
+  slice(-1) |>
+  transmute(capture_year_raw = `Capture`,
+            SNS_F = as.numeric(`...2`), SNS_M = as.numeric(`...4`),
+            LRS_F = as.numeric(`...5`), LRS_M = as.numeric(`...7`)) |>
+  pivot_longer(-capture_year_raw, names_to = c("species", "sex"), names_sep = "_") |>
+  pivot_wider(names_from = sex, values_from = value)
+
+check_b <- brood_2025 |>
+  mutate(capture_year_raw = if_else(capture_year_raw == "N/A", "N/A (not recorded)", capture_year_raw)) |>
+  inner_join(KFNFH_broodstock_spawned, by = c("species", "capture_year_raw"))
+tibble(rows_in_object = nrow(KFNFH_broodstock_spawned), rows_matched_to_pdf = nrow(check_b),
+       females_equal = all(check_b$F == check_b$females_spawned, na.rm = TRUE),
+       males_equal = all(check_b$M == check_b$males_spawned, na.rm = TRUE))
+```
+
+# QC checks and plots
+
+One subsection per data object. Each has a table of checks (`rows_failing` is the number of rows that break the check; `status` is `pass` or
+`FLAG`, and every flag has a note saying what it is) followed by plots. A flag is a property of the reports or workbooks that the package reproduces,
+or a documented limitation; it is not corrected in the object. Each subsection ends with a table of missing values (`NA`) for every variable of the object. The flags are collected in the QC summary at the end of this section.
+
+```{r qc-setup}
+library(ggplot2)
+theme_set(theme_minimal(base_size = 11))
+
+qc_all <- tibble()
+qc <- function(object, check, failed, note = "") {
+  n_fail <- sum(failed, na.rm = TRUE)
+  qc_all <<- bind_rows(qc_all, tibble(object = object, check = check, rows_checked = sum(!is.na(failed)),
+                                      rows_failing = n_fail, status = if (n_fail == 0) "pass" else "FLAG",
+                                      note = if (n_fail == 0) "" else note))
+  invisible(failed)
+}
+# tables are written as HTML tables with wrapped text and fixed column widths (see the style block above), so they fit the page
+qc_table <- function(o) {
+  x <- qc_all |> filter(object %in% o)
+  if (length(o) == 1) {
+    x |> select(check, checked = rows_checked, failing = rows_failing, status, note) |>
+      knitr::kable(format = "html", table.attr = 'class="qc-table"')
+  } else {
+    x |> select(object, check, checked = rows_checked, failing = rows_failing, status, note) |>
+      knitr::kable(format = "html", table.attr = 'class="qc-flags"')
+  }
+}
+
+# missing values of every variable of an object, as a compact HTML table
+na_summary <- function(x) {
+  tibble(variable = names(x),
+         type = map_chr(x, \(v) class(v)[1]),
+         missing = map_int(x, \(v) sum(is.na(v))),
+         pct_missing = round(100 * missing / nrow(x), 1),
+         rows = nrow(x)) |>
+    knitr::kable(format = "html", table.attr = 'class="na-table"')
+}
+
+fy_start <- function(fy) as.Date(paste0(fy - 1, "-10-01"))
+fy_end <- function(fy) as.Date(paste0(fy, "-09-30"))
+fiscal_year_of <- function(d) year(d) + if_else(month(d) >= 10, 1, 0)
+```
+
+## KFNFH_historical_collection_release
+
+```{r qc-historical}
+h <- KFNFH_historical_collection_release
+qc("KFNFH_historical_collection_release", "one row per fiscal year", duplicated(h$fiscal_year))
+qc("KFNFH_historical_collection_release", "fiscal years 2016-2025 only", !(h$fiscal_year %in% 2016:2025))
+qc("KFNFH_historical_collection_release", "total_released = sum of the four releases",
+   h$total_released != rowSums(h[c("sarp_release", "fingerling_release", "fry_release", "salvage_release")], na.rm = TRUE))
+qc("KFNFH_historical_collection_release", "larvae_collected > 0", h$larvae_collected <= 0)
+qc("KFNFH_historical_collection_release", "salvage length is SL or TL, not both", !is.na(h$salvage_sl_mm) & !is.na(h$salvage_tl_mm))
+qc("KFNFH_historical_collection_release", "collection method present", is.na(h$primary_collection_method))
+qc_table("KFNFH_historical_collection_release")
+```
+
+```{r qc-historical-plot, fig.height = 3.5, fig.width = 8}
+h |>
+  select(fiscal_year, larvae_collected, total_released) |>
+  pivot_longer(-fiscal_year) |>
+  ggplot(aes(factor(fiscal_year), value, fill = name)) +
+  geom_col(position = "dodge") +
+  scale_y_continuous(labels = scales::comma) +
+  labs(x = "Fiscal year", y = "Fish", fill = NULL, title = "Larvae collected and fish released")
+```
+
+### Missing values
+
+```{r qc-na-kfnfh-historical-collection-release}
+na_summary(KFNFH_historical_collection_release)
+```
+
+## KFNFH_hatchery_release
+
+```{r qc-release}
+r <- KFNFH_hatchery_release
+o <- "KFNFH_hatchery_release"
+qc(o, "number_fish > 0", r$number_fish <= 0)
+qc(o, "dispo_date inside its fiscal year", r$dispo_date < fy_start(r$fiscal_year) | r$dispo_date > fy_end(r$fiscal_year))
+qc(o, "no duplicate events", duplicated(r[c("fiscal_year", "dispo_date", "species", "lot", "dispo_location", "from_ponds", "number_fish")]))
+qc(o, "number_per_lb within 5% of number_fish / weight_lb", abs(r$number_per_lb - r$number_fish / r$weight_lb) / r$number_per_lb > 0.05,
+   "rows where the report's fish per pound does not match its own number and weight")
+
+release_vs_history <- r |>
+  group_by(fiscal_year) |>
+  summarise(distributions = sum(number_fish, na.rm = TRUE), .groups = "drop") |>
+  inner_join(KFNFH_historical_collection_release |> select(fiscal_year, total_released), by = "fiscal_year") |>
+  mutate(difference = distributions - total_released)
+qc(o, "yearly total equals total_released of the historical table (within 1%)", abs(release_vs_history$difference) / release_vs_history$total_released >= 0.01,
+   "the distribution table and the collection and release table of the same report do not add to the same total (FY2021 and FY2023, see below)")
+qc_table(o)
+release_vs_history
+```
+
+```{r qc-release-plot, fig.height = 3.5, fig.width = 8}
+r |>
+  mutate(species_group = case_when(str_detect(species, "ESS") ~ "ESS LRS", str_detect(species, "LRS") ~ "LRS", str_detect(species, "SNS|KLS") ~ "SNS", TRUE ~ "Other / unknown")) |>
+  summarise(number_fish = sum(number_fish, na.rm = TRUE), .by = c(fiscal_year, species_group)) |>
+  ggplot(aes(factor(fiscal_year), number_fish)) +
+  geom_col() +
+  facet_wrap(~species_group) +
+  scale_y_continuous(labels = scales::comma) +
+  labs(x = "Fiscal year", y = "Fish distributed or transferred", title = "Hatchery release by species")
+```
+
+### Missing values
+
+```{r qc-na-kfnfh-hatchery-release}
+na_summary(KFNFH_hatchery_release)
+```
+
+## KFNFH_LRS_ESS_adult_collection
+
+```{r qc-adults}
+a <- KFNFH_LRS_ESS_adult_collection
+o <- "KFNFH_LRS_ESS_adult_collection"
+qc(o, "sex is Male or Female", !(a$sex %in% c("Male", "Female")), "two FY2023 records with no fish data (a note in the report table)")
+qc(o, "fork length 300-1000 mm", a$fl_mm < 300 | a$fl_mm > 1000)
+qc(o, "collected inside its fiscal year", a$date < fy_start(a$fiscal_year) | a$date > fy_end(a$fiscal_year))
+qc(o, "PIT tag appears once per fiscal year", !is.na(a$pit_tag_last_5) & duplicated(a[c("fiscal_year", "pit_tag_last_5")]),
+   "a tag listed twice in the same year (a fish caught twice, or a repeated line in the table)")
+qc(o, "fl_in = fl_mm / 25.4", abs(a$fl_in - a$fl_mm / 25.4) > 0.05)
+qc_table(o)
+```
+
+```{r qc-adults-plot, fig.height = 3.5, fig.width = 8}
+a |>
+  filter(!is.na(sex), !is.na(fl_mm)) |>
+  ggplot(aes(factor(fiscal_year), fl_mm, fill = sex)) +
+  geom_boxplot() +
+  labs(x = "Fiscal year", y = "Fork length (mm)", fill = NULL, title = "Wild adult LRS fork length")
+```
+
+### Missing values
+
+```{r qc-na-kfnfh-lrs-ess-adult-collection}
+na_summary(KFNFH_LRS_ESS_adult_collection)
+```
+
+## KFNFH_LRS_ESS_incubation_hatch
+
+```{r qc-incubation}
+i <- KFNFH_LRS_ESS_incubation_hatch
+o <- "KFNFH_LRS_ESS_incubation_hatch"
+qc(o, "total_eggs within 5% of egg_volume_mL x eggs_per_mL", abs(i$total_eggs - i$egg_volume_mL * i$eggs_per_mL) / i$total_eggs > 0.05)
+qc(o, "hatch_percent within 1 point of total_fry / total_eggs", abs(i$hatch_percent - 100 * i$total_fry / i$total_eggs) > 1)
+qc(o, "hatch_percent <= 100", i$hatch_percent > 100, "more fry than eggs counted (egg numbers are estimated from volume); values as reported")
+qc(o, "spawning in April or May", !(month(i$spawning_date) %in% 4:5))
+qc(o, "family_groups = number of males listed", i$family_groups != rowSums(!is.na(i[paste0("male_", 1:6)])))
+qc(o, "one row per female, date and incubator", duplicated(i[c("spawning_date", "female", "incubator")]))
+qc_table(o)
+```
+
+```{r qc-incubation-plot, fig.height = 3.8, fig.width = 6}
+ggplot(i, aes(total_eggs, total_fry, colour = factor(fiscal_year))) +
+  geom_abline(slope = 1, linetype = "dashed") +
+  geom_point(size = 2) +
+  scale_x_log10(labels = scales::comma) + scale_y_log10(labels = scales::comma) +
+  labs(x = "Total eggs", y = "Total fry (first count)", colour = "Fiscal year", title = "Eggs and fry per cross (dashed line: 100% hatch)")
+```
+
+### Missing values
+
+```{r qc-na-kfnfh-lrs-ess-incubation-hatch}
+na_summary(KFNFH_LRS_ESS_incubation_hatch)
+```
+
+## KFNFH_adfluvial_early_rearing
+
+```{r qc-early}
+e <- KFNFH_adfluvial_early_rearing
+o <- "KFNFH_adfluvial_early_rearing"
+qc(o, "stocked <= collected", e$stocked > e$collected)
+qc(o, "survival_percent + observed + unobserved mortality = 100 (1 point)", abs(e$survival_percent + e$observed_mortality_percent + e$unobserved_mortality_percent - 100) > 1)
+qc(o, "survival_percent within 1 point of stocked / collected", abs(e$survival_percent - 100 * e$stocked / e$collected) > 1,
+   "FY2023 and FY2025 tanks where survival is 1 minus the observed mortality because fish were only counted into the tanks (stated in the FY2025 report)")
+qc(o, "collected in May or June", !(month(e$date) %in% 5:6))
+qc(o, "no duplicate tank and date", duplicated(e[c("fiscal_year", "date_raw", "culture_unit")]))
+qc_table(o)
+```
+
+```{r qc-early-plot, fig.height = 3.8, fig.width = 8}
+ggplot(e, aes(collected, stocked, colour = factor(fiscal_year), shape = restock)) +
+  geom_abline(slope = 1, linetype = "dashed") +
+  geom_point(size = 2) +
+  scale_x_log10(labels = scales::comma) + scale_y_log10(labels = scales::comma) +
+  labs(x = "Larvae collected into the tank", y = "Larvae stocked out", colour = "Fiscal year", shape = "Restock",
+       title = "Early rearing: collected and stocked per tank (dashed line: no loss)")
+```
+
+### Missing values
+
+```{r qc-na-kfnfh-adfluvial-early-rearing}
+na_summary(KFNFH_adfluvial_early_rearing)
+```
+
+## KFNFH_pond_growout
+
+```{r qc-pond}
+p <- KFNFH_pond_growout
+o <- "KFNFH_pond_growout"
+has_stock <- !is.na(p$pond_stock_date)
+qc(o, "no duplicate cycles (pond, lot, stock date, harvest date)", has_stock & duplicated(p[c("pond", "lot", "pond_stock_date", "harvest_date")]),
+   "a cycle listed in two reports that the script did not remove")
+qc(o, "harvest after stocking", p$harvest_date < p$pond_stock_date)
+qc(o, "days within 3 of harvest_date - pond_stock_date", abs(p$days - as.numeric(p$harvest_date - p$pond_stock_date)) > 3, "FY2022 rows from the OCR'd image tables")
+qc(o, "end_number <= start_number", p$end_number > p$start_number, "fish were added to the pond during the cycle (mostly FY2021 Table 3)")
+qc(o, "survival_percent within 2 points of end_number / start_number", abs(p$survival_percent - 100 * p$end_number / p$start_number) > 2,
+   "the hatchery's survival is not always end/start (negative harvest mortalities, fish moved between ponds); values as reported")
+qc(o, "survival_percent between 0 and 110", p$survival_percent < 0 | p$survival_percent > 110, "FY2021 Table 3: more fish at harvest than at stocking")
+qc(o, "growth_mm_day within 0.1 of (end_tl_mm - start_tl_mm) / days", abs(p$growth_mm_day - (p$end_tl_mm - p$start_tl_mm) / p$days) > 0.1,
+   "FY2023 Table 7 (and 3 FY2024 Table 7 rows): the reported 'mm/day' equals the length change divided by 30, i.e. mm per 30 days")
+qc(o, "age_class present for harvested cycles", !is.na(p$harvest_date) & is.na(p$age_class), "lots with no year in the name")
+qc(o, "fiscal_year = fiscal year of the harvest date", !is.na(p$harvest_date) & p$fiscal_year != fiscal_year_of(p$harvest_date),
+   "fiscal_year is the year of the report that lists the cycle; reports also list cycles harvested just before or after their fiscal year")
+qc_table(o)
+```
+
+The script removed 44 duplicated cycles (the same completed cycle listed in two consecutive reports) and kept the later report's row; the first check above confirms
+none remain. The growth values that are not mm/day, by report table:
+
+```{r qc-pond-detail}
+p |>
+  filter(!is.na(growth_mm_day), !is.na(days), days > 0) |>
+  mutate(calculated = (end_tl_mm - start_tl_mm) / days, calculated_per_30_days = (end_tl_mm - start_tl_mm) / 30) |>
+  filter(abs(growth_mm_day - calculated) > 0.1) |>
+  summarise(rows = n(), matches_per_30_days = sum(abs(growth_mm_day - calculated_per_30_days) < 0.05), .by = c(fiscal_year, inventory_source))
+```
+
+```{r qc-pond-plots, fig.height = 4, fig.width = 8}
+p |>
+  filter(!is.na(survival_percent)) |>
+  ggplot(aes(factor(fiscal_year), survival_percent)) +
+  geom_boxplot(outlier.alpha = 0.4) +
+  geom_hline(yintercept = 100, linetype = "dashed") +
+  labs(x = "Fiscal year", y = "Survival (%)", title = "Pond cycle survival as reported")
+
+p |>
+  filter(!is.na(start_number), !is.na(end_number)) |>
+  ggplot(aes(start_number, end_number, colour = factor(fiscal_year))) +
+  geom_abline(slope = 1, linetype = "dashed") +
+  geom_point(alpha = 0.7) +
+  scale_x_log10(labels = scales::comma) + scale_y_log10(labels = scales::comma) +
+  labs(x = "Fish at stocking", y = "Fish at harvest", colour = "Fiscal year", title = "Fish at stocking and harvest (dashed line: no loss)")
+```
+
+### Missing values
+
+```{r qc-na-kfnfh-pond-growout}
+na_summary(KFNFH_pond_growout)
+```
+
+## KFNFH_pen_survival
+
+```{r qc-pens}
+n <- KFNFH_pen_survival |> filter(is.na(note))
+o <- "KFNFH_pen_survival"
+qc(o, "harvested <= stocked", n$number_harvested > n$number_stocked)
+qc(o, "survival within 0.2 points of harvested / stocked", abs(n$survival_percentage - 100 * n$number_harvested / n$number_stocked) > 0.2)
+qc(o, "rows with a note have no counts", !is.na(KFNFH_pen_survival$note) & !is.na(KFNFH_pen_survival$number_stocked))
+qc(o, "one row per pen, operation year and capture year", duplicated(n[c("operation_year", "pen_id", "captured_year")]))
+qc_table(o)
+```
+
+```{r qc-pens-plot, fig.height = 3.8, fig.width = 8}
+KFNFH_pen_survival |>
+  ggplot(aes(factor(operation_year), survival_percentage, fill = pen_type)) +
+  geom_col(position = position_dodge2(preserve = "single")) +
+  geom_text(data = KFNFH_pen_survival |> filter(!is.na(note)), aes(y = 2, label = "not operated"), angle = 90, hjust = 0, size = 3, position = position_dodge2(width = 0.9, preserve = "single")) +
+  labs(x = "Operation year", y = "Survival (%)", fill = NULL, title = "Net pen survival by pen (years with a note were not operated)")
+```
+
+### Missing values
+
+```{r qc-na-kfnfh-pen-survival}
+na_summary(KFNFH_pen_survival)
+```
+
+## KFNFH_fish_movements and KFNFH_cohort_age
+
+```{r qc-movements-cohort}
+mv <- KFNFH_fish_movements
+ca <- KFNFH_cohort_age
+o <- "KFNFH_fish_movements"
+qc(o, "n_fish > 0 when present", mv$n_fish <= 0)
+qc(o, "move_date within FY2021-FY2026 when present", mv$move_date < as.Date("2020-10-01") | mv$move_date > as.Date("2026-09-30"))
+qc(o, "to_facility is a pond or net pen code", !is.na(mv$to_facility) & !str_detect(mv$to_facility, "^([ABCP]\\d+|GERE|GERW)$"))
+qc(o, "source_text is kept for every row", is.na(mv$source_text))
+qc(o, "fish moved are within 10% of end_number (cycles where every destination has a number)", abs(cycle_moved$ratio - 1) > 0.1,
+   "the cell may leave out a destination or count fish differently; see the table in the section")
+qc_table(o)
+
+o <- "KFNFH_cohort_age"
+qc(o, "age_at_end is 0-4 or wild when the cohort has a single year", !is.na(ca$cohort_year) & !str_detect(ca$age_at_end, "^[0-4]$"))
+qc(o, "age_at_start is not older than age_at_end for single-year cohorts",
+   !is.na(ca$cohort_year) & !is.na(ca$age_at_start) & suppressWarnings(as.numeric(ca$age_at_start) > as.numeric(ca$age_at_end)))
+qc(o, "rows = pond cycles + net pen groups with a capture year + releases",
+   nrow(ca) != nrow(KFNFH_pond_growout) + sum(!is.na(KFNFH_pen_survival$captured_year)) + nrow(KFNFH_hatchery_release))
+qc_table(o)
+```
+
+### Missing values
+
+```{r qc-na-movements-cohort}
+na_summary(KFNFH_fish_movements)
+na_summary(KFNFH_cohort_age)
+```
+
+## KFNFH_mortality_events and KFNFH_mortality_events_summary
+
+```{r qc-events}
+ev <- KFNFH_mortality_events
+s <- KFNFH_mortality_events_summary
+o <- "KFNFH_mortality_events"
+tier_rule <- case_when(
+  !ev$mortality_event & !is.na(ev$percent_lost) & ev$percent_lost == 0 ~ "Near-miss (no mortality observed)",
+  !ev$mortality_event ~ "Non-mortality (escape/collection/reproductive)",
+  is.na(ev$percent_lost) ~ "Qualitative only (unquantified)",
+  ev$percent_lost > 70 ~ "Catastrophic (>70% loss)",
+  ev$percent_lost >= 30 ~ "Major (30-70% loss)",
+  ev$percent_lost >= 10 ~ "Moderate (10-30% loss)",
+  TRUE ~ "Minor (<10% loss)")
+qc(o, "one row per event_id", duplicated(ev$event_id))
+qc(o, "percent_lost between 0 and 100", ev$percent_lost < 0 | ev$percent_lost > 100)
+qc(o, "severity_tier follows percent_lost", ev$severity_tier != tier_rule)
+qc(o, "report_phrase present", is.na(ev$report_phrase))
+qc(o, "citation present and names the report of report_year", is.na(ev$citation) | !str_detect(ev$citation, paste0("FY", ev$report_year, " Annual Report")))
+qc(o, "loss_source present when percent_lost present", !is.na(ev$percent_lost) & is.na(ev$loss_source))
+qc(o, "event year 2019-2025 and not after its report", ev$year < 2019 | ev$year > ev$report_year)
+qc(o, "category is one of the six categories", !(ev$category %in% c("disease", "water_quality", "weather", "predation", "equipment", "other")))
+o2 <- "KFNFH_mortality_events_summary"
+qc(o2, "same events, in the same order, as KFNFH_mortality_events", s$event_id != ev$event_id)
+qc(o2, "percent_mortality = percent_lost", abs(coalesce(s$percent_mortality, -1) - coalesce(ev$percent_lost, -1)) > 0.05)
+qc(o2, "n_mortality >= 0", s$n_mortality < 0)
+qc_table(c(o, o2))
+```
+
+```{r qc-events-plot, fig.height = 6, fig.width = 8}
+ev |>
+  mutate(label = paste(event_id, str_trunc(location, 38)), label = fct_rev(fct_inorder(label))) |>
+  ggplot(aes(percent_lost, label, colour = severity_tier)) +
+  geom_point(size = 2.5, na.rm = TRUE) +
+  labs(x = "Percent lost", y = NULL, colour = NULL, title = "Mortality events: percent lost", subtitle = "events without a number are not plotted") +
+  theme(legend.position = "bottom", legend.direction = "vertical")
+
+ev |>
+  count(year, category) |>
+  ggplot(aes(factor(year), n, fill = category)) +
+  geom_col(position = "dodge") +
+  labs(x = "Year of event", y = "Events", fill = NULL, title = "Mortality events per year")
+```
+
+### Missing values
+
+`KFNFH_mortality_events`:
+
+```{r qc-na-kfnfh-mortality-events}
+na_summary(KFNFH_mortality_events)
+```
+
+`KFNFH_mortality_events_summary`:
+
+```{r qc-na-kfnfh-mortality-events-summary}
+na_summary(KFNFH_mortality_events_summary)
+```
+
+## KFNFH_mortality_pond_monthly
+
+```{r qc-monthly}
+m <- KFNFH_mortality_pond_monthly
+o <- "KFNFH_mortality_pond_monthly"
+qc(o, "mortality >= 0", m$mortality < 0)
+qc(o, "month is a calendar month (harvest records may have none)", !is.na(m$month) & !(m$month %in% month.abb))
+qc(o, "record_type is pond or harvest", !(m$record_type %in% c("pond", "harvest")))
+qc(o, "one pond record per pond, month and fiscal year", m$record_type == "pond" & duplicated(m[c("fiscal_year", "month", "pond", "record_type")]),
+   "FY2024 and FY2025 are daily log rows labelled with their month (the FY2023 sheet is one value per pond and month); sum by month before using as monthly counts")
+qc(o, "age_class present", is.na(m$age_class), "months with no pond cycle that has a stock date, and records with no month")
+qc_table(o)
+m |> filter(record_type == "pond") |> group_by(fiscal_year) |> summarise(months_with_records = n_distinct(month), records = n(), mortality = sum(mortality))
+```
+
+```{r qc-monthly-plot, fig.height = 4, fig.width = 8}
+m |>
+  filter(record_type == "pond", !is.na(month)) |>
+  group_by(fiscal_year, month) |>
+  summarise(mortality = sum(mortality), .groups = "drop") |>
+  mutate(month = factor(month, levels = c("Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"))) |>
+  ggplot(aes(month, mortality, group = fiscal_year, colour = factor(fiscal_year))) +
+  geom_line() + geom_point() +
+  scale_y_log10(labels = scales::comma) +
+  labs(x = NULL, y = "Recorded dead fish (log scale)", colour = "Fiscal year",
+       title = "Pond mortality by month (FY2024 has records from 1 Jan to 22 Sep only)")
+```
+
+### Missing values
+
+```{r qc-na-kfnfh-mortality-pond-monthly}
+na_summary(KFNFH_mortality_pond_monthly)
+```
+
+## KFNFH_capacity
+
+```{r qc-capacity}
+cp <- KFNFH_capacity
+o <- "KFNFH_capacity"
+qc(o, "ponds and acreage > 0", cp$n_outdoor_ponds <= 0 | cp$acreage_outdoor_ponds <= 0)
+qc(o, "one current row per fiscal year", cp$capacity_type == "current" & duplicated(cp$fiscal_year))
+qc(o, "indoor gallons present for current years", cp$capacity_type == "current" & is.na(cp$gallons_indoor), "FY2022 has no tank list in the report text that gives gallons")
+qc(o, "planned build-out larger than every current year", cp$capacity_type != "current" & cp$acreage_outdoor_ponds <= max(cp$acreage_outdoor_ponds[cp$capacity_type == "current"]))
+qc_table(o)
+```
+
+```{r qc-capacity-plot, fig.height = 3.5, fig.width = 8}
+cp |>
+  select(fiscal_year, capacity_type, acreage_outdoor_ponds, gallons_indoor) |>
+  pivot_longer(c(acreage_outdoor_ponds, gallons_indoor)) |>
+  ggplot(aes(factor(fiscal_year), value, fill = capacity_type)) +
+  geom_col(position = "dodge", na.rm = TRUE) +
+  facet_wrap(~name, scales = "free_y") +
+  labs(x = "Fiscal year", y = NULL, fill = NULL, title = "Hatchery capacity")
+```
+
+### Missing values
+
+```{r qc-na-kfnfh-capacity}
+na_summary(KFNFH_capacity)
+```
+
+## KFNFH_broodstock_spawned
+
+```{r qc-brood}
+b <- KFNFH_broodstock_spawned
+o <- "KFNFH_broodstock_spawned"
+qc(o, "total = females + males", b$total_spawned != b$females_spawned + b$males_spawned)
+qc(o, "capture year before the spawning year", b$capture_year >= b$spawn_fiscal_year)
+qc(o, "one row per species and capture year", duplicated(b[c("species", "capture_year_raw")]))
+qc(o, "species is SNS or LRS", !(b$species %in% c("SNS", "LRS")))
+qc_table(o)
+```
+
+```{r qc-brood-plot, fig.height = 3.5, fig.width = 8}
+b |>
+  select(species, capture_year_raw, females_spawned, males_spawned) |>
+  pivot_longer(c(females_spawned, males_spawned), names_to = "sex", names_pattern = "(.*)_spawned") |>
+  ggplot(aes(capture_year_raw, value, fill = sex)) +
+  geom_col(position = "dodge") +
+  facet_wrap(~species, scales = "free_x") +
+  labs(x = "Capture year", y = "Fish spawned", fill = NULL, title = "Captive broodstock spawned in spring 2025")
+```
+
+### Missing values
+
+```{r qc-na-kfnfh-broodstock-spawned}
+na_summary(KFNFH_broodstock_spawned)
+```
+
+## Checks across objects
+
+```{r qc-cross}
+o <- "across objects"
+early_vs_history <- KFNFH_adfluvial_early_rearing |>
+  group_by(fiscal_year) |>
+  summarise(collected_all_rows = sum(collected), collected_excl_restock = sum(collected[!restock]), .groups = "drop") |>
+  inner_join(KFNFH_historical_collection_release |> select(fiscal_year, larvae_collected), by = "fiscal_year") |>
+  mutate(closest_difference = pmin(abs(collected_all_rows - larvae_collected), abs(collected_excl_restock - larvae_collected)))
+qc(o, "early rearing collected (all rows, or without restock rows) equals larvae_collected of the historical table (within 1 fish)",
+   early_vs_history$closest_difference > 1, "FY2023: the report's table rows add to 6,037 and its total row says 6,036")
+coverage <- bind_rows(KFNFH_pond_growout |> filter(!is.na(harvest_date)) |> transmute(object = "KFNFH_pond_growout", fiscal_year, ok = !is.na(age_class)),
+                      KFNFH_mortality_pond_monthly |> transmute(object = "KFNFH_mortality_pond_monthly", fiscal_year, ok = !is.na(age_class))) |>
+  group_by(object, fiscal_year) |>
+  summarise(share_with_age_class = mean(ok), .groups = "drop")
+qc(o, "age_class present for at least 90% of records in every fiscal year", coverage$share_with_age_class < 0.9)
+qc(o, "every FY2025 pond cycle that was harvested has an age class", KFNFH_pond_growout$fiscal_year == 2025 & !is.na(KFNFH_pond_growout$harvest_date) & is.na(KFNFH_pond_growout$age_class))
+qc(o, "each FY2025 event cites the FY2025 report", ev$event_id >= "E29" & ev$report_year != 2025)
+qc_table(o)
+early_vs_history
+coverage |> pivot_wider(names_from = fiscal_year, values_from = share_with_age_class)
+```
+
+```{r qc-cross-plot, fig.height = 3.5, fig.width = 8}
+coverage |>
+  ggplot(aes(factor(fiscal_year), share_with_age_class, fill = object)) +
+  geom_col(position = "dodge") +
+  scale_y_continuous(labels = scales::percent, limits = c(0, 1)) +
+  labs(x = "Fiscal year", y = "Records with an age class", fill = NULL, title = "Records with an age class")
+```
+
+## QC summary
+
+```{r qc-summary}
+qc_all |>
+  summarise(checks = n(), pass = sum(status == "pass"), flagged = sum(status == "FLAG")) |>
+  knitr::kable()
+
+qc_all |>
+  group_by(object) |>
+  summarise(checks = n(), flagged = sum(status == "FLAG"), .groups = "drop") |>
+  knitr::kable(format = "html", table.attr = 'class="qc-counts"')
+
+# missing values: one line per object
+map(final_objects, \(o) {
+  x <- get(o)
+  tibble(object = o, rows = nrow(x), variables = ncol(x), variables_with_missing = sum(map_lgl(x, anyNA)),
+         cells_missing_pct = round(100 * mean(is.na(x)), 1))
+}) |>
+  list_rbind() |>
+  knitr::kable(format = "html", table.attr = 'class="qc-counts"')
+
+qc_all |>
+  filter(status == "FLAG") |>
+  select(object, check, failing = rows_failing, checked = rows_checked, note) |>
+  knitr::kable(format = "html", table.attr = 'class="qc-summary"')
+```
+
+# One age definition everywhere
+
+Every object with a pond or facility has an `age_class` calculated the same way (the monthly mortality takes it from the cohort table):
+
+```{r age-coverage}
+bind_rows(
+  KFNFH_pond_growout |> filter(!is.na(harvest_date)) |> transmute(object = "KFNFH_pond_growout", fiscal_year, matched = !is.na(age_class)),
+  KFNFH_mortality_pond_monthly |> transmute(object = "KFNFH_mortality_pond_monthly", fiscal_year, matched = !is.na(age_class))) |>
+  group_by(object, fiscal_year) |>
+  summarise(rows = n(), with_age = sum(matched), share = round(with_age / rows, 2), .groups = "drop")
+```
+
+Pond cycles still in progress (no harvest date, 38 cycles) have no age class and are left out of the pond grow-out counts above. Other records with no age class are lots with no year in the name (pond grow-out) and months with no pond cycle that has a stock date (monthly mortality).
+
+# Description of each data object
+
+All values come from the annual reports (PDF) or the hatchery workbooks (Excel).
+
+```{r object-descriptions}
+descriptions <- tribble(
+  ~object, ~contents, ~source, ~years,
+  "KFNFH_historical_collection_release", "Larvae collected, SARP, fingerling, fry and salvage releases with lengths, collection method, total released, broodstock on station",
+    "FY2025 report Tables 1 and 7; broodstock from the report text; collection totals confirmed in `2025 Larval Collection and Early Rearing Summary Data (version 1).xlsx`", "FY2016-2025",
+  "KFNFH_hatchery_release", "Every distribution or transfer of fish: date, species, lot, number, weight, lengths, source pond, destination",
+    "FY2021-FY2025 report tables (FY2025 Table 15); FY2025 matches `FY25 Fish Distribution.xlsx`", "FY2021-2025",
+  "KFNFH_LRS_ESS_adult_collection", "Wild adult Lost River suckers collected at East Side Springs: date, PIT tag, sex, gamete use, lengths, spring, family groups",
+    "FY2023-FY2025 report Table 2; FY2023-24 match the ESS metadata workbooks", "FY2023-2025",
+  "KFNFH_LRS_ESS_incubation_hatch", "Spawning crosses per female and incubation vessel: parents, family groups, eggs, fry, hatch percent",
+    "FY2024 and FY2025 report Table 3; both years match the ESS metadata workbooks", "FY2024-2025",
+  "KFNFH_adfluvial_early_rearing", "Larval culture-unit stocking: collected, mortality, stocked, survival, observed and unobserved mortality, `restock` flag",
+    "FY2023 Table 3, FY2024 Table 5, FY2025 Table 8; FY2024 identical to the early rearing workbook", "FY2023-2025",
+  "KFNFH_pond_growout", "One row per pond cycle: dates, numbers, weights, lengths, growth, harvest mortality, survival, disposition, `age_class`",
+    "FY2021-FY2025 report pond tables; FY2025 cycles validated against the Production Harvest workbook; `age_class` calculated from the lot name. A cycle listed in two consecutive reports is kept once (the later report's row)", "FY2021-2025",
+  "KFNFH_pen_survival", "Net pen survival and growth (Upper Klamath Lake and Gerber) with notes for years not operated",
+    "FY2024 Tables 9-10 and FY2025 Tables 13-14; identical to `nphistory.xlsx`", "Operation years 2019-2025",
+  "KFNFH_fish_movements", "One row per destination of the fish of a pond cycle: from pond, lot, to pond, net pen or other site, number of fish, date, the text it was read from",
+    "Production Harvest Data Sheet workbooks (Stocked To column; Disposition on the Spring 2022 sheet) and the FY2021 report pond tables", "FY2021-2025",
+  "KFNFH_cohort_age", "Every pond cycle, net pen group and release with its cohort and the age class at the start and end of the stay",
+    "FY2021-FY2025 report pond tables and Production Harvest workbooks (pond cycles); `nphistory.xlsx` and the FY2024-FY2025 net pen tables (net pens); FY2021-FY2025 distribution tables and `FY25 Fish Distribution.xlsx` (releases). Built from `KFNFH_pond_growout`, `KFNFH_pen_survival` and `KFNFH_hatchery_release`; the age class is calculated from the lot or capture year", "FY2021-2025",
+  "KFNFH_mortality_events", "37 events from the report narratives: category, location, cause, loss, confidence, severity tier, report year, report phrase, citation (report and page) and loss source",
+    "E01-E28: written from the FY2021-2024 report narratives and tables, each tied to a phrase in the report (`report_phrase`) and the report and page in `citation`; loss from `nphistory.xlsx`, larval rearing tables and workbook, report text. E29-E37: `FY25 KFNFH Annual Report.pdf`; loss from `KFNFH_WQ_FY2025_2 (version 1).xlsx` (daily sheets and Sheet1), the Production Harvest workbook, Table 8 and the report text. Tier: fixed rule on the loss", "Events 2019-2025",
+  "KFNFH_mortality_events_summary", "Simplified events: category, mortality yes/no, percent mortality, fish lost", "Same as `KFNFH_mortality_events`", "Events 2019-2025",
+  "KFNFH_mortality_pond_monthly", "Monthly pond mortality (and FY2023 harvest mortality) with age class",
+    "`Fiscal Year 23 WQ_Mortality reporting.xlsx`, `Copy of 2024_KFNFH_WQ.xlsx`, `KFNFH_WQ_FY2025_2 (version 1).xlsx`", "FY2023-2025 (FY2024 is 1 Jan-22 Sep only)",
+  "KFNFH_capacity", "Outdoor pond count and acreage, indoor tank gallons, current vs planned",
+    "Facility description of the FY2021-FY2025 reports (phrases checked against the report text); gallons summed from the tank lists", "FY2021-2025 plus planned build-out",
+  "KFNFH_broodstock_spawned", "Captive broodstock spawned in spring 2025 by capture year, species and sex",
+    "`FY25CaptiveBroodSpawning_FINAL.xlsx` (sheet All PIT), identical to FY2025 Table 4", "Spawned in 2025")
+
+descriptions |>
+  mutate(rows = map_int(object, ~ nrow(get(.x))),
+         cols = map_int(object, ~ ncol(get(.x)))) |>
+  relocate(rows, cols, .after = object)
+```
+
+# Draft data dictionary
+
+One row per column of each data object, with its type, a description and the source of its values. The descriptions are the ones in `R/data.R`
+(they are parsed from the roxygen blocks, so editing them there updates this table). The source is a PDF title, or a workbook and sheet name; a column
+whose source differs from the rest of its object has its own entry. This is a draft: columns that are not described in `R/data.R` show as "TODO", and
+the table is also written to `data-raw/hatchery_data_dictionary.csv`.
+
+```{r dictionary}
+pdf_2021 <- "20240912_FY2021_KFNFH_Annual_Report_Final.pdf"
+pdf_2022 <- "20240830_FY2022 KFNFH Annual Report_Final.pdf"
+pdf_2023 <- "20240801_FY2023 KFNFH Annual Report_Final.pdf"
+pdf_2024 <- "20250619_FY2024 KFNFH Annual Report_Final Draft.pdf"
+pdf_2025 <- "FY25 KFNFH Annual Report.pdf"
+
+dictionary_objects <- final_objects
+get_object <- function(name) get(name)
+
+# descriptions: \item \code{column}: text lines of each roxygen block in R/data.R
+parse_data_r <- function(path) {
+  lines <- readLines(path)
+  starts <- which(str_detect(lines, "^#' @name "))
+  map2(starts, c(starts[-1] - 1, length(lines)), function(from, to) {
+    block <- lines[from:to]
+    items <- block[str_detect(block, "^#'\\s+\\\\item \\\\code\\{")]
+    tibble(object = str_trim(str_remove(lines[from], "^#' @name ")),
+           column = str_trim(str_match(items, "\\\\code\\{([^}]+)\\}")[, 2]),
+           description = items |>
+             str_remove("^#'\\s+\\\\item \\\\code\\{[^}]+\\}:?\\s*") |>
+             str_replace_all("\\\\code\\{([^}]*)\\}", "`\\1`") |>
+             str_replace_all("\\\\%", "%") |>
+             str_squish())
+  }) |> list_rbind()
+}
+documented <- parse_data_r(here::here("R/data.R"))
+
+# default source of each object
+source_default <- tribble(
+  ~object, ~source,
+  "KFNFH_historical_collection_release", paste0(pdf_2025, ", Table 1"),
+  "KFNFH_hatchery_release", paste0(pdf_2025, ", Table 15; ", pdf_2024, ", Table 11; ", pdf_2023, ", Table 10; ", pdf_2022, ", Table 5; ", pdf_2021, ", Table 2"),
+  "KFNFH_LRS_ESS_adult_collection", paste0(pdf_2025, ", Table 2; ", pdf_2024, ", Table 2; ", pdf_2023, ", Table 2"),
+  "KFNFH_LRS_ESS_incubation_hatch", paste0(pdf_2024, ", Table 3 (FY2024 rows); FY25 METADATA FOR ALL ESS LRS FISH SPAWNED.xlsx, sheet 'FY25 Tables Reorganized ' (FY2025 rows, same as ", pdf_2025, ", Table 3)"),
+  "KFNFH_adfluvial_early_rearing", paste0(pdf_2025, ", Table 8; ", pdf_2024, ", Table 5; ", pdf_2023, ", Table 3"),
+  "KFNFH_pond_growout", paste0(pdf_2025, ", Tables 10-12; ", pdf_2024, ", Tables 6-8; ", pdf_2023, ", Tables 5-7; ", pdf_2022, ", Tables 2-4; ", pdf_2021, ", Tables 3-4"),
+  "KFNFH_pen_survival", paste0("nphistory.xlsx, sheets UKL and Gerber (same as ", pdf_2025, ", Tables 13-14 and ", pdf_2024, ", Tables 9-10)"),
+  "KFNFH_fish_movements", "Production Harvest Data Sheet.xlsx (FY2024 folder), sheets Spring 2022, SPRING 2023, FALL 2023, SPRING 2024, column Stocked To (Disposition OUT OF ORDER on Spring 2022); FY2025 Production Harvest Data Sheet_20251107.xlsx, sheets FALL 2024, Spring 2025, Fall 2025, column Stocked To/#; FY2021 report tables 3-4, disposition column",
+  "KFNFH_cohort_age", paste0("Pond cycles: ", pdf_2025, ", Tables 10-12; ", pdf_2024, ", Tables 6-8; ", pdf_2023, ", Tables 5-7; ", pdf_2022, ", Tables 2-4; ", pdf_2021, ", Tables 3-4 (and the Production Harvest Data Sheet workbooks). Net pens: nphistory.xlsx, sheets UKL and Gerber. Releases: ", pdf_2025, ", Table 15; ", pdf_2024, ", Table 11; ", pdf_2023, ", Table 10; ", pdf_2022, ", Table 5; ", pdf_2021, ", Table 2. Age class calculated from the lot or capture year"),
+  "KFNFH_mortality_events", paste0(pdf_2021, ", ", pdf_2022, ", ", pdf_2023, ", ", pdf_2024, " (narrative sections, E01-E28); ", pdf_2025, " (narrative, E29-E37)"),
+  "KFNFH_mortality_events_summary", "Derived from KFNFH_mortality_events (same sources)",
+  "KFNFH_mortality_pond_monthly", "Fiscal Year 23 WQ_Mortality reporting.xlsx, sheets Pond Mortality FY 23 and Harvest Morts FY 23; Copy of 2024_KFNFH_WQ.xlsx, sheets JanToMar_WQ, ApriltoJune_WQ, JulytoSeptember_WQ; KFNFH_WQ_FY2025_2 (version 1).xlsx, sheets OctobertoDecember_WQ, JantoMar_WQ, AprtoJun_WQ, JulytoSept_WQ",
+  "KFNFH_capacity", paste0(pdf_2021, ", ", pdf_2022, ", ", pdf_2023, ", ", pdf_2024, ", ", pdf_2025, " (facility description sections)"),
+  "KFNFH_broodstock_spawned", "FY25CaptiveBroodSpawning_FINAL.xlsx, sheet All PIT (same as FY25 KFNFH Annual Report.pdf, Table 4)"
+)
+
+# columns whose source differs from the rest of the object ("*" = every object)
+source_overrides <- tribble(
+  ~object, ~column, ~source,
+  "*", "hatchery_name", "constant (KFNFH)",
+  "KFNFH_historical_collection_release", "larvae_collected", paste0(pdf_2025, ", Table 7 (confirmed in 2025 Larval Collection and Early Rearing Summary Data (version 1).xlsx, sheet 2025 Sucker Early Rearing)"),
+  "KFNFH_historical_collection_release", "primary_collection_method", paste0(pdf_2025, ", Table 7"),
+  "KFNFH_historical_collection_release", "total_released", paste0(pdf_2025, ", Table 1 (sum of the four release columns)"),
+  "KFNFH_historical_collection_release", "broodstock_on_station_raw", paste0("report text of ", pdf_2021, ", ", pdf_2023, ", ", pdf_2024, ", ", pdf_2025),
+  "KFNFH_historical_collection_release", "broodstock_cohort_years", paste0("report text of ", pdf_2021, ", ", pdf_2023, ", ", pdf_2024, ", ", pdf_2025),
+  "KFNFH_historical_collection_release", "new_broodstock_reported", paste0("report text of ", pdf_2021),
+  "KFNFH_historical_collection_release", "broodstock_on_station", "parsed from broodstock_on_station_raw",
+  "KFNFH_hatchery_release", "dispo_date", paste0("report tables above; FY2025 also in FY25 Fish Distribution.xlsx, sheet FY25 Distribution Table"),
+  "KFNFH_LRS_ESS_incubation_hatch", "program", "METADATA FOR ALL ESS LRS FISH SPAWNED (version 1).xlsx and FY25 METADATA FOR ALL ESS LRS FISH SPAWNED.xlsx (constant: Wild ESS Spawning)",
+  "KFNFH_LRS_ESS_incubation_hatch", "species", "same workbooks (constant: LRS)",
+  "KFNFH_LRS_ESS_incubation_hatch", "family_groups", "METADATA FOR ALL ESS LRS FISH SPAWNED (version 1).xlsx, sheet FY24 Tables Reorganized - MY (number of males); FY25 METADATA FOR ALL ESS LRS FISH SPAWNED.xlsx, sheet FY25 Tables Reorganized ",
+  "KFNFH_adfluvial_early_rearing", "restock", "derived from culture_unit",
+  "KFNFH_adfluvial_early_rearing", "date", "first date in date_raw",
+  "KFNFH_pond_growout", "fiscal_year", "fiscal year of the report table",
+  "KFNFH_pond_growout", "source", "derived (annual_report_table or production_harvest_workbook)",
+  "KFNFH_pond_growout", "age_class", "derived (fiscal year the cycle ended minus the year in the lot name)",
+  "KFNFH_pen_survival", "note", "nphistory.xlsx, sheets UKL and Gerber (text in the stock columns)",
+  "KFNFH_mortality_events", "report_year", "derived (report whose narrative describes the event)",
+  "KFNFH_mortality_events", "report_phrase", "phrase copied from the report named by report_year (the sources of the events table)",
+  "KFNFH_mortality_events", "citation", "report and page(s) of the annual report PDFs that the event is taken from (the text of the row)",
+  "KFNFH_mortality_events", "percent_lost", "see loss_source: nphistory.xlsx (sheets UKL, Gerber); 2024 Larval Collection and Early Rearing Summary Data.xlsx, sheet Pond Performance Table 4 Report; FY2023 report tables; report text; E29-E37: KFNFH_WQ_FY2025_2 (version 1).xlsx (Sheet1 and the daily sheets), FY2025 Production Harvest Data Sheet_20251107.xlsx, FY25 report Table 8",
+  "KFNFH_mortality_events", "severity_tier", "derived from percent_lost by a fixed rule",
+  "KFNFH_mortality_events", "loss_source", "see percent_lost",
+  "KFNFH_mortality_events_summary", "percent_mortality", "see KFNFH_mortality_events$loss_source",
+  "KFNFH_mortality_events_summary", "n_mortality", "see KFNFH_mortality_events$loss_source",
+  "KFNFH_mortality_pond_monthly", "record_type", "derived (pond: daily or monthly pond sheets; harvest: sheet Harvest Morts FY 23)",
+  "KFNFH_mortality_pond_monthly", "age_class", "derived from KFNFH_cohort_age (pond cycles in the pond that month)",
+  "KFNFH_capacity", "gallons_indoor", paste0("tank lists in ", pdf_2021, ", ", pdf_2022, ", ", pdf_2023, ", ", pdf_2024, ", ", pdf_2025),
+  "KFNFH_broodstock_spawned", "spawn_fiscal_year", "constant (2025)"
+)
+
+data_dictionary <- map(dictionary_objects, function(o) {
+  x <- get_object(o)
+  tibble(object = o, column = names(x), type = map_chr(x, \(v) class(v)[1]))
+}) |>
+  list_rbind() |>
+  left_join(documented, by = c("object", "column")) |>
+  left_join(source_default, by = "object") |>
+  left_join(source_overrides |> filter(object != "*") |> rename(source_override = source), by = c("object", "column")) |>
+  left_join(source_overrides |> filter(object == "*") |> select(column, source_all = source), by = "column") |>
+  transmute(object, column, type,
+            description = coalesce(description, "TODO: not described in R/data.R"),
+            data_source = coalesce(source_override, source_all, source))
+
+write_csv(data_dictionary, here::here("data-raw", "hatchery_data_dictionary.csv"))
+
+# described in R/data.R but not a column of the object, and columns with no description
+documented |>
+  filter(object %in% dictionary_objects) |>
+  anti_join(data_dictionary, by = c("object", "column"))
+data_dictionary |> filter(str_detect(description, "^TODO")) |> select(object, column)
+```
+
+```{r dictionary-tables, results = "asis"}
+for (o in dictionary_objects) {
+  cat("\n\n## ", o, "\n\n", sep = "")
+  data_dictionary |>
+    filter(object == o) |>
+    select(column, type, description, data_source) |>
+    knitr::kable(format = "html", table.attr = 'class="dict"') |>
+    print()
+}
+```
+
+# Remaining gaps
+
+| Gap | Why it is still open | Next step |
+|---|---|---|
+| Early rearing FY2021 and FY2022 | The FY2021 and FY2022 reports have no culture-unit table | Ask USFWS for the larval tank records for those years |
+| FY2022 pond tables 3-4 | Embedded as images and OCR'd earlier; `inventory_source` is `NA` for those rows | Re-check against the source images |
+| FY2021 pond PIT tag study (Tables 5-7) and FY2022 historical PIT detections (Table 6) | Different table types, never imported | Decide if the model needs them |
+| Weight gain and feed conversion | FY2025 start and end weights are now in `KFNFH_pond_growout` (from the report tables), but weight gain is not reported for FY2025 (left `NA`), and feed conversion is not extracted for any year | Compute weight gain from the start and end weights if needed; extract feed conversion from the workbooks (not in the repository) |
+| Mortality events E29-E37 (FY2025) | Added from the FY2025 report, the WQ workbook and `Sheet1`. E30, E32 and E37 have no number at risk, and `Sheet1` and the Production Harvest workbook disagree on the C1/C2 harvest | Ask USFWS which harvest count is right and for the number of fish in the tanks after the September harvest |
+| Fish movements: Fall 2021 and Fall 2022 sheets | The FY2021 and Fall 2022 Production Harvest sheets have no destination column with text (Fall 2022 has a `Dispo` column that is empty), and the FY2022 to FY2025 report tables give no destination | Ask USFWS for the pond-to-pond records for those seasons |
+| Fish movements: larvae to ponds | The early rearing tables give culture units but not the pond the fish went to, so a cohort can't be followed from the tanks | Ask USFWS for the tank-to-pond transfers |
+| Mortality spreadsheets FY2024 Oct-Dec 2023 | Quarter not found | Ask USFWS |
+| Cohort age: start age for the FY2021 report cycles | The FY2021 report tables give no stock dates, so `start_date` and `age_at_start` are `NA` for those cycles | Ask USFWS for the FY2021 stock dates |
+| Magnitudes for qualitative mortality events (including E22, E11, E14 and E16) | Most events have no number in the reports or workbooks | Ask USFWS or agree how to assign severity numerically |
+
+# Notes for the model
+
+* `KFNFH_pond_growout` is the stage-specific growth and survival table (mm/day, survival percent, by pond and season, FY2021-2025).
+* `KFNFH_mortality_events` and `KFNFH_mortality_pond_monthly` give event frequency/severity and routine mortality.
+* `KFNFH_capacity` bounds production; `KFNFH_historical_collection_release` and `KFNFH_hatchery_release` give inputs and outputs by year.
+* In `KFNFH_mortality_pond_monthly`, `age_class` has multi-age values (`"0/2"`) where a pond held cycles of several age groups in a month. Decide how to allocate mortality in those cases before using it as a stage.
+
+```{r session, echo = FALSE}
+sessionInfo()
+```
