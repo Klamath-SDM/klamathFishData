@@ -1,29 +1,56 @@
-#' @title Modeled Fisheries Data
-#' @name fisheries_model_estimates
+#' @title Salmon Juvenile Abundance
+#' @name salmon_juvenile_abundance
 #' @description This dataset compiles modeled estimates and credible intervals
 #' from fisheries models such as abundance and survival estimates. This dataset
 #' is not species or location specific. This is a key dataset!
-#' Data exploration was done in R Markdowns which also contain information on data source.
-#' {Modeled Fisheries Data R Markdown}{https://github.com/Klamath-SDM/KlamathEDA/blob/main/data-raw/fisheries/modeled/modeled-fisheries-data.md}
-#' @format A tibble with 1051 rows and 14 columns
+#' In the future, this dataset may be broken down into separate tables like what
+#' was done for spawner escapement.
+#' @format A tibble with 122 rows and 14 columns
 #' \itemize{
-#'   \item \code{julian_year}: julian year. Min/max years vary by location, species, type of estimate. Adult escapement is reported for a brood year which is the same as the julian year. Juvenile abundance typically spans multiple years (e.g. Oct 2020 - May 2021) and would be assigned a julian year for the latter part of this period.
-#'   \item \code{stream}: stream ("bogus creek", "iron gate hatchery  (igh)", "klamath river", "lower klamath river", "other tributaries", "salmon river", "scott river", "shasta river", "trinity river", "trinity river hatchery (trh)", "upper klamath lake", "yurok and hoopa reservation tribs")
-#'   \item \code{species}: species (coho salmon, winter steelhead, steelhead, fall chinook salmon, spring chinook salmon, lost river lakeshore spawning, lost river river spawning, shortnose)
-#'   \item \code{origin}: origin (natural, hatchery, mixed, unknown)
-#'   \item \code{lifestage}: lifestage category (parr, smolts, adult, yoy, age 1+, age 2+, adult and subadult, spawner)
+#'   \item \code{julian_year}: julian year (2001-2022). Min/max years vary by location, species, type of estimate. Juvenile abundance typically spans multiple years (e.g. Oct 2020 - May 2021) and would be assigned a julian year for the latter part of this period.
+#'   \item \code{location}: location of data collection or estimate. This may be a river, wetland or marsh, hatchery, etc
+#'   \item \code{species}: species (coho salmon, steelhead, fall chinook salmon)
+#'   \item \code{origin}: origin (wild)
+#'   \item \code{lifestage}: lifestage category (yoy, age 1+, age 2+, smolt)
+#'   \item \code{sex}: sex, if applicable to model (NA)
+#'   \item \code{estimate_type}: type of model estimate (abundance, count)
+#'   \item \code{estimate}: value of estimate
+#'   \item \code{confidence_interval}: type of confidence or credible interval (e.g., 95)
+#'   \item \code{lower_bounds_estimate}: value of lower bounds estimate, if applicable
+#'   \item \code{upper_bounds_estimate}: value of upper bounds estimate, if applicable
+#'   \item \code{estimation_method}: type of model used (mark-recapture)
+#'   \item \code{is_complete_estimate}: data included in model are complete. In some cases, it is known that an
+#'   estimate is not complete, otherwise it is assumed that estimate is complete.
+#'   \item \code{source}: describes where data were sourced from. Currently there is one data source: (1) California Department of Fish and Wildlife (CDFW)
+#'   \href{https://www.nrm.dfg.ca.gov/documents/ContextDocs.aspx?cat=Fisheries--AnadromousSalmonidPopulationMonitoring}{document library}
+#'   }
+'salmon_juvenile_abundance'
+
+#' @title Sucker Adult Estimates
+#' @name sucker_adult_estimates
+#' @description This dataset compiles modeled estimates and credible intervals
+#' from fisheries models such as abundance and survival estimates. This dataset
+#' is not species or location specific. This is a key dataset!
+#' In the future, this dataset may be broken down into separate tables like what
+#' was done for spawner escapement.
+#' @format A tibble with 265 rows and 13 columns
+#' \itemize{
+#'   \item \code{julian_year}: julian year (1999-2022). Min/max years vary by location, species, type of estimate.
+#'   \item \code{location}: location of data collection or estimate. This may be a river, wetland or marsh, hatchery, etc
+#'   \item \code{species}: species (lost river sucker lakeshore spawning, lost river sucker river spawning, shortnose sucker)
+#'   \item \code{lifestage}: lifestage category (adult)
 #'   \item \code{sex}: sex, if applicable to model (female, male, NA)
-#'   \item \code{estimate_type}: type of model estimate (abundance, redd abundance, count, apparent survival, seniority probability, annual population rate of change)
+#'   \item \code{estimate_type}: type of model estimate (apparent survival, seniority probability, annual population rate of change)
 #'   \item \code{estimate}: value of estimate
 #'   \item \code{confidence_interval}: type of confidence or credible interval (e.g., 80, 95)
 #'   \item \code{lower_bounds_estimate}: value of lower bounds estimate, if applicable
 #'   \item \code{upper_bounds_estimate}: value of upper bounds estimate, if applicable
-#'   \item \code{estimation_method}: type of model used
+#'   \item \code{estimation_method}: type of model used (Cormack-Jolly-Seber model)
 #'   \item \code{is_complete_estimate}: data included in model are complete. In some cases, it is known that an
 #'   estimate is not complete, otherwise it is assumed that estimate is complete.
-#'   \item \code{source}: describes where data were sourced from. Currently there are 4 sources: (1) California Department of Fish and Wildlife (CDFW) document library (https://www.nrm.dfg.ca.gov/documents/ContextDocs.aspx?cat=Fisheries--AnadromousSalmonidPopulationMonitoring), (2) CDFW Megatable (https://wildlife.ca.gov/Conservation/Fishes/Chinook-Salmon/Anadromous-Assessment), (3) Gough, S. A., C. Z. Romberger, and N. A. Som. 2018. Fall Chinook Salmon Run Characteristics and Escapement in the Mainstem Klamath River below Iron Gate Dam, 2017. U.S. Fish and Wildlife Service. Arcata Fish and Wildlife Office, Arcata Fisheries Data Series Report Number DS 2018–58, Arcata, California (https://www.fws.gov/sites/default/files/documents/2017%20klamath%20spawn%20survey%20report%202017%20FINAL1.pdf), (4) Hewitt, D.A., Janney, E.C., Hayes, B.S., and Harris, A.C., 2018, Status and trends of adult Lost River (Deltistes luxatus) and shortnose (Chasmistes brevirostris) sucker populations in Upper Klamath Lake, Oregon, 2017: U.S. Geological Survey Open-File Report 2018-1064, 31 p., https://doi.org/10.3133/ofr20181064. (https://pubs.usgs.gov/of/2018/1064/ofr20181064.pdf)
+#'   \item \code{source}: describes where data were sourced from. Currently there is one source: Hewitt, D.A., Janney, E.C., Hayes, B.S., and Harris, A.C., 2018, Status and trends of adult Lost River (Deltistes luxatus) and shortnose (Chasmistes brevirostris) sucker populations in Upper Klamath Lake, Oregon, 2017: \href{U.S. Geological Survey Open-File Report 2018-1064, 31 p}{https://pubs.usgs.gov/of/2018/1064/ofr20181064.pdf}.
 #'   }
-'fisheries_model_estimates'
+'sucker_adult_estimates'
 
 #' @title Data Location Lookup
 #' @name data_location_lookup
@@ -32,111 +59,128 @@
 #' data collection locations.
 #' @format A tibble with 35 rows and 10 columns
 #' \itemize{
-#'   \item \code{stream}: stream
+#'   \item \code{location}: location of data collection or estimate. This may be a river, wetland or marsh, hatchery, etc
 #'   \item \code{sub_basin}: sub-basin name (upper klamath, lower klamath, trinity, shasta)
 #'   \item \code{data_type}: type of data (rst, hatchery, redd/carcass survey)
 #'   \item \code{site_name}: name of site such as a RST site or hatchery location (big bar, shasta river, bogus, willow creek, pear creek, weitchpec, iron gate fish hatchery, trinity river hatchery, klamath hatchery)
 #'   \item \code{agency}: agency that manages/monitors the site (arcata fwo, arcata fwo, cdfw, hoopa tribal fisheries department, karuk, yurok tribal fisheries program, usfws)
 #'   \item \code{latitude}: longitude
 #'   \item \code{longitude}: longitude
-#'   \item \code{downstream_latitude}: Latitude of the downstream end of the feature's extent, applicable for survey extents
-#'   \item \code{downstream_longitude}: Longitude of the downstream end of the feature's extent, applicable for survey extents
+#'   \item \code{downstream_latitude}: latitude of the downstream end of the feature's extent, applicable for survey extents
+#'   \item \code{downstream_longitude}: longitude of the downstream end of the feature's extent, applicable for survey extents
 #'   \item \code{link}: web link containing more information about fisheries locations
 #'   }
 'data_location_lookup'
 
-#' @title Megatable - IN DEVELOPMNENT
-#' @name megatable
-#' @description Digital version of [CDFW's Megatable](https://wildlife.ca.gov/Conservation/Fishes/Chinook-Salmon/Anadromous-Assessment)
-#' @format A tibble with 4077 rows and 7 columns
+#' @title Salmon Spawner Escapement
+#' @name salmon_spawner_escapement
+#' @description Digital version of the Spawner Escapement sections from
+#' \href{https://nrm.dfg.ca.gov/FileHandler.ashx?DocumentID=122850&inline}{CDFW's Fall Chinook Salmon Megatable}
+#' and
+#' \href{https://casalmon.org/wp-content/uploads/2024/08/FINAL-2023-Spring-Chinook-Megatable-v.28-Mar-2024.pdf}{CDFW's Spring Chinook Salmon Megatable},
+#' as well as other data sources for Coho Salmon and Steelhead not included in the Megatables.
+#'
+#' Coho Salmon, Steelhead, and Winter Steelhead data come from the California
+#' Department of Fish and Wildlife (CDFW)
+#' \href{https://www.nrm.dfg.ca.gov/documents/ContextDocs.aspx?cat=Fisheries--AnadromousSalmonidPopulationMonitoring}{document library}.
+#'
+#' The most recent data come from digitized tables (Table 5 and Appendix G)
+#' from the
+#' \href{https://www.pcouncil.org/documents/2026/06/2026-run-klamath-river-fall-chinook-salmon-age-specific-escapement-river-harvest-and-run-size-estimates-2026-run-may-20-2026.pdf/}{Klamath River Technical Team Report 2026},
+#' obtained from the Pacific Fishery Management Council.
+#'
+#' Table 2 of ODFW Summary of field data collection efforts for Fall-run Chinook Salmon in the Oregon portion of the Mainstem Klamath River during the 2025 Season and
+#' Table 3 of ODFW Summary of field data collection efforts for fall-run Chinook Salmon in Spencer Creek, Oregon during the 2025 season
+#'
+#' @format A tibble with 1,858 rows and 13 columns
 #' \itemize{
-#'   \item \code{location}:
-#'   \item \code{subsection}:
-#'   \item \code{section}:
-#'   \item \code{species}:
-#'   \item \code{lifestage}:
-#'   \item \code{year}:
-#'   \item \code{value}:
+#'   \item \code{location}: River, hatchery, or basin where escapement is reported. ("bogus creek", "hoopa and yurok tributaries", "hoopa trinity tributaries", "iron gate hatchery", "klamath basin", "klamath river", "lower klamath river", "other klamath tributaries", "other klamath trinity tributaries", "other trinity tributaries", "salmon river", "scott river", "shasta river", "south fork trinity river", "trinity basin", "trinity river", "trinity river hatchery", "yurok klamath tributaries")
+#'   \item \code{year}: Return year of the escapement estimate/count (1978-2025)
+#'   \item \code{species}: Species name (spring chinook salmon, fall chinook salmon, coho salmon, winter steelhead, steelhead)
+#'   \item \code{origin}: Fish origin category (hatchery, wild, mixed, unknown)
+#'   \item \code{lifestage}: Life stage reported (adult, adult and subadult, grilse). In a few cases adult and subadult were not distinguished and are grouped together.
+#'   \item \code{estimate_type}: Type of estimate reported (abundance, count, redd abundance). Work in progress as these have not been filled in yet for the data from the Megatables.
+#'   \item \code{estimate}: value of estimate
+#'   \item \code{confidence_interval}: type of confidence or credible interval (e.g., 95)
+#'   \item \code{lower_bounds_estimate}: value of lower bounds estimate, if applicable
+#'   \item \code{upper_bounds_estimate}: value of upper bounds estimate, if applicable
+#'   \item \code{estimation_method}: type of model used (count, net upstream count, upstream count, expanded redd estimate, mark recapture. Work in progress as these have not been filled in yet for the data from the Megatables.)
+#'   \item \code{is_complete_estimate}: data included in model are complete. In some cases, it is known that an
+#'   estimate is not complete, otherwise it is assumed that estimate is complete.
+#'   \item \code{source}: describes where data were sourced from. Currently there are 3 sources: (1) California Department of Fish and Wildlife (CDFW)
+#'   \href{https://www.nrm.dfg.ca.gov/documents/ContextDocs.aspx?cat=Fisheries--AnadromousSalmonidPopulationMonitoring}{document library},
+#'   (2) CDFW Spring and Fall Megatables, and (3) Klamath River Technical Team Report 2026 obtained from Pacific Fishery Management Council
 #'   }
-'megatable'
+'salmon_spawner_escapement'
 
-
-
-#' @title Avian Predation PIT-tag Recoveries
-#' @name predation_estimates_avian_pit_tag
-#' @description Data on the number of PIT-tagged fish that were available and subsequently
-#' recovered on piscivorous waterbird colonies in the Upper Klamath Basin
-#' during 2021–2023.
-#' This dataset corresponds to **Table 2** in the report:
-#' *Avian Predation on Upper Klamath Basin Suckers, 2021–2023 Summary Report*.
-#' It provides raw counts of tagged fish released and tags recovered, by species
-#' group, year, and location.
-#' @format A tibble with 39 rows and 9 columns
+#' @title Salmon Harvest
+#' @name salmon_harvest
+#' @description Digital version of \href{https://wildlife.ca.gov/Conservation/Fishes/Chinook-Salmon/Anadromous-Assessment}{CDFW's Spring Chinook Salmon Megatable},
+#' \href{https://casalmon.org/wp-content/uploads/2024/08/FINAL-2023-Spring-Chinook-Megatable-v.28-Mar-2024.pdf}{CDFW's Spring Chinook Salmon Megatable} River Harvest sections,
+#' and digitized tables (table 5 and appedix G.) from the
+#' \href{https://www.pcouncil.org/documents/2026/06/2026-run-klamath-river-fall-chinook-salmon-age-specific-escapement-river-harvest-and-run-size-estimates-2026-run-may-20-2026.pdf/}{Klamath River Technical Team Report 2026} obtained from Pacific Fishery Management Council
+#' @format A tibble with 392 rows and 8 columns
 #' \itemize{
-#'   \item{location}{Waterbody where releases occurred (upper klamath lake, clear lake reservoir, etc.)}
-#'   \item{species}{Fish species (e.g., lost river sucker, shortnose and klamath largescale suckers, sucker juveniles, chinook salmon,
-#'   sucker, klamath largescale sucker, shortnose sucker)}
-#'   \item{life_stage}{Fish life stage (e.g. adult, juvenile)}
-#'   \item{origin}{Origin of realeased fish (e.g. wild, hatchery)}
-#'   \item{release_season}{Season when fish were realeased (e.g. spring_summer, fall_winter)}
-#'   \item{sarp_program}{Wheather fish are part of the Sucker Assisted Rearing Program (SARP) (e.g. TRUE, FALSE)}
-#'   \item{year}{Year of release / monitoring (2021–2023)}
-#'   \item{available}{Number of PIT-tagged fish available to predators}
-#'   \item{recovered}{Number of PIT-tags recovered on piscivorous waterbird colonies during the 2021–2023 breeding seasons}
-#' }
-#'
-#' @source Bird Research Northwest (2023)
-#' [Avian Predation on UKB Suckers 2021–2023 Summary Report](https://www.birdresearchnw.org/Avian%20Predation%20on%20UKB%20Suckers_Summary%20Report%202021-2023.pdf)
-"predation_estimates_avian_pit_tag"
+#'   \item \code{location}: location of data collection or estimate. This may be a river, wetland or marsh, hatchery, etc (klamath river, trinity river)
+#'   \item \code{year}: return year of the escapement estimate/count (1978-2025)
+#'   \item \code{species}: species name (spring chinook salmon, fall chinook salmon)
+#'   \item \code{origin}: fish origin category (unknown)
+#'   \item \code{lifestage}: life stage reported (adult, grilse)
+#'   \item \code{estimate_type}: type of estimate reported. Work in progress as these have not been filled in yet for the data from the Megatables.
+#'   \item \code{estimate}: value of estimate
+#'   \item \code{source}: describes where data were sourced from. Currently data comes from: CDFW Spring and Fall Megatables, and Klamath River Technical Team Report 2026 obtained from Pacific Fishery Management Council
+#'   }
+'salmon_harvest'
 
-
-#' @title Avian Predation Estimates on Wild Suckers
-#' @name predation_estimates_wild
-#' @description Estimates of predation rates (with 95% credible intervals) on PIT-tagged
-#' wild suckers (Lost River, Shortnose, Klamath Largescale, SNS–KLS hybrids,
-#' and wild juveniles) by piscivorous colonial waterbirds in the Upper Klamath
-#' Basin.
-#' This dataset corresponds to **Table 3** of the 2021–2023 summary report.
-#' Values are adjusted for PIT-tag detection and deposition probabilities.
-#' @format A tibble with 21 rows and 8 columns
+#' @title In-River Run Estimates
+#' @name inriver_run_estimates
+#' @description Digital version of \href{https://wildlife.ca.gov/Conservation/Fishes/Chinook-Salmon/Anadromous-Assessment}{CDFW's Spring Chinook Salmon Megatable}, \href{https://casalmon.org/wp-content/uploads/2024/08/FINAL-2023-Spring-Chinook-Megatable-v.28-Mar-2024.pdf}{CDFW's Spring Chinook Salmon Megatable}
+#' and tables (table 5 and appedix G.) from the \href{https://www.pcouncil.org/documents/2026/06/2026-run-klamath-river-fall-chinook-salmon-age-specific-escapement-river-harvest-and-run-size-estimates-2026-run-may-20-2026.pdf/}{Klamath River Technical Team Report 2026} obtained from Pacific Fishery Management Council River Harvest sections.
+#' The fall Chinook figures represent basin-wide in-river totals (i.e. fish entering the river mouth, distinct from the ocean harvest tracked separately by the Klamath Ocean Harvest Model). The spring Chinook figures are mark-recapture-based run-size estimates
+#'   primarily upstream of the Junction City Weir on the Trinity River and do not include harvest below the weir or spawning in the South Fork Trinity, North Fork Trinity, or New River. All estimates are provided by CDFW unless otherwise noted; tribal harvest
+#'   figures for fall Chinook are provided by the Hoopa Valley Business Council Fisheries Department (HVBCFD) and the Yurok Tribal Fisheries Department.
+#' @format A tibble with 182 rows and 8 columns
 #' \itemize{
-#'   \item{location}: Waterbody (upper klamath lake, clear lake reservoir)
-#'   \item{species}: Fish species (e.g., lost river sucker, shortnose and klamath largescale suckers, sucker juveniles,
-#'   sucker, klamath largescale sucker, shortnose sucker)
-#'   \item{life_stage}: Fish life stage (e.g. adult, juvenile)
-#'   \item{origin}: Origin of released fish (e.g. wild)
-#'   \item{year}: Year (2021–2023)
-#'   \item{estimate_pct}: Estimated predation rate (% of available fish consumed)
-#'   \item{lower_ci_pct}: Lower 95% credible interval
-#'   \item{upper_ci_pct}: Upper 95% credible interval
-#' }
-#'
-#' @source Bird Research Northwest (2023)
-#' [Avian Predation on UKB Suckers 2021–2023 Summary Report](https://www.birdresearchnw.org/Avian%20Predation%20on%20UKB%20Suckers_Summary%20Report%202021-2023.pdf)
-"predation_estimates_wild"
+#'   \item \code{location}: location of data collection or estimate. This may be a river, wetland or marsh, hatchery, etc (klamath river, trinity river)
+#'   \item \code{year}: return year of the escapement estimate/count (1978-2025)
+#'   \item \code{species}: species name (spring chinook salmon, fall chinook salmon)
+#'   \item \code{origin}: fish origin category (unknown)
+#'   \item \code{lifestage}: life stage reported (adult, grilse)
+#'   \item \code{estimate_type}: type of estimate reported. Work in progress as these have not been filled in yet for the data from the Megatables.
+#'   \item \code{estimate}: value of estimate
+#'   \item \code{source}: describes where data were sourced from. Currently data comes from: CDFW Spring and Fall Megatables, and Klamath River Technical Team Report 2026 obtained from Pacific Fishery Management Council
+#'   }
+#' @note The source tables use different terminology for total run size ("in-river run"
+#'   for fall Chinook; "run-size estimates" for spring Chinook) reflecting genuine differences
+#'   in geographic scope and estimation methodology. Users should apply caution when comparing
+#'   spring and fall figures directly. Spring Chinook are listed as threatened under the
+#'   California Endangered Species Act (Upper Klamath/Trinity River Spring Chinook Salmon).
+'inriver_run_estimates'
 
 
 #' @title Predation Estimates on SARP and Chinook
-#' @name predation_estimates_hatchery
-#' @description Estimates of predation rates (with 95% credible intervals) on PIT-tagged
-#' Sucker Assisted Rearing Program (SARP) juvenile suckers and juvenile Chinook
-#' Salmon released into the Upper Klamath Basin, Clear Lake Reservoir, and
-#' Sheepy Lake.
-#' This dataset corresponds to **Table 4** of the 2021–2023 summary report.
-#' Estimates are provided separately for fish released in spring/summer (Spr/Sum)
-#' and fall/winter (Fall/Win).
-#' @format A tibble with 18 rows and 10 columns
+#' @name avian_predation_estimates
+#' @description This dataset combines avian predation rate estimates (with 95% credible intervals) and PIT-tag availability and recovery data for juvenile fishes in the Upper Klamath Basin. It includes PIT-tagged SARP suckers, hatchery-reared juvenile Chinook Salmon, and wild juvenile suckers released between 2021 and 2023.
+#' This dataset corresponds to **Table 2**, **Table 3**, **Table 4**  of the *Avian Predation on Upper Klamath Basin Suckers: Summary Report 2021–2023*.
+#' This dataset compiles avian predation estimates alongside PIT‑tag availability and recovery information for juvenile
+#' fishes released in the Upper Klamath Basin between 2021 and 2023. It includes PIT‑tagged Sucker Assisted Rearing Program (SARP)
+#' juvenile suckers, wild juvenile suckers, and hatchery‑reared juvenile Chinook Salmon.
+#'
+#' @format A tibble with 39 rows and 16 columns
 #' \itemize{
-#'   \item{location}: Waterbody (upper klamath lake, clear lake reservoir, sheepy lake)
-#'   \item{species}: Fish species (e.g. sucker, chinook salmon)
-#'   \item{life_stage}: Fish life stage (e.g. juvenile)
-#'   \item{origin}: Origin of realeased fish (e.g. hatchery)
-#'   \item{release_season}: Season when fish were realeased (e.g. spring_summer, fall_winter)
-#'   \item{sarp_program}: Wheather fish are part of the Sucker Assisted Rearing Program (SARP) (e.g. TRUE, FALSE)
+#'   \item{location}: location of data collection or estimate. This may be a river, wetland or marsh, hatchery, etc. (upper klamath lake, clear lake reservoir, sheepy lake)
+#'   \item{species}: fish species associated with each release group (e.g. sucker, chinook salmon)
+#'   \item{life_stage}: fish life stage (e.g. juvenile, adult)
+#'   \item{origin}: origin of realeased fish (e.g. hatchery, wild)
+#'   \item{release_season}: season when fish were realeased (e.g. spring_summer, fall_winter)
+#'   \item{sarp_program}: whether fish are part of the Sucker Assisted Rearing Program (SARP) (e.g. TRUE, FALSE)
 #'   \item{year}: Year (2021–2023)
-#'   \item{estimate_pct}: Estimated predation rate (% of available fish consumed)
-#'   \item{lower_ci_pct}: Lower 95% credible interval
-#'   \item{upper_ci_pct}: Upper 95% credible interval
+#'   \item{percent_estimate}: estimated predation rate (% of available fish consumed). This is a statistically adjusted percentage that accounts for the probability of a bird depositing a tag on a colony and the probability of a
+#'   researcher successfully detecting that tag. Predation estimates are adjusted to account for PIT tag detection and deposition probabilities that were unique to each predator species, colony, and year
+#'   \item{lower_ci_pct}: lower 95% credible interval. This interval provides the range in which the true predation rate is likely to fall. Predation rates are estimates derived from a hierarchical Bayesian model.
+#'   \item{upper_ci_pct}: upper 95% credible interval. This interval provides the range in which the true predation rate is likely to fall. Predation rates are estimates derived from a hierarchical Bayesian model.
+#'   \item{number_adults_tagged}: total number of PIT-tagged fish (both adults and juveniles) present in the study area and considered "available" to avian predators during the specified year
+#'   \item{number_recovered_tags}: raw count of physical PIT-tags recovered on piscivorous waterbird colonies during the 2021–2023 breeding seasons.
 #' }
 #'
 #' @source Bird Research Northwest (2023)

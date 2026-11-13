@@ -7,22 +7,71 @@ library(janitor)
 library(tabulapdf)
 library(tidyverse)
 library(purrr)
+library(stringr)
+library(readr)
 
-
-pdf_path <- "data-raw/Avian_Predation_on_UKB_Suckers_Summary_Report_2021_2023.pdf"
+## 2021-2023 DATA
+pdf_path <- "data-raw/helper-data/Avian_Predation_on_UKB_Suckers_Summary_Report_2021_2023.pdf"
 tables <- extract_tables(pdf_path, method = "stream", output = "tibble")
 
-#### PIT-tagged LRS, SNS, KLS, SNS-KLS and SARP ----
-tag_data_raw <- tables[[2]] |> glimpse()
 
-tag_data_raw <- as.data.frame(tag_data_raw, stringsAsFactors = FALSE) %>%
-  clean_names()
+## 2024 DATA
+pdf_path_2024 <- "data-raw/helper-data/Avian-Predation-Final-Summary-Report_2024.pdf"
+tables_2024 <- extract_tables(pdf_path_2024, method = "stream", output = "tibble")
 
+#### ======= PIT-tagged LRS, SNS, KLS, SNS-KLS and SARP ===== ####
 # The first number = the number of PIT-tagged fish available to avian predators that year in that location.
 # This is essentially how many tagged suckers (or salmon) were released or present in the waterbody.
 # The number in parentheses = the number of those tags recovered from avian predator nesting colonies in the same year.
 # Recovery = physical detection of PIT tags on bird colonies (e.g., cormorants, pelicans) after birds consumed tagged fish.
 # Importantly, these are minimum counts of predation events — not corrected for imperfect detection or deposition, so the true number of fish eaten could be higher.
+
+#  code below reads table 2 of 2021-2023 report, and table 2 of 2024 report
+
+# (1) read in 2021-2023 report table 2
+tag_data_raw <- tables[[2]] |> glimpse()
+
+tag_data_raw <- as.data.frame(tag_data_raw, stringsAsFactors = FALSE) %>%
+  clean_names()
+
+# (2) read in 2024 report table 2
+tag_data_raw_2 <- tables_2024[[2]] |> glimpse()
+
+tag_data_raw_2_clean <- tag_data_raw_2 |>
+  clean_names() |>
+  separate(
+    col = no_recovered_on_bird_colonies,
+    into = c("recovered_CL", "recovered_SL", "recovered_KR"),
+    sep = "\\s{1,}",
+    fill = "right",
+    extra = "merge") |>
+  glimpse()
+
+# (3) clean 2024
+to_num0 <- function(x) {
+  x <- ifelse(is.na(x), "0", x)
+  x <- str_trim(x)
+  x <- ifelse(x == "-" | x == "", "0", x)
+  readr::parse_number(x)
+}
+
+tag_data_clean_2024 <- tag_data_raw_2_clean |>
+  slice(-1) |>
+  mutate(
+    row_id = row_number(),
+    location = if_else(row_id <= 8, "Upper Klamath Lake", "Clear Lake Reservoir"),
+    fish_group = x2,
+    year = 2024L,
+    available = readr::parse_number(x3),
+    recovered = to_num0(x4) +
+      to_num0(recovered_CL) +
+      to_num0(recovered_SL) +
+      to_num0(recovered_KR) +
+      to_num0(x6)) |>
+  filter(!is.na(fish_group) & fish_group != "") |>
+  select(location, fish_group, year, available, recovered)
+
+# (4) functions to clean 2021-2023 table
 parse_avail <- function(x) {
   # available number before parentheses, allowing commas
   v <- str_extract(x, "^[0-9,]+")
@@ -50,7 +99,7 @@ tag_data_split <- tag_data_split |>
   select(-matches("^x20\\d{2}$"))
 
 
-tag_data_clean <- tag_data_split |>
+tag_data_2021_2023 <- tag_data_split |>
   mutate(location_1 = case_when(
     row_number() %in% 1:9  ~ "Upper Klamath Lake",
     row_number() %in% 10    ~ "Klamath River",
@@ -62,7 +111,8 @@ tag_data_clean <- tag_data_split |>
 # year columns
 year_cols <- grep("^x20\\d{2}_(available|recovered)$", names(tag_data_split), value = TRUE)
 
-avian_predation_pit_tag <- tag_data_clean |>
+# avian_predation_pit_tag <- tag_data_clean_2021_2023 |>
+tag_data_clean_2021_2023 <- tag_data_2021_2023 |>
   mutate(fish_group_2 = na_if(str_trim(fish_group_2), "")) |>
   filter(!(is.na(fish_group_2) & rowSums(!is.na(across(all_of(year_cols)))) == 0)) |>
   pivot_longer(cols = all_of(year_cols),
@@ -80,42 +130,47 @@ avian_predation_pit_tag <- tag_data_clean |>
   # mutate(recovered_rate = if_else(!is.na(available) & available > 0, recovered / available, NA_real_))
   glimpse()
 
+# (4) combine 2021-2023 and 2024
+avian_predation_pit_tag <- bind_rows(tag_data_clean_2024, tag_data_clean_2021_2023)
+
+# final cleaning step
 predation_estimates_avian_pit_tag <- avian_predation_pit_tag |>
-  mutate(
-  species = case_when(
-    str_detect(fish_group, "LRS") ~ "lost river sucker",
-    str_detect(fish_group, "SNS-KLS") ~ "shortnose and klamath largescale suckers",
-    str_detect(fish_group, "SNS") ~ "shortnose sucker",
-    str_detect(fish_group, "KLS") ~ "klamath largescale sucker",
-    str_detect(fish_group, "Chinook") ~ "chinook salmon",
-    str_detect(fish_group, "Juvenile suckers") ~ "sucker",
-    str_detect(fish_group, "Juvenile sucker") ~ "sucker",
-    str_detect(fish_group, "SARP–Spr/Sum") ~ "sucker",
-    TRUE ~ NA_character_),
-  life_stage = if_else(str_detect(fish_group, "Adult"), "adult", "juvenile"),
-  origin = case_when(
-    str_detect(fish_group, "Wild") ~ "wild",
-    str_detect(fish_group, "SARP") | str_detect(fish_group, "Chinook") ~ "hatchery",
-    TRUE ~ "wild"),
-  release_season = case_when(
-    str_detect(fish_group, "Spr/Sum") ~ "spring_summer",
-    str_detect(fish_group, "Fall/Win") ~ "fall_winter",
-    TRUE ~ NA_character_
-  ),
-  sarp_program = case_when(
-    str_detect(fish_group, "SARP") ~ TRUE,
-    TRUE ~ FALSE),
-  location = tolower(location)) |>
+  mutate(species = case_when(str_detect(fish_group, "LRS") ~ "lost river sucker",
+                             str_detect(fish_group, "SNS-KLS") ~ "shortnose and klamath largescale suckers",
+                             str_detect(fish_group, "SNS") ~ "shortnose sucker",
+                             str_detect(fish_group, "KLS") ~ "klamath largescale sucker",
+                             str_detect(fish_group, "Chinook") ~ "chinook salmon",
+                             str_detect(fish_group, "Juvenile suckers") ~ "sucker",
+                             str_detect(fish_group, "Juvenile sucker") ~ "sucker",
+                             str_detect(fish_group, "SARP–Spr/Sum") ~ "sucker",
+                             TRUE ~ NA_character_),
+         life_stage = if_else(str_detect(fish_group, "Adult"), "adult", "juvenile"),
+         origin = case_when(str_detect(fish_group, "Wild") ~ "wild",
+                            str_detect(fish_group, "SARP") | str_detect(fish_group, "Chinook") ~ "hatchery",
+                            TRUE ~ "wild"),
+         release_season = case_when(str_detect(fish_group, "Spr/Sum") ~ "spring_summer",
+                                    str_detect(fish_group, "Fall/Win") ~ "fall_winter",
+                                    TRUE ~ NA_character_),
+         sarp_program = case_when(str_detect(fish_group, "SARP") ~ TRUE,
+                                  TRUE ~ FALSE),
+         location = tolower(location)) |>
   select(-fish_group) |>
-  relocate(species, life_stage, origin, release_season, sarp_program, .after = location) |> glimpse()
-  # life_stage = if_else(str_detect(fish_group_2, "Adult"), "Adult", "Juvenile"),
+  relocate(species, life_stage, origin, release_season, sarp_program, .after = location) |>
+  mutate(sarp_program = as.character(sarp_program),
+         number_adults_tagged = available,
+         number_recovered_tags = recovered) |>
+  select(-available, -recovered) |>
+  glimpse()
 
+#### ======= estimate predation rates - LRS, SNS, KLS, SNS-KLS and SARP (UKL and Clear Lake) ===== ####
 
-# save clean data - how many tagged suckers were available and how many were recovered on bird colonies
-usethis::use_data(predation_estimates_avian_pit_tag, overwrite = TRUE)
+# Estimates of predation rates (95% credible intervals) on PIT-tagged Lost River suckers (LRS),
+# Shortnose suckers (SNS), Klamath Largescale suckers (KLS), Shortnose/Klamath Largescale suckers (SNS-KLS), and wild juvenile suckers by piscivorous colonial waterbirds nesting at colonies in Upper Klamath
+# Lake and Clear Lake Reservoir (i.e., cumulative predation effects)
 
+#  code below reads table 3 of 2021-2023 report, and table 3 of 2024 report
 
-#### estimate predation rates - LRS, SNS, KLS, SNS-KLS and SARP (UKL and Clear Lake) ----
+# (1) read in 2021-2023 report table 3
 estimate_predation_raw <- tables[[3]] |> glimpse()
 
 pred_raw_clean <- estimate_predation_raw |>
@@ -144,9 +199,51 @@ pred_raw_clean[8, c("CLR_Adult_SNS", "CLR_Adult_KLS", "CLR_Wild_Juv")] <- # migr
 names(pred_raw_clean)[2:5] <- c("UKL_Adult_LRS", "UKL_Adult_SNS", "UKL_Adult_KLS", "UKL_Juveniles")
 names(pred_raw_clean)[6:8] <- c("CLR_Adult_LRS", "CLR_Adult_SNS_KLS", "CLR_Juveniles")
 
+# (2) read in 2024 report table 3
+# using tabulizer::extract_areas() since original method is skipping this page - note that table needs to be selected
+area_table <- extract_areas(pdf_path_2024, pages = 12)
+
+estimate_predation_raw_2024 <- as.data.frame(area_table, stringsAsFactors = FALSE) |>
+  clean_names()
+
+est_predation_clean <- estimate_predation_raw_2024 |>
+  mutate(
+    upper_klamath_lake_1 = str_squish(upper_klamath_lake_1),
+    upper_klamath_lake_2 = str_squish(clear_lake_reservoir)) |>
+  separate(
+    col = upper_klamath_lake_1,
+    into = c("ukl_col2_part1", "ukl_col2_part2", "ukl_col2_part3"),
+    sep = "\\s{1,}",
+    fill = "right",
+    extra = "merge") |>
+  separate(
+    col = upper_klamath_lake_2,
+    into = c("cl_part1", "cl_part2", "cl_part3"),
+    sep = "\\s{1,}",
+    fill = "right",
+    extra = "merge")
+
+pred_raw_clean_2 <- est_predation_clean |>
+  select(1:4, 6:7) |>
+  slice(2:4) |>
+  rename(...1 = x1)
+
+names(pred_raw_clean_2)[2:4] <- c("UKL_Adult_LRS", "UKL_Adult_KLS", "UKL_Adult_SNS")
+names(est_predation_clean)[5:6] <- c("CLR_Adult_LRS", "CLR_Adult_SNS_KLS")
+
+
+pred_raw_clean_2 <- pred_raw_clean_2 |>
+  mutate(across(starts_with("UKL_Adult_") | starts_with("CLR_Adult_"), str_trim)) |>
+  rename(CLR_Adult_LRS = cl_part1,
+         CLR_Adult_SNS_KLS = cl_part2)
+
+# (3) combine 2024 with 2021-2023 to continue cleaning
+est_predation_clean <- bind_rows(pred_raw_clean, pred_raw_clean_2)
+
+
 # Row indices where the years are listed
-year_map <- tibble(row_index = c(4, 6, 8, 9, 10, 12),
-                   year = c(2021, 2021, 2022, 2022, 2023, 2023))
+year_map <- tibble(row_index = c(4, 6, 8, 9, 10, 12, 13, 15),
+                   year = c(2021, 2021, 2022, 2022, 2023, 2023, 2024, 2024))
 
 # parse "estimate (lcl–ucl)"
 parse_pred <- function(x) {
@@ -180,7 +277,7 @@ parse_pred <- function(x) {
 
 # build table
 estimates_suckers_clean <- map2_dfr(year_map$row_index, year_map$year, function(i, yr){
-  row_vals <- pred_raw_clean[i, ]
+  row_vals <- est_predation_clean[i, ]
   # Each column corresponds to one group
   bind_rows(
     parse_pred(row_vals$UKL_Adult_LRS) %>% mutate(location_1="Upper Klamath Lake", fish_group_2="Adult LRS", year=yr),
@@ -204,6 +301,7 @@ group_by(location_1, fish_group_2, year) |>
          fish_group = fish_group_2) |>
   glimpse()
 
+# (4) clean and combined predation_estimates_wild
 predation_estimates_wild <- predation_estimates_wild_clean |>
   mutate(
   species = case_when(
@@ -220,14 +318,11 @@ predation_estimates_wild <- predation_estimates_wild_clean |>
   relocate(species, life_stage, origin, .after = location) |> glimpse()
 
 
-# save clean data -  Estimates of predation rates (95% credible intervals) on PIT-tagged Lost River suckers (LRS),
-# Shortnose suckers (SNS), Klamath Largescale suckers (KLS), Shortnose/Klamath Largescale suckers (SNS-KLS), and wild juvenile suckers by piscivorous colonial waterbirds nesting at colonies in Upper Klamath
-# Lake and Clear Lake Reservoir (i.e., cumulative predation effects)
+#### ======= estimates of predation rates PIT-tagged Sucker Assisted Rearing Program (SARP) juvenile suckers  ===== ####
 
-usethis::use_data(predation_estimates_wild, overwrite = TRUE)
+#  code below reads table 4 of 2021-2023 report, and table 4 of 2024 report
 
-
- #### Estimates of predation rates PIT-tagged Sucker Assisted Rearing Program (SARP) juvenile suckers ----
+# (1) read in 2021-2023 report table 3
  estimate_predation_sarp_raw <- tables[[4]] |> glimpse()
 
  estimate_predation_sarp_raw <- as.data.frame(estimate_predation_sarp_raw, stringsAsFactors = FALSE) |>
@@ -235,82 +330,114 @@ usethis::use_data(predation_estimates_wild, overwrite = TRUE)
 
  estimate_predation_sarp <- estimate_predation_sarp_raw |>
    separate(col = 'upper_klamath_lake', # split the mixed column into two
-          into = c("ukl_sarp_fall_win", "ukl_chin_spr_sum"),
-          sep = "(?<=\\)|%)\\s+",
-          extra = "merge",
-          fill = "right") |>
+            into = c("ukl_sarp_fall_win", "ukl_chin_spr_sum"),
+            sep = "(?<=\\)|%)\\s+",
+            extra = "merge",
+            fill = "right") |>
    rename(ukl_chin_fall_win = x4,
           kr_chin_spr_sum = klamath_river,
           shpy_sarp_spr_sum = sheepy_lake,
           ukl_sarp_spr_sum = x2) |>
    glimpse()
 
- year_map_2 <- tibble(row_index = c(4, 6, 7, 9, 10, 12),
-                    year = c(2021, 2021, 2022, 2022, 2023, 2023))
 
+# (2) read/clean in 2024 report table 4
+area_table_estimate_sarp <- extract_areas(pdf_path_2024, pages = 16)
+#
+estimate_predation_sarp_raw_2024 <- as.data.frame(area_table_estimate_sarp, stringsAsFactors = FALSE) |>
+   clean_names()
 
- # parse "estimate (lcl–ucl)"
- parse_sarp <- function(x) {
-   if (is.na(x) || x %in% c("NA","–")) {
-     return(tibble(estimate_pct = NA_character_, lower_ci_pct = NA_real_, upper_ci_pct = NA_real_))
-   }
+estimate_predation_sarp_2024 <- estimate_predation_sarp_raw_2024 |>
+  separate(col = 'upper_klamath_lake_1', # split the mixed column into two
+         into = c("ukl_sarp_spr_sum", "ukl_sarp_fall_win"),
+         sep = "(?<=\\)|%)\\s+",
+         extra = "merge",
+         fill = "right") |>
+  rename(ukl_wild_juv = x2, #check this col name
+         ukl_chin_fall_win = x4,
+         cl_wild_juv = clear_lake_reservoir) |> #check this col name
+  glimpse()
 
-   # keep "<"
-   x_clean <- str_remove_all(x, "[()%]")
+# (3) 2024 table cleaned and combined with 2021-2023
+estimate_pred_combined <- bind_rows(estimate_predation_sarp, estimate_predation_sarp_2024)
 
-   # range (CI)
-   if (str_detect(x_clean, "–")) {
-     rng <- str_split(x_clean, "–")[[1]] |>  str_trim()
-     tibble(estimate_pct = NA_character_,
-            lower_ci_pct = suppressWarnings(as.numeric(str_remove(rng[1], "%"))),
-            upper_ci_pct = suppressWarnings(as.numeric(str_remove(rng[2], "%"))))
+# year mapping stays the same
+year_map_2 <- tibble(
+  row_index = c(4, 6, 7, 9, 10, 12, 16, 18),
+  year      = c(2021, 2021, 2022, 2022, 2023, 2023, 2024, 2024)
+)
 
-     # explicit "<" value (e.g. "< 0.1%")
-   } else if (str_detect(x_clean, "<")) {
-     tibble(estimate_pct = str_trim(x_clean),  # keep as character, e.g. "<0.1%"
-            lower_ci_pct = NA_real_,
-            upper_ci_pct = NA_real_)
+# parse function (unchanged, but keep en-dash handling)
+parse_sarp <- function(x) {
+  if (is.na(x) || x %in% c("NA", "–")) {
+    return(tibble(estimate_pct = NA_character_, lower_ci_pct = NA_real_, upper_ci_pct = NA_real_))
+  }
 
-     # normal percentage
-   } else {
-     tibble(estimate_pct = str_trim(str_remove(x_clean, "%")),
-            lower_ci_pct = NA_real_,
-            upper_ci_pct = NA_real_)
-   }
- }
+  x_clean <- str_remove_all(x, "[()%]")
 
- # build table
- estimate_predation_sarp_clean <- map2_dfr(year_map_2$row_index, year_map_2$year, function(i, yr){
-   row_vals <- estimate_predation_sarp[i, ]
-   # Each column corresponds to one group
-   bind_rows(
-     parse_sarp(row_vals$ukl_sarp_spr_sum) %>% mutate(location_1="Upper Klamath Lake", fish_group_2="SARP Spring/Summer", year=yr),
-     parse_sarp(row_vals$ukl_sarp_fall_win) %>% mutate(location_1="Upper Klamath Lake", fish_group_2="SARP Fall/Winter", year=yr),
-     parse_sarp(row_vals$ukl_chin_spr_sum) %>% mutate(location_1="Upper Klamath Lake", fish_group_2="Chinook Spring/Summer", year=yr),
-     parse_sarp(row_vals$ukl_chin_fall_win) %>% mutate(location_1="Upper Klamath Lake", fish_group_2="Chinook Fall/Winter", year=yr),
-     parse_sarp(row_vals$kr_chin_spr_sum) %>% mutate(location_1="Klamath River", fish_group_2="Chinook Spring/Summer", year=yr),
-     parse_sarp(row_vals$shpy_sarp_spr_sum) %>% mutate(location_1="Sheepy Lake", fish_group_2="SARP Spring/Summer", year=yr)
-   )
- })
+  if (str_detect(x_clean, "–")) {
+    rng <- str_split(x_clean, "–")[[1]] |> str_trim()
+    tibble(
+      estimate_pct = NA_character_,
+      lower_ci_pct = suppressWarnings(as.numeric(rng[1])),
+      upper_ci_pct = suppressWarnings(as.numeric(rng[2]))
+    )
+  } else if (str_detect(x_clean, "<")) {
+    tibble(estimate_pct = str_trim(x_clean), lower_ci_pct = NA_real_, upper_ci_pct = NA_real_)
+  } else {
+    tibble(estimate_pct = str_trim(x_clean), lower_ci_pct = NA_real_, upper_ci_pct = NA_real_)
+  }
+}
 
+# combine tables
+estimate_pred_combined <- bind_rows(estimate_predation_sarp, estimate_predation_sarp_2024)
 
- estimate_predation_sarp <- estimate_predation_sarp_clean |>
-   group_by(location_1, fish_group_2, year) |>
-   summarise(estimate_pct = suppressWarnings(max(estimate_pct, na.rm = TRUE)) %>% { ifelse(is.infinite(.), NA_real_, .) },
-             lower_ci_pct   = suppressWarnings(max(lower_ci_pct, na.rm = TRUE)) %>% { ifelse(is.infinite(.), NA_real_, .) },
-             upper_ci_pct   = suppressWarnings(max(upper_ci_pct, na.rm = TRUE)) %>% { ifelse(is.infinite(.), NA_real_, .) },
-             .groups = "drop") |>
-   rename(location = location_1,
-          fish_group = fish_group_2)
+# (4) functions to clean 2021-2023 and 2024 tables
 
+add_group_if_present <- function(row_vals, col, location, fish_group, yr) {
+  if (!col %in% names(row_vals)) return(NULL)
+  parse_sarp(row_vals[[col]][[1]]) %>%
+    mutate(location_1 = location, fish_group_2 = fish_group, year = yr)
+}
+
+# build tidy output from combined table
+estimate_pred_long <- map2_dfr(year_map_2$row_index, year_map_2$year, function(i, yr) {
+  row_vals <- estimate_pred_combined[i, ]
+
+  groups <- list(
+    add_group_if_present(row_vals, "ukl_sarp_spr_sum", "Upper Klamath Lake", "SARP Spring/Summer", yr),
+    add_group_if_present(row_vals, "ukl_sarp_fall_win", "Upper Klamath Lake", "SARP Fall/Winter", yr),
+    add_group_if_present(row_vals, "ukl_chin_spr_sum", "Upper Klamath Lake", "Chinook Spring/Summer", yr),
+    add_group_if_present(row_vals, "ukl_chin_fall_win", "Upper Klamath Lake", "Chinook Fall/Winter", yr),
+    add_group_if_present(row_vals, "kr_chin_spr_sum", "Klamath River", "Chinook Spring/Summer", yr),
+    add_group_if_present(row_vals, "shpy_sarp_spr_sum", "Sheepy Lake", "SARP Spring/Summer", yr),
+    add_group_if_present(row_vals, "ukl_wild_juv", "Upper Klamath Lake", "Wild Juveniles", yr),
+    add_group_if_present(row_vals, "cl_wild_juv", "Clear Lake Reservoir","Wild Juveniles", yr))
+  bind_rows(groups)
+  })
+
+estimate_predation_sarp <- estimate_pred_long |>
+  group_by(location_1, fish_group_2, year) |>
+  summarise(estimate_pct = suppressWarnings(max(estimate_pct, na.rm = TRUE)) %>% { ifelse(is.infinite(.), NA_real_, .) },
+            lower_ci_pct   = suppressWarnings(max(lower_ci_pct, na.rm = TRUE)) %>% { ifelse(is.infinite(.), NA_real_, .) },
+            upper_ci_pct   = suppressWarnings(max(upper_ci_pct, na.rm = TRUE)) %>% { ifelse(is.infinite(.), NA_real_, .) },
+            .groups = "drop") |>
+  rename(location = location_1,
+         fish_group = fish_group_2)
+
+# (5) Produce clean and combined predation_estimates_hatchery
 predation_estimates_hatchery <- estimate_predation_sarp |>
   mutate(
    species = case_when(
      str_detect(fish_group, "SARP") ~ "sucker",
      str_detect(fish_group, "Chinook") ~ "chinook salmon",
+     str_detect(fish_group, "Wild Juveniles") ~ "sucker",
      TRUE ~ NA_character_),
    life_stage = "juvenile",
-   origin = "hatchery",
+   # origin = "hatchery", #note that on this table for 2024 there are also wild
+   origin = case_when(
+     fish_group == "Wild Juveniles" ~ "wild",
+     T ~"hatchery"),
    release_season = case_when(
      str_detect(fish_group, "Spring/Summer") ~ "spring_summer",
      str_detect(fish_group, "Fall/Win") ~ "fall_winter",
@@ -323,10 +450,57 @@ predation_estimates_hatchery <- estimate_predation_sarp |>
    select(-fish_group) |>
    relocate(species, life_stage, origin, release_season, sarp_program, .after = location) |> glimpse()
 
-# save clean data -   Estimates of predation rates (95% credible intervals) on PIT-tagged Sucker Assisted Rearing
-# Program (SARP) juvenile suckers and juvenile Chinook Salmon (Chinook) by piscivorous colonial
-# waterbirds nesting at colonies in Upper Klamath Lake, Clear Lake Reservoir, and Sheepy Lake combined
-# (i.e., cumulative predation effects).
 
-usethis::use_data(predation_estimates_hatchery, overwrite = TRUE)
+#### ======= harmonize and combine all tables  ===== ####
+#  predation_estimates_hatchery, predation_estimates_wild and predation_estimates_avian_pit_tag
+## combine ----
+
+# harmonize hatchery
+hatchery_long <- predation_estimates_hatchery |>
+  filter(!(origin == "wild" & is.na(estimate_pct))) |> # 2024 included the wild juvenile suckers in the hatchery table but 2021-2023 included in other table so need to remove so don't get duplicates
+  mutate(metric_type = "percent",
+         available = NA_integer_,
+         recovered = NA_integer_,
+         percent_estimate = estimate_pct,
+         sarp_program = as.character(sarp_program)) |>
+  select(location, species, life_stage, origin, release_season, sarp_program, year, metric_type,
+         percent_estimate, lower_ci_pct, upper_ci_pct) |> glimpse()
+
+# harmonize wild
+wild_long<- predation_estimates_wild |> # this table is ready to be combined with others
+  filter(!(year == 2024 & location == "clear lake reservoir" & life_stage == "juvenile")) |>  # remove 2024 because it is coming from hatchery table
+  mutate(metric_type = "percent",
+         release_season = NA_character_,
+         # # origin = "Natural",
+         # available = NA_integer_,
+         # recovered = NA_integer_,
+         percent_estimate = estimate_pct,
+         sarp_program = as.character(FALSE)) |>
+  select(location, species, life_stage, origin, release_season, sarp_program, year, metric_type,
+         percent_estimate, lower_ci_pct, upper_ci_pct) |> glimpse()
+
+#combine hatchery and wild
+percent_estimates <- bind_rows(wild_long, hatchery_long) |>
+  # mutate(percent_estimate = value) |>
+  select(-metric_type) |>
+         glimpse()
+
+# combine percent estimates and count
+avian_predation_estimates <- percent_estimates |>
+  left_join(predation_estimates_avian_pit_tag,
+            by = c("location",
+                   "species",
+                   "life_stage",
+                   "origin",
+                   "release_season",
+                   "sarp_program",
+                   "year")) |> glimpse()
+
+# Check that there are no duplicates
+# avian_predation_estimates |>
+#   group_by(location, species, life_stage, origin, release_season, sarp_program, year) |>
+#   tally() |>
+#   filter(n > 1)
+# save clean data
+usethis::use_data(avian_predation_estimates, overwrite = TRUE)
 

@@ -9,7 +9,7 @@ library(rivermile)
 
 # fisheries_location_lookup  ----
 # RST
-rst_sites <- read_csv(here::here('data-raw','tables_with_data', 'rst_sites.csv')) |>
+rst_sites <- read_csv(here::here('data-raw','helper-data', 'rst_sites.csv')) |>
   clean_names() |>
   mutate(data_type = "rst",
          stream = tolower(paste(watershed, "River")),
@@ -22,7 +22,7 @@ rst_sites <- read_csv(here::here('data-raw','tables_with_data', 'rst_sites.csv')
   glimpse()
 
 # hatcheries
-hatcheries <- read_csv(here::here('data-raw','tables_with_data', 'fish_hatchery_locations.csv')) |>
+hatcheries <- read_csv(here::here('data-raw','helper-data', 'fish_hatchery_locations.csv')) |>
   clean_names() |>
   mutate(stream = tolower(paste(watershed, "River")),
          data_type = "hatchery",
@@ -42,7 +42,7 @@ hatcheries <- read_csv(here::here('data-raw','tables_with_data', 'fish_hatchery_
 # for now, I have left out the shapefiles created to associate geodata, and rely on lat long (will work on schema)
 
 ## Survey Lines
-redd_carcass_surveys <- read_csv(here::here('data-raw', 'redd_carcass_survey_data' ,'redd_carcass.csv')) |>
+redd_carcass_surveys <- read_csv(here::here('data-raw', 'helper-data','redd-carcass-survey-data' ,'redd_carcass.csv')) |>
   clean_names() |>
   select(-c(id, upstream_river_access, upstream_google_earth, downstream_access, downstream_google_earth, downstream_rkm, upstream_rkm,
             has_holding, had_redd, has_carcass)) |>
@@ -67,7 +67,7 @@ redd_carcass_surveys <- read_csv(here::here('data-raw', 'redd_carcass_survey_dat
   glimpse()
 
 # Habitat data ------------------------------------------------------------
-habitat_raw <- read_csv(here::here('data-raw','tables_with_data', 'habitat_data.csv'))
+habitat_raw <- read_csv(here::here('data-raw','helper-data', 'habitat_data.csv'))
 
 habitat <- habitat_raw |>
   janitor::clean_names() |>
@@ -81,7 +81,11 @@ habitat <- habitat_raw |>
 
 # Combine -----------------------------------------------------------------
 
-data_location_lookup <- bind_rows(rst_sites, hatcheries, redd_carcass_surveys, habitat)
+data_location_lookup <- bind_rows(rst_sites, hatcheries, redd_carcass_surveys, habitat) |>
+  mutate(location = tolower(stream)) |>
+  relocate(location, .before = sub_basin) |>
+  select(-stream) |>
+  glimpse()
 
 # save rda files
 usethis::use_data(data_location_lookup, overwrite = TRUE)

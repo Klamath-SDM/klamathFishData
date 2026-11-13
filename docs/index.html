@@ -72,7 +72,7 @@
 </h1></div>
 <!-- badges: start -->
 <!-- badges: end -->
-<p>The <strong><code>klamathFishData</code></strong> package is an R data package developed by FlowWest to provide access to curated environmental and biological datasets on fish in the Klamath River Basin. It is designed to support research, modeling, and restoration planning.</p>
+<p>The <strong><code>klamathFishData</code></strong> package is an R data package developed by FlowWest that provides curated environmental and biological datasets on fish in the Klamath River Basin. The package is intended to support research, modeling, and restoration planning by making commonly used fisheries datasets easily accessible in a consistent format.</p>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
@@ -87,28 +87,56 @@
 <p>The data in this package comes from a variety of public sources, including:</p>
 <ul>
 <li>California Department of Fish and Wildlife (CDFW)</li>
-<li>US Geological Survey (USGS)</li>
+<li>U.S. Geological Survey (USGS)</li>
 <li>Literature-based habitat models</li>
-<li>more…</li>
 </ul>
 </div>
 <div class="section level2">
 <h2 id="example">Example<a class="anchor" aria-label="anchor" href="#example"></a>
 </h2>
-<p>This is a basic example which shows you how to solve a common problem:</p>
+<p>The example below demonstrates how to filter spawner escapement data for adult spring Chinook Salmon.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">klamathFishData</span><span class="op">)</span></span>
-<span><span class="co">## basic example code</span></span></code></pre></div>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://tidyverse.tidyverse.org" class="external-link">tidyverse</a></span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">salmon_spawner_escapement</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">species</span> <span class="op">==</span> <span class="st">"spring chinook salmon"</span> <span class="op">&amp;</span> <span class="va">lifestage</span> <span class="op">==</span> <span class="st">"adult"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; # A tibble: 315 × 13</span></span>
+<span><span class="co">#&gt;     year location                species origin lifestage estimate_type estimate</span></span>
+<span><span class="co">#&gt;    &lt;dbl&gt; &lt;chr&gt;                   &lt;chr&gt;   &lt;chr&gt;  &lt;chr&gt;     &lt;chr&gt;            &lt;dbl&gt;</span></span>
+<span><span class="co">#&gt;  1  2016 trinity river hatchery  spring… hatch… adult     &lt;NA&gt;              1830</span></span>
+<span><span class="co">#&gt;  2  2017 trinity river hatchery  spring… hatch… adult     &lt;NA&gt;              1134</span></span>
+<span><span class="co">#&gt;  3  2018 trinity river hatchery  spring… hatch… adult     &lt;NA&gt;              2488</span></span>
+<span><span class="co">#&gt;  4  2016 salmon river            spring… wild   adult     &lt;NA&gt;               406</span></span>
+<span><span class="co">#&gt;  5  2017 salmon river            spring… wild   adult     &lt;NA&gt;               133</span></span>
+<span><span class="co">#&gt;  6  2018 salmon river            spring… wild   adult     &lt;NA&gt;               171</span></span>
+<span><span class="co">#&gt;  7  2016 other klamath tributar… spring… wild   adult     &lt;NA&gt;                 1</span></span>
+<span><span class="co">#&gt;  8  2017 other klamath tributar… spring… wild   adult     &lt;NA&gt;                 2</span></span>
+<span><span class="co">#&gt;  9  2018 other klamath tributar… spring… wild   adult     &lt;NA&gt;                11</span></span>
+<span><span class="co">#&gt; 10  2016 trinity river           spring… wild   adult     &lt;NA&gt;              1331</span></span>
+<span><span class="co">#&gt; # ℹ 305 more rows</span></span>
+<span><span class="co">#&gt; # ℹ 6 more variables: confidence_interval &lt;dbl&gt;, lower_bounds_estimate &lt;dbl&gt;,</span></span>
+<span><span class="co">#&gt; #   upper_bounds_estimate &lt;dbl&gt;, estimation_method &lt;chr&gt;,</span></span>
+<span><span class="co">#&gt; #   is_complete_estimate &lt;lgl&gt;, source &lt;chr&gt;</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="whats-included">What’s Included<a class="anchor" aria-label="anchor" href="#whats-included"></a>
 </h2>
 <p>The package contains cleaned, documented data objects including:</p>
 <ul>
-<li><p><code>fisheries_location_lookup</code> - This dataset compiles location data relevant to fisheries data collection efforts from across the Klamath Basin. (rotary screw traps, hatchery, redd/carcass survey data)</p></li>
-<li><p><code>fisheries_model_estimates</code> - Modeled estimates and credible intervals from fisheries models such as abundance and survival estimates.</p></li>
-<li><p><code>predation_estimates_avian_pit_tag</code>, <code>predation_estimates_wild</code> and <code>predation_estimates_hatchery</code> - Predation Estimates on SARP, Chinook and wild Suckers, and Avian Predation PIT-tag Recoveries</p></li>
-<li><p>And more…</p></li>
+<li>
+<code>sucker_adult_estimates</code> — This dataset compiles sucker modeled estimates and credible intervals from fisheries models such as abundance and survival estimates</li>
+<li>
+<code>salmon_juvenile_abundance</code> — This dataset compiles salmon modeled estimates and credible intervals from fisheries abundance models</li>
+<li>
+<code>data_location_lookup</code> - Latitude and longitude information for fisheries data collection locations, used to support spatial mapping of datasets such as <code>sucker_adult_estimates</code> and <code>salmon_juvenile_abundance.</code>
+</li>
+<li>
+<code>salmon_spawner_escapement</code> - Data extracted from <a href="https://wildlife.ca.gov/Conservation/Fishes/Chinook-Salmon/Anadromous-Assessment" class="external-link">CDFW’s Fall-Run Megatable</a> and <a href="https://nrm.dfg.ca.gov/FileHandler.ashx?DocumentID=100231&amp;inline" class="external-link">CDFW’s Spring-Run Megatable</a>
+</li>
+<li>
+<code>avian_predation_estimates</code> - This dataset combines avian predation rate estimates and PIT-tag availability and recovery data for juvenile fishes in the Upper Klamath Basin.</li>
+<li>And more in development…</li>
 </ul>
 <p>Use <code>data(package = "klamathFishData")</code> to view all datasets included.</p>
 </div>
